@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oor:component-data xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" oor:package="org.openoffice.TypeDetection" oor:name="Types">
+
+   <node oor:name="Types">
+	<node oor:name="Hwp2002_File" oor:op="replace">
+		<prop oor:name="UIOrder"><value>0</value></prop>
+		<prop oor:name="DetectService"><value>ebandal.libreoffice.H2Orestart</value></prop>
+		<prop oor:name="URLPattern"/>
+		<prop oor:name="Extensions"><value>hwpx</value></prop>
+		<prop oor:name="MediaType"/>
+		<prop oor:name="Preferred"><value>false</value></prop>
+		<prop oor:name="PreferredFilter"><value>Hwp2002_Reader</value></prop>
+		<prop oor:name="UIName"><value xml:lang="en-US">Hwp2002_File</value></prop>
+		<prop oor:name="ClipboardFormat"/>
+	</node>
+	
+   </node>
+
+</oor:component-data>

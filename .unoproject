@@ -1,0 +1,12 @@
+#UNO project configuration file
+#Sun Apr 09 18:09:53 KST 2023
+project.prefix=ebandal.libreoffice
+project.ooo=LibreOffice 7.5
+project.language=Java
+regclassname=ebandal.libreoffice.comp.RegistrationHandler
+project.idl=/idl
+project.implementation=comp
+project.build=build
+project.sdk=7.5.2.2
+project.srcdir=/source
+javaversion=java5

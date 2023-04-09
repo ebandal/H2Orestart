@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oor:component-data xmlns:oor="http://openoffice.org/2001/registry" xmlns:xs="http://www.w3.org/2001/XMLSchema" oor:package="org.openoffice.TypeDetection" oor:name="Filter">
+
+  <node oor:name="Filters">
+	<node oor:name="Hwp2002_Reader" oor:op="replace">
+		<prop oor:name="FileFormatVersion"><value>5</value></prop>
+		<prop oor:name="Type"><value>Hwp2002_File</value></prop>
+		<prop oor:name="DocumentService"><value>com.sun.star.text.TextDocument</value></prop>
+		<prop oor:name="UserData"/>
+		<prop oor:name="FilterService"><value>ebandal.libreoffice.H2Orestart</value></prop>
+		<prop oor:name="TemplateName"/>
+		<prop oor:name="UIName"><value xml:lang="x-default">Hwp2002_Reader</value>
+		</prop><prop oor:name="Flags"><value>IMPORT ALIEN 3RDPARTYFILTER</value></prop>
+	</node>
+
+  </node>
+
+</oor:component-data>

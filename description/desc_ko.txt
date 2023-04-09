@@ -1,0 +1,3 @@
+이 확장은 HWP 5.0 파일을 읽어들입니다.
+본 제품은 한글과컴퓨터의 ᄒᆞᆫ글 문서 파일(HWP, HWPML) 공개 문서를 참고하여 개발하였습니다.
+버그 신고는 https://github.com/ebandal/H2Orestart 로 해주세요.
