@@ -29,6 +29,7 @@ package HwpDoc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -66,7 +67,7 @@ public class HwpDocInfo {
 	private HwpFile        parentHwp;
 	public List<HwpRecord> recordList;
 	
-	public Map<String, HwpRecord> binDataList;
+	public LinkedHashMap<String, HwpRecord> binDataList;
 	public List<HwpRecord> faceNameList;
 	public List<HwpRecord> borderFillList;
 	public List<HwpRecord> charShapeList;
@@ -79,7 +80,7 @@ public class HwpDocInfo {
 	
     public HwpDocInfo(HanType hanType) {
         recordList      = new ArrayList<HwpRecord>();
-        binDataList     = new HashMap<String, HwpRecord>();
+        binDataList     = new LinkedHashMap<String, HwpRecord>();
         faceNameList    = new ArrayList<HwpRecord>();
         borderFillList  = new ArrayList<HwpRecord>();
         charShapeList   = new ArrayList<HwpRecord>();
@@ -131,7 +132,7 @@ public class HwpDocInfo {
 				break;
 			case HWPTAG_BIN_DATA:
 			    HwpRecord_BinData binRecord = new HwpRecord_BinData(this, tagNum, level, size, buf, off, version);
-				binDataList.put(String.valueOf(binRecord.binDataID), binRecord);
+				binDataList.put(binRecord.itemId, binRecord);
 				break;
 			case HWPTAG_FACE_NAME:
 				record = new HwpRecord_FaceName(this, tagNum, level, size, buf, off, version);
@@ -314,8 +315,14 @@ public class HwpDocInfo {
                 }
                 break;
             case "hh:bullets":
-                record = new HwpRecord_Bullet(this, node, version);
-                bulletList.add(record);
+            	{
+                    NodeList children = node.getChildNodes();
+                    for (int j=0; j<children.getLength(); j++) {
+                    	Node childNode = children.item(j);
+		                record = new HwpRecord_Bullet(this, childNode, version);
+		                bulletList.add(record);
+                    }
+            	}
                 break;
             case "hh:paraProperties":
                 {

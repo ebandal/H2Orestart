@@ -1,9 +1,9 @@
 package soffice;
 
 public class ParaNode {
-    String numberingHead;
-    boolean showNumberingHead;
-    String content;
+    public String numberingHead;
+    public boolean showNumberingHead;
+    public String content;
     
     public ParaNode(String head, boolean show, String content) {
         this.numberingHead = head;

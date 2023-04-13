@@ -321,10 +321,10 @@ public class Ctrl_Common extends Ctrl {
                     horzAlign = HorzAlign.valueOf(childAttrs.getNamedItem("horzAlign").getNodeValue());
                     
                     numStr = childAttrs.getNamedItem("vertOffset").getNodeValue();
-                    vertOffset = Integer.parseInt(numStr);
+                    vertOffset = Integer.parseUnsignedInt(numStr);
 
                     numStr = childAttrs.getNamedItem("horzOffset").getNodeValue();
-                    horzOffset = Integer.parseInt(numStr);
+                    horzOffset = Integer.parseUnsignedInt(numStr);
                     node.removeChild(child);
                 }
                 break;
@@ -360,6 +360,7 @@ public class Ctrl_Common extends Ctrl {
 	
 	private void setCaption(Node node, int version) throws NotImplementedException {
         NamedNodeMap attrs = node.getAttributes();
+        // [fullSz="0", gap="850", lastWidth="38288", side="TOP", width="8504"]
         switch(attrs.getNamedItem("side").getNodeValue()) {
         case "LEFT":
             captionAttr = 0b00;      break;
@@ -373,7 +374,7 @@ public class Ctrl_Common extends Ctrl {
             throw new NotImplementedException("setCaption");
         }
 
-        switch(attrs.getNamedItem("fullSize").getNodeValue()) {
+        switch(attrs.getNamedItem("fullSz").getNodeValue()) {
         case "0":
             break;
         case "1":
@@ -399,7 +400,7 @@ public class Ctrl_Common extends Ctrl {
             Node child = nodeList.item(i);
             
             switch(child.getNodeName()) {
-            case "subList":
+            case "hp:subList":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     // childAttrs.getNamedItem("id").getNodeValue();
@@ -422,6 +423,7 @@ public class Ctrl_Common extends Ctrl {
                 }
                 break;
             default:
+            	log.warning(child.getNodeName() + " : " + child.getNodeValue());
                 throw new NotImplementedException("setCaption");
             }
         }

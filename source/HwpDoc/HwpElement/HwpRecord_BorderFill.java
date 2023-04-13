@@ -276,10 +276,13 @@ public class HwpRecord_BorderFill extends HwpRecord {
 	private static Border getBorder(Node child) {
 	    Border border = new Border();
         NamedNodeMap childAttrs = child.getAttributes();
-        border.type = LineType2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+        // [color="none", type="NONE", width="0.1 mm"]
         
+        border.type = LineType2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
         String colorStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("^#([0-9A-F]+)$", "$1");
-        border.color = Integer.parseInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
+        if (!colorStr.equals("none")) {
+        	border.color = Integer.parseInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
+        }
         switch(childAttrs.getNamedItem("width").getNodeValue()) {
         case "0.1":
         case "0.1 mm":

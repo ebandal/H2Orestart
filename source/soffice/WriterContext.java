@@ -254,7 +254,7 @@ public class WriterContext {
 		return (HwpRecord_Bullet) docInfo.bulletList.get(id-1);
 	}
 	
-	public String getBinFilename(short id) {
+	public String getBinFilename(String id) {
 		String retString = "";
 		HwpDocInfo docInfo = null;
         switch(hType) {
@@ -266,17 +266,16 @@ public class WriterContext {
             break;
         }
 
-		HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(String.valueOf(id));
-		if (binData.type==Type.LINK) {
-			retString = binData.aPath;
-		} else {
-			String compoundFileName = String.format("BIN%04X.%s", binData.binDataID, binData.format);
-			try {
-				retString = hwp.saveChildEntry(getWorkingFolder(), compoundFileName, binData.compressed);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(id);
+		retString = binData.aPath;
+		/*
+		String compoundFileName = String.format("BIN%04X.%s", binData.binDataID, binData.format);
+		try {
+			retString = hwp.saveChildEntry(getWorkingFolder(), compoundFileName, binData.compressed);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		*/
 		return retString;
 	}
 	
@@ -286,7 +285,7 @@ public class WriterContext {
         switch(hType) {
         case HWP:
             docInfo = hwp.getDocInfo();
-            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(String.valueOf(id));
+            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(id);
             if (binData != null) {
                 if (binData.type==Type.LINK) {
                     File file = new File(binData.aPath);

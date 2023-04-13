@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -325,8 +326,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
 
         short binDataID       = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
-
-        HwpRecord_BinData binData = (HwpRecord_BinData)hwp.getDocInfo().binDataList.get(String.valueOf(binDataID));
+        
+        ArrayList<String> keyList = new ArrayList<String>(hwp.getDocInfo().binDataList.keySet());
+        String key = keyList.get(binDataID-1);
+        HwpRecord_BinData binData = (HwpRecord_BinData)hwp.getDocInfo().binDataList.get(key);
         if (binData != null) {
             obj.imagePath = new ImagePath();
             if (binData.type==Type.LINK) {
@@ -334,11 +337,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                 obj.imagePath.type = ImagePathType.LINK;
                 obj.imagePath.path = binData.aPath;
             } else {
-                if (hwp.getBinData().size() >= binData.binDataID) {
-                    obj.imagePath.compressed = binData.compressed;
-                    obj.imagePath.type = ImagePathType.COMPOUND;
-                    obj.imagePath.path = String.format("BIN%04X.%s", binData.binDataID, binData.format);
-                }
+                obj.imagePath.compressed = binData.compressed;
+                obj.imagePath.type = ImagePathType.COMPOUND;
+                // obj.imagePath.path = String.format("BIN%04X.%s", key, binData.format);
+                obj.imagePath.path = binData.aPath;
             }
         }
         

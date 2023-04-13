@@ -61,67 +61,68 @@ public class ConvFootnote {
 			context2.mText			= xSimple;
 			context2.mTextCursor	= xRange;
             
-      		for (int paraIndex=0; paraIndex < note.paras.size(); paraIndex++) {
-      			HwpParagraph para = note.paras.get(paraIndex);
-      			if (para.p==null || para.p.size()==0)          continue;
-
-      			boolean isLastPara = (paraIndex==note.paras.size()-1)?true:false;
-
-      			String styleName = ConvPara.getStyleName((int)para.paraStyleID);
-      			log.finer("StyleID="+para.paraStyleID+ ", StyleName="+styleName);
-      			if (styleName==null || styleName.isEmpty()) {
-      				log.fine("Style Name is empty");
-      			}
-
-      			short[] charShapeID = new short[1];
-      			Optional<Ctrl> ctrlOp = para.p.stream().filter(c -> (c instanceof ParaText)).findFirst();
-      			if (ctrlOp.isPresent()) {
-      			    charShapeID[0] = (short) ((ParaText)ctrlOp.get()).charShapeId;
-      			}
-      			HwpRecord_Style paraStyle = wContext.getParaStyle(para.paraStyleID);
-      			HwpRecord_ParaShape paraShape = wContext.getParaShape(para.paraShapeID);
-    			
-    			HwpCallback callback = new HwpCallback() {
-    				@Override
-    				public void onNewNumber(int paraStyleID, int paraShapeID) {
-    					reset(context2);
-    					String label = Integer.valueOf(getFootnoteIndex()+1).toString()+")";	// index 보다 1많은 값으로 표현.
-    					xFootnote.setLabel(label);
-    				};
-    				@Override
-    				public void onAutoNumber(int paraStyleID, int paraShapeID) {
-    					String label = Integer.valueOf(getFootnoteIndex()+1).toString()+")";	// index 보다 1많은 값으로 표현.
-    					xFootnote.setLabel(label);
-    				};
-    				@Override
-    				public boolean onTab(String info) {
-                        HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID[0]);
-    					HwpRecurs.insertParaString(context2, "\t", para.lineSegs,
-    												styleName, paraStyle, paraShape, charShape,	true, true, step);
-    					return true;
-    				};
-    				@Override
-    				public boolean onText(String content, int charShapeId, int charPos, boolean append) {
-    					charShapeID[0] = (short)charShapeId;
-                        HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID[0]);
-    	   				HwpRecurs.insertParaString(context2, content, para.lineSegs,
-    	   											styleName, paraStyle, paraShape, charShape, append, true, step);
-    	   	            // xSimple.insertString (xRange, content, false );
-    					return true;
-    				}
-    				@Override
-    				public boolean onParaBreak() {
-    					if (isLastPara==false) {
-                            HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID[0]);
-    						HwpRecurs.insertParaString(context2, "\r", para.lineSegs,
-    												styleName, paraStyle, paraShape, charShape, true, true, step);
-    					}
-    					return true;
-    				}
-    			};
-    			HwpRecurs.printParaRecurs(context2, para, callback, 2);
-      		}
-
+			if (note.paras!=null) {
+	      		for (int paraIndex=0; paraIndex < note.paras.size(); paraIndex++) {
+	      			HwpParagraph para = note.paras.get(paraIndex);
+	      			if (para.p==null || para.p.size()==0)          continue;
+	
+	      			boolean isLastPara = (paraIndex==note.paras.size()-1)?true:false;
+	
+	      			String styleName = ConvPara.getStyleName((int)para.paraStyleID);
+	      			log.finer("StyleID="+para.paraStyleID+ ", StyleName="+styleName);
+	      			if (styleName==null || styleName.isEmpty()) {
+	      				log.fine("Style Name is empty");
+	      			}
+	
+	      			short[] charShapeID = new short[1];
+	      			Optional<Ctrl> ctrlOp = para.p.stream().filter(c -> (c instanceof ParaText)).findFirst();
+	      			if (ctrlOp.isPresent()) {
+	      			    charShapeID[0] = (short) ((ParaText)ctrlOp.get()).charShapeId;
+	      			}
+	      			HwpRecord_Style paraStyle = wContext.getParaStyle(para.paraStyleID);
+	      			HwpRecord_ParaShape paraShape = wContext.getParaShape(para.paraShapeID);
+	    			
+	    			HwpCallback callback = new HwpCallback() {
+	    				@Override
+	    				public void onNewNumber(int paraStyleID, int paraShapeID) {
+	    					reset(context2);
+	    					String label = Integer.valueOf(getFootnoteIndex()+1).toString()+")";	// index 보다 1많은 값으로 표현.
+	    					xFootnote.setLabel(label);
+	    				};
+	    				@Override
+	    				public void onAutoNumber(int paraStyleID, int paraShapeID) {
+	    					String label = Integer.valueOf(getFootnoteIndex()+1).toString()+")";	// index 보다 1많은 값으로 표현.
+	    					xFootnote.setLabel(label);
+	    				};
+	    				@Override
+	    				public boolean onTab(String info) {
+	                        HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID[0]);
+	    					HwpRecurs.insertParaString(context2, "\t", para.lineSegs,
+	    												styleName, paraStyle, paraShape, charShape,	true, true, step);
+	    					return true;
+	    				};
+	    				@Override
+	    				public boolean onText(String content, int charShapeId, int charPos, boolean append) {
+	    					charShapeID[0] = (short)charShapeId;
+	                        HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID[0]);
+	    	   				HwpRecurs.insertParaString(context2, content, para.lineSegs,
+	    	   											styleName, paraStyle, paraShape, charShape, append, true, step);
+	    	   	            // xSimple.insertString (xRange, content, false );
+	    					return true;
+	    				}
+	    				@Override
+	    				public boolean onParaBreak() {
+	    					if (isLastPara==false) {
+	                            HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID[0]);
+	    						HwpRecurs.insertParaString(context2, "\r", para.lineSegs,
+	    												styleName, paraStyle, paraShape, charShape, true, true, step);
+	    					}
+	    					return true;
+	    				}
+	    			};
+	    			HwpRecurs.printParaRecurs(context2, para, callback, 2);
+	      		}
+			}
         } catch (Exception e) {
             e.printStackTrace();
         }

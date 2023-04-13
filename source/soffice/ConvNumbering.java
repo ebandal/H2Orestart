@@ -353,19 +353,21 @@ public class ConvNumbering {
 		   		 	} else {	// 이미지 글머리
 		   		 		numberingType = NumberingType.BITMAP;
 		   		 	}
-	   		 		if (bullet.headerInfo.textOffsetType==0x1) { // 절대값 거리
-	   		 			indentAt = 0; // Transform.translateHwp2Office(bullet.headerInfo.textOffset);
-	   		 			listtabStopPosition = indentAt/2;
-	   		 			firstLineIndent = -listtabStopPosition;
-	   		 		} else {									// 상대값 거리 (글자의 몇%)
-	   		 			indentAt = 0;
-	   		 			listtabStopPosition = indentAt/2;
-	   		 			firstLineIndent = -listtabStopPosition;
-	   		 		}
-   		 			startsWith = (short)bullet.headerInfo.startNumber;
-	   		 		parentNumbering = getParentNumbering(bullet.headerInfo.numFormat, 0);
-	   		 		prefix = getPrefix(bullet.headerInfo.numFormat);
-	   		 		suffix = getSuffix(bullet.headerInfo.numFormat);
+		   		 	if (bullet.headerInfo!=null) {
+		   		 		if (bullet.headerInfo.textOffsetType==0x1) { // 절대값 거리
+		   		 			indentAt = 0; // Transform.translateHwp2Office(bullet.headerInfo.textOffset);
+		   		 			listtabStopPosition = indentAt/2;
+		   		 			firstLineIndent = -listtabStopPosition;
+		   		 		} else {									// 상대값 거리 (글자의 몇%)
+		   		 			indentAt = 0;
+		   		 			listtabStopPosition = indentAt/2;
+		   		 			firstLineIndent = -listtabStopPosition;
+		   		 		}
+	   		 			startsWith = (short)bullet.headerInfo.startNumber;
+		   		 		parentNumbering = getParentNumbering(bullet.headerInfo.numFormat, 0);
+		   		 		prefix = getPrefix(bullet.headerInfo.numFormat);
+		   		 		suffix = getSuffix(bullet.headerInfo.numFormat);
+		   		 	}
 		   		 	adjust = HoriOrientation.RIGHT;
 	   		 	} else {
    		 			indentAt = 0;
@@ -452,7 +454,7 @@ public class ConvNumbering {
 																				0.0f, false, false, (short)0);				// Kerning,WordLineMode,Type
 		   		 	} else {
 		   		 		// GraphicBitmap 전달하는 것이 동작하지 않는다. 해결될때까지 GraphicURL 전달하는 방식으로 유지한다.
-		   		 		String imageExtractPath = wContext.getBinFilename((short)(bullet.binItemRefID));
+		   		 		String imageExtractPath = wContext.getBinFilename(bullet.binItemRefID);
 		   		        String m_sGraphicFileURL = ConvUtil.convertToURL(wContext, "", imageExtractPath);
 		   	    		// byte[] imageAsByteArray = WriterContext.getBinBytes((bullet.binItemRefID));
 		   	    		// MyBitmap myBitmap = new MyBitmap(new ByteArrayInputStream(imageAsByteArray));

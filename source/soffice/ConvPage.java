@@ -569,11 +569,13 @@ public class ConvPage {
 						return false;
 					}
 				};
-                for (HwpParagraph para: hf.paras) {
-                    HwpRecurs.printParaRecurs(context2, para, callbackBoth, 2);
-                }
-                // REMOVE last PARA_BREAK
-                HwpRecurs.removeLastParaBreak(context2.mTextCursor);
+				if (hf.paras!=null) {
+	                for (HwpParagraph para: hf.paras) {
+	                    HwpRecurs.printParaRecurs(context2, para, callbackBoth, 2);
+	                }
+	                // REMOVE last PARA_BREAK
+	                HwpRecurs.removeLastParaBreak(context2.mTextCursor);
+				}
 	        	break;
 	        }
 	        

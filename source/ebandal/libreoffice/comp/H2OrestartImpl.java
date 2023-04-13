@@ -53,9 +53,9 @@ import soffice.ConvPage;
 import soffice.ConvPara;
 import soffice.ConvTable;
 import soffice.ConvUtil;
-import soffice.Hwp2Swriter;
 import soffice.HwpRecurs;
 import soffice.WriterContext;
+import working.Hwp2Swriter;
 
 import com.sun.star.lib.uno.helper.Factory;
 

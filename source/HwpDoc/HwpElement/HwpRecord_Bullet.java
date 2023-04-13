@@ -33,10 +33,15 @@ import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
+import HwpDoc.Exception.NotImplementedException;
+import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
 import HwpDoc.HwpElement.HwpRecord_Numbering.Numbering;
+import HwpDoc.paragraph.Ctrl_ShapePic.ImagePath;
+import HwpDoc.paragraph.Ctrl_ShapePic.ImagePathType;
 
 public class HwpRecord_Bullet extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_Bullet.class.getName());
@@ -49,7 +54,7 @@ public class HwpRecord_Bullet extends HwpRecord {
 	public byte			bright;								// 	밝기
 	public byte			contrast;							// 	대비
 	public byte			imageEffect;						// 	효과
-	public short		binItemRefID;						// 	ID
+	public String		binItemRefID;						// 	ID
 	public char			checkBulletChar;					// 체크 글머리표 문자
 	
 	HwpRecord_Bullet(int tagNum, int level, int size) {
@@ -93,7 +98,7 @@ public class HwpRecord_Bullet extends HwpRecord {
             imageEffect 				= buf[offset++];
         }
         if (size-(offset-off) > 0) {
-            binItemRefID 				= (short) (buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
+            binItemRefID 				= String.valueOf(buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
             offset += 2;
         }
 		// size가 23byte일 경우, 아래 2byte는 읽지 않도록 한다. 문서도 정확하지 않으니 이게 맞는 것인지는 알 수 없다.
@@ -111,7 +116,7 @@ public class HwpRecord_Bullet extends HwpRecord {
 				+(bulletImage==0?"":",이미지ID="+bulletImage)
 				+",밝기="+bright
 				+",대비="+contrast
-				+(binItemRefID>0?",BinData="+binItemRefID:"")
+				+(binItemRefID!=null?",BinData="+binItemRefID:"")
 				+",체크글머리표문자="+String.format("%c", checkBulletChar) 	);
 		
 		if (offset-off-size!=0) {
@@ -121,36 +126,79 @@ public class HwpRecord_Bullet extends HwpRecord {
 		}
 	}
 
-    public HwpRecord_Bullet(HwpDocInfo docInfo, Node node, int version) {
+    public HwpRecord_Bullet(HwpDocInfo docInfo, Node node, int version) throws HwpParseException {
         super(HwpTag.HWPTAG_BULLET, 0, 0);
         this.parent = docInfo;
         
         NamedNodeMap attributes = node.getAttributes();
         
         for (int i=0; i<attributes.getLength(); i++) {
+        	// [char="", id="1", useImage="0"]
             Node attr = attributes.item(i);
-            /*
             switch(attr.getNodeName()) {
-            case "page":
-                pageStartNo = Short.parseShort(attr.getNodeValue());
+            case "id":
+            	// ID = Short.parseShort(attr.getNodeValue());
                 break;
-            case "footnote":
-                footNoteStartNo = Short.parseShort(attr.getNodeValue());
+            case "char":
+            	bulletChar = attr.getNodeValue().charAt(0);
                 break;
-            case "endnote":
-                endNoteStartNo = Short.parseShort(attr.getNodeValue());
+            case "checkedChar":
+            	checkBulletChar = attr.getNodeValue().charAt(0);
                 break;
-            case "pic":
-                figureStartNo = Short.parseShort(attr.getNodeValue());
-                break;
-            case "tbl":
-                tableStartNo = Short.parseShort(attr.getNodeValue());
+            case "useImage":
+            	bulletImage = Integer.parseInt(attr.getNodeValue());
                 break;
             default:
-                throw new HwpParseException();
             }
-            */
         }
+        
+        NodeList children = node.getChildNodes();
+        for (int i=0; i<children.getLength(); i++) {
+        	Node childNode = children.item(i);
+        	log.info(childNode.getNodeName() + ":" + childNode.getNodeValue());
+        	switch(childNode.getNodeName()) {
+        	case "hc:img":
+	        	{
+	                NamedNodeMap childAttrs = childNode.getAttributes();
+	                // alpha:0, binaryItemIDRef:image1, bright:0, contrast:0, effect:REAL_PIC
+	                
+	                for (int j=0; j<childAttrs.getLength(); j++) {
+	                	Node grandChildNode = childAttrs.item(j);
+	                	switch(grandChildNode.getNodeName()) {
+	                	case "alpha":
+	                		break;
+	                	case "binaryItemIDRef":
+	                		binItemRefID = grandChildNode.getNodeValue();
+	                		break;
+	                	case "bright":
+	                		break;
+	                	case "contrast":
+	                		break;
+	                	case "effect":
+	                		break;
+                		default:
+    	                	log.info(grandChildNode.getNodeName() + ":" + grandChildNode.getNodeValue());
+    	                	break;
+	                	}
+	                }
+	        	}
+        		break;
+            case "hh:paraHead":
+            	{
+	                NamedNodeMap childAttrs = childNode.getAttributes();
+	                // align:LEFT, autoIndent:1, charPrIDRef:4294967295, checkable:0, level:0
+	                // numFormat:DIGIT, textOffset:50, textOffsetType:PERCENT, useInstWidth:0, widthAdjust:0
+	                
+	                for (int j=0; j<childAttrs.getLength(); j++) {
+	                	Node grandChildNode = childAttrs.item(j);
+	                	log.info(grandChildNode.getNodeName() + ":" + grandChildNode.getNodeValue());
+	                }
+                }
+            	break;
+            default:
+        	}
+        }
+        
     }
 
 }

@@ -122,26 +122,70 @@ public class Ctrl_HeadFoot extends Ctrl {
             Node child = nodeList.item(i);
             
             switch(child.getNodeName()) {
-            case "subList":
+            case "hp:subList":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
+                    // [hasNumRef="0", hasTextRef="0", id="", lineWrap="BREAK", linkListIDRef="0", 
+                    // linkListNextIDRef="0", textDirection="HORIZONTAL", textHeight="7087", 
+                    // textWidth="45354", vertAlign="TOP"]
+                    for (int j=0; j<childAttrs.getLength(); j++) {
+                    	Node childNodeAttr = childAttrs.item(j);
+                    	switch(childNodeAttr.getNodeName()) {
+                    	case "hasNumRef":
+                    		break;
+                    	case "hasTextRef":
+                    		break;
+                    	case "id":
+                    		break;
+                    	case "lineWrap":
+                    		break;
+                    	case "linkListIDRef":
+                    		break;
+                    	case "linkListNextIDRef":
+                    		break;
+                    	case "textDirection":
+                    		break;
+                    	case "textHeight":
+                    		break;
+                    	case "textWidth":
+                    		break;
+                    	case "vertAlign":
+                    		break;
+                        default:
+                        	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
+                            throw new NotImplementedException("Ctrl_HeadFoot");
+                    	}
+                    }
                     
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
+                        // [columnBreak="0", id="2147483648", merged="0", pageBreak="0", paraPrIDRef="47", styleIDRef="1"]
                         switch(grandChild.getNodeName()) {
-                        case "p":
-                            HwpParagraph cellP = new HwpParagraph(grandChild, version);
-                            paras.add(cellP);
+                        case "columnBreak":
                             break;
+                        case "id":
+                            break;
+                        case "merged":
+                            break;
+                        case "pageBreak":
+                            break;
+                        case "paraPrIDRef":
+                            break;
+                        case "styleIDRef":
+                            break;
+                        case "hp:p":
+                        	break;
                         default:
-                            throw new NotImplementedException("Ctrl_GeneralShape");
+                        	log.warning(grandChild.getNodeName() + ":" + grandChild.getNodeValue());
+                            throw new NotImplementedException("Ctrl_HeadFoot");
                         }
                     }
                 }
                 break;
             default:
-                throw new NotImplementedException("Ctrl_GeneralShape");
+            	log.warning(child.getNodeName() + ":" + child.getNodeValue());
+                throw new NotImplementedException("Ctrl_HeadFoot");
             }
         }
         this.fullfilled = true;

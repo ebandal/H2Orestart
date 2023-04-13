@@ -52,7 +52,7 @@ public class HwpRecord_BinData extends HwpRecord {
 	public short  binDataID;	// Type이 "EMBEDDING"이거나 "STORAGE"일때, BINDATASTORAGE에 저장된 바이너리 데이터의 아이디
 	public String format;		// Type이 "EMBEDDING"일때, extension("."제외)
 
-	public String itemId;       // hwpx에서는 itemId가 String
+	public String itemId;        // hwpx에서는 itemId가 String
     
 	
 	HwpRecord_BinData(int tagNum, int level, int size) {
@@ -95,12 +95,7 @@ public class HwpRecord_BinData extends HwpRecord {
 		if (type==Type.EMBEDDING || type==Type.STORAGE) {
 			binDataID = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
 			offset += 2;
-			if (docInfo.getParentHwp().getBinData().size() >= binDataID) {
-			    aPath = docInfo.getParentHwp().getBinData().get(binDataID-1).getDirectoryEntryName().trim();
-				log.fine("                                                  "
-						+"ID="+binDataID+"("+aPath+")");
-                // String.format("BIN%04X.%s", binDataID, format);
-			}
+		    // aPath = docInfo.getParentHwp().getBinData().get(binDataID-1).getDirectoryEntryName().trim();
 			itemId = String.valueOf(binDataID);
 		}
 		if (type==Type.EMBEDDING || type==Type.STORAGE) {
@@ -110,6 +105,9 @@ public class HwpRecord_BinData extends HwpRecord {
 				format = new String(buf, offset, extLen, StandardCharsets.UTF_16LE);
 				offset += extLen;
 			}
+			aPath = String.format("BIN%04X.%s", binDataID, format);
+			log.fine("                                                  "
+					+"ID="+binDataID+"("+aPath+")");
 		}
 		
 		if (offset-off-size!=0) {
@@ -121,7 +119,7 @@ public class HwpRecord_BinData extends HwpRecord {
         super(HwpTag.HWPTAG_BIN_DATA, 0, 0);
 
         NamedNodeMap attributes = node.getAttributes();
-        
+
         itemId = attributes.getNamedItem("id").getNodeValue();
         
         Node tempNode = attributes.getNamedItem("isEmbeded");
