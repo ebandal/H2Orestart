@@ -244,12 +244,12 @@ public class HwpxFile {
 	    return owplmFile.getBinData(shortName);
 	}
 	
-	public byte[] getBinDataByIDRef(String shortName) throws IOException {
+	public byte[] getBinDataByIDRef(String shortName) throws IOException, DataFormatException {
 	    String entry = owplmFile.getBinData(shortName);
 	    return owplmFile.getBytes(entry);
 	}
 
-	public byte[] getBinDataByEntry(String entry) throws IOException {
+	public byte[] getBinDataByEntry(String entry) throws IOException, DataFormatException {
         return owplmFile.getBytes(entry);
     }
 

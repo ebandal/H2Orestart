@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.zip.DataFormatException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -302,7 +303,9 @@ public class ConvGraphics {
     	    e.printStackTrace();
     	} catch (IOException e) {
             e.printStackTrace();
-        }
+        } catch (DataFormatException e) {
+			e.printStackTrace();
+		}
 
     }
     

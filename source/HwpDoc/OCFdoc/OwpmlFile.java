@@ -114,13 +114,17 @@ public class OwpmlFile {
         return null;
     }
 
-    public byte[] getBytes(String entryName) throws IOException {
+    public byte[] getBytes(String entryName) throws IOException, DataFormatException {
         Offset offset = offsetMap.get(entryName);
         long entrySize = (int)(offset.end - offset.start);
         
         byte[] buf = new byte[(int)entrySize];
         raf.seek(offset.start);
         int readLen = raf.read(buf, 0, (int)entrySize);
+
+        if (offset.zipMethod == ZipEntry.DEFLATED) {
+            buf = unzip(buf, readLen);
+        }
 
         return buf;
     }
