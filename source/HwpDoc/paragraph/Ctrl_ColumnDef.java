@@ -148,7 +148,7 @@ public class Ctrl_ColumnDef extends Ctrl {
             Node child = nodeList.item(i);
             
             switch(child.getNodeName()) {
-            case "colLine":
+            case "hp:colLine":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     colLineType = LineType2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
@@ -226,6 +226,7 @@ public class Ctrl_ColumnDef extends Ctrl {
                 }
                 break;
             default:
+        		log.warning(child.getNodeName() + "," + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ColumnDef");
             }
         }
