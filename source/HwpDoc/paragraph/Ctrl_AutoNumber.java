@@ -66,12 +66,77 @@ public class Ctrl_AutoNumber extends Ctrl {
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
+
+            NamedNodeMap childAttrs = child.getAttributes();
+            for (int j=0; j<childAttrs.getLength(); j++) {
+            	Node childNodeAttr = childAttrs.item(j);
+            	switch(childNodeAttr.getNodeName()) {
+            	case "prefixChar":
+            	case "suffixChar":
+                	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
+            		break;
+            	case "supscript":
+            		superscript = childNodeAttr.getNodeValue().equals("0")?false:true;
+            		break;
+            	case "type":
+	            	{
+	            		switch(childNodeAttr.getNodeValue()) {
+	            		case "DIGIT":
+	            			numShape = NumberShape2.DIGIT;			break;
+	            		case "CIRCLE_DIGIT":
+	            			numShape = NumberShape2.CIRCLE_DIGIT;	break;
+	            		case "ROMAN_CAPITAL":
+	            			numShape = NumberShape2.ROMAN_CAPITAL;	break;
+	            		case "ROMAN_SMALL":
+	            			numShape = NumberShape2.ROMAN_SMALL;	break;
+	            		case "LATIN_CAPITAL":
+	            			numShape = NumberShape2.LATIN_CAPITAL;	break;
+	            		case "LATIN_SMALL":
+	            			numShape = NumberShape2.LATIN_SMALL;	break;
+	            		case "CIRCLED_LATIN_CAPITAL":
+	            			numShape = NumberShape2.CIRCLED_LATIN_CAPITAL;	break;
+	            		case "CIRCLED_LATIN_SMALL":
+	            			numShape = NumberShape2.CIRCLED_LATIN_SMALL;	break;
+	            		case "CIRCLED_HANGUL_SYLLABLE":
+	            			numShape = NumberShape2.CIRCLED_HANGUL_SYLLABLE;	break;
+	            		case "HANGUL_JAMO":
+	            			numShape = NumberShape2.HANGUL_JAMO;	break;
+	            		case "CIRCLED_HANGUL_JAMO":
+	            			numShape = NumberShape2.CIRCLED_HANGUL_JAMO;	break;
+	            		case "HANGUL_PHONETIC":
+	            			numShape = NumberShape2.HANGUL_PHONETIC;	break;
+	            		case "IDEOGRAPH":
+	            			numShape = NumberShape2.IDEOGRAPH;	break;
+	            		case "CIRCLED_IDEOGRAPH":
+	            			numShape = NumberShape2.CIRCLED_IDEOGRAPH;	break;
+	            		case "DECAGON_CIRCLE":
+	            			numShape = NumberShape2.DECAGON_CIRCLE;	break;
+	            		case "DECAGON_CRICLE_HANGJA":
+	            			numShape = NumberShape2.DECAGON_CRICLE_HANGJA;	break;
+	            		case "SYMBOL":
+	            			numShape = NumberShape2.SYMBOL;	break;
+	            		case "USER_CHAR":
+	            			numShape = NumberShape2.USER_CHAR;	break;
+	        			default:
+	                    	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
+	                        throw new NotImplementedException("Ctrl_AutoNumber");
+	            		}
+	            	}
+	            	break;
+            	case "userChar":
+            		break;
+            	}
+            }
             
             switch(child.getNodeName()) {
             case "autoNumFormat":
-                numShape = NumberShape2.valueOf(child.getNodeValue());
+            case "hp:autoNumFormat":
+            	if (child.getNodeValue()!=null) {
+            		numShape = NumberShape2.valueOf(child.getNodeValue());
+            	}
                 break;
             default:
+            	log.warning(child.getNodeName() + ":" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_AutoNumber");
             }
         }
