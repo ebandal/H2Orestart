@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -121,12 +122,18 @@ public class Ctrl_HeadFoot extends Ctrl {
                     // [hasNumRef="0", hasTextRef="0", id="", lineWrap="BREAK", linkListIDRef="0", 
                     // linkListNextIDRef="0", textDirection="HORIZONTAL", textHeight="7087", 
                     // textWidth="45354", vertAlign="TOP"]
+                	String numStr;
+                	
                     for (int j=0; j<childAttrs.getLength(); j++) {
                     	Node childNodeAttr = childAttrs.item(j);
                     	switch(childNodeAttr.getNodeName()) {
                     	case "hasNumRef":
+                    		numStr = childNodeAttr.getNodeValue();
+                    		refLevelNum = (byte)Short.parseShort(numStr);
                     		break;
                     	case "hasTextRef":
+                    		numStr = childNodeAttr.getNodeValue();
+                    		refLevelText = (byte)Short.parseShort(numStr);
                     		break;
                     	case "id":
                     		break;
@@ -139,8 +146,12 @@ public class Ctrl_HeadFoot extends Ctrl {
                     	case "textDirection":
                     		break;
                     	case "textHeight":
+                    		numStr = childNodeAttr.getNodeValue();
+                    		textHeight = Integer.parseInt(numStr);
                     		break;
                     	case "textWidth":
+                    		numStr = childNodeAttr.getNodeValue();
+                    		textWidth = Integer.parseInt(numStr);
                     		break;
                     	case "vertAlign":
                     		break;
@@ -153,21 +164,13 @@ public class Ctrl_HeadFoot extends Ctrl {
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
-                        // [columnBreak="0", id="2147483648", merged="0", pageBreak="0", paraPrIDRef="47", styleIDRef="1"]
                         switch(grandChild.getNodeName()) {
-                        case "columnBreak":
-                            break;
-                        case "id":
-                            break;
-                        case "merged":
-                            break;
-                        case "pageBreak":
-                            break;
-                        case "paraPrIDRef":
-                            break;
-                        case "styleIDRef":
-                            break;
                         case "hp:p":
+                        	if (paras==null) {
+                        		paras = new ArrayList<HwpParagraph>();
+                        	}
+                            HwpParagraph p = new HwpParagraph(grandChild, version);
+                            paras.add(p);
                         	break;
                         default:
                         	log.warning(grandChild.getNodeName() + ":" + grandChild.getNodeValue());
