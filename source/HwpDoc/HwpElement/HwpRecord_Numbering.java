@@ -30,6 +30,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
+import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
 import HwpDoc.HwpElement.HwpRecord_TabDef.Tab;
 
@@ -136,7 +137,7 @@ public class HwpRecord_Numbering extends HwpRecord {
 		}
 	}
 	
-	public HwpRecord_Numbering(HwpDocInfo docInfo, Node node, int version) {
+	public HwpRecord_Numbering(HwpDocInfo docInfo, Node node, int version) throws NotImplementedException {
         super(HwpTag.HWPTAG_NUMBERING, 0, 0);
         this.parent = docInfo;
         
@@ -154,13 +155,13 @@ public class HwpRecord_Numbering extends HwpRecord {
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
+            numbering[i] = new Numbering();
             
             switch(child.getNodeName()) {
+            case "hh:paraHead":
             case "paraHead":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    // level은 1수준~7수준을 의미
-                    // childAttrs.getNamedItem("level").getNodeValue();
                     switch(childAttrs.getNamedItem("align").getNodeValue()) {
                     case "LEFT":
                         numbering[i].align = 0; break;
@@ -172,16 +173,16 @@ public class HwpRecord_Numbering extends HwpRecord {
 
                     switch(childAttrs.getNamedItem("useInstWidth").getNodeValue()) {
                     case "0":
-                        numbering[i].useInstWidth = false;
+                        numbering[i].useInstWidth = false;	break;
                     case "1":
-                        numbering[i].useInstWidth = true;
+                        numbering[i].useInstWidth = true;	break;
                     }
                     
                     switch(childAttrs.getNamedItem("autoIndent").getNodeValue()) {
                     case "0":
-                        numbering[i].autoIndent = false;
+                        numbering[i].autoIndent = false;	break;
                     case "1":
-                        numbering[i].autoIndent = true;
+                        numbering[i].autoIndent = true;		break;
                     }
                     
                     numStr = childAttrs.getNamedItem("widthAdjust").getNodeValue();
@@ -189,21 +190,83 @@ public class HwpRecord_Numbering extends HwpRecord {
 
                     switch(childAttrs.getNamedItem("textOffsetType").getNodeValue()) {
                     case "PERCENT":
-                        numbering[i].textOffsetType = 0;
+                        numbering[i].textOffsetType = 0;	break;
                     case "HWPUNIT":
-                        numbering[i].textOffsetType = 1;
+                        numbering[i].textOffsetType = 1;	break;
                     }
                     
                     numStr = childAttrs.getNamedItem("textOffset").getNodeValue();
-                    numbering[i].textOffset = (short)Integer.parseInt(numStr);
-                 
-                    // 67 page
-                    // numbering[i].numFormat = childAttrs.getNamedItem("numFormat").getNodeValue();
+                    numbering[i].textOffset = Short.parseShort(numStr);
+
+                    // level은 1수준~7수준을 의미
+                    numStr = childAttrs.getNamedItem("level").getNodeValue();
+                    short level = Short.parseShort(numStr);
+
+                    switch(childAttrs.getNamedItem("numFormat").getNodeValue()) {
+                    case "DIGIT":
+	                    {
+	                    	switch(level) {
+	                    	case 1:
+		                        numbering[i].numFormat = "^1.";		break;
+	                    	case 2:
+		                        numbering[i].numFormat = "^2.";		break;
+	                    	case 3:
+		                        numbering[i].numFormat = "^3.";		break;
+	                    	case 4:
+		                        numbering[i].numFormat = "^4.";		break;
+	                    	case 5:
+		                        numbering[i].numFormat = "^5.";		break;
+	                    	case 6:
+		                        numbering[i].numFormat = "^6.";		break;
+	                    	case 7:
+		                        numbering[i].numFormat = "^7.";		break;
+	                    	}
+	                    }
+	                    break;
+                    case "HANGUL_SYLLABLE":
+                    	switch(level) {
+                    	case 1:
+	                        numbering[i].numFormat = "^가.";		break;
+                    	case 2:
+	                        numbering[i].numFormat = "^나.";		break;
+                    	case 3:
+	                        numbering[i].numFormat = "^다.";		break;
+                    	case 4:
+	                        numbering[i].numFormat = "^라.";		break;
+                    	case 5:
+	                        numbering[i].numFormat = "^마.";		break;
+                    	case 6:
+	                        numbering[i].numFormat = "^바.";		break;
+                    	case 7:
+	                        numbering[i].numFormat = "^사.";		break;
+                    	}
+                    	break;
+                    case "CIRCLED_DIGIT":
+                    	switch(level) {
+                    	case 1:
+	                        numbering[i].numFormat = "^\u2460.";		break;
+                    	case 2:
+	                        numbering[i].numFormat = "^\u2461.";		break;
+                    	case 3:
+	                        numbering[i].numFormat = "^\u2462.";		break;
+                    	case 4:
+	                        numbering[i].numFormat = "^\u2463.";		break;
+                    	case 5:
+	                        numbering[i].numFormat = "^\u2464.";		break;
+                    	case 6:
+	                        numbering[i].numFormat = "^\u2465.";		break;
+                    	case 7:
+	                        numbering[i].numFormat = "^\u2466.";		break;
+                    	}
+                    	break;
+                    default:
+                    	throw new NotImplementedException("HwpRecord_Numbering");
+                    }
 
                     numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
-                    numbering[i].charShape = (short)Integer.parseInt(numStr);
+                    numbering[i].charShape = (short)Integer.parseUnsignedInt(numStr);
                     
-                    numStr = childAttrs.getNamedItem("startNumber").getNodeValue();
+                    numStr = childAttrs.getNamedItem("start").getNodeValue();
                     numbering[i].startNumber = (short)Integer.parseInt(numStr);
                 }
             }
