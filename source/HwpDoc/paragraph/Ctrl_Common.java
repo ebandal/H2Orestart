@@ -256,7 +256,7 @@ public class Ctrl_Common extends Ctrl {
                     width = Integer.parseInt(numStr);
                     widthRelto = WidthRelTo.valueOf(childAttrs.getNamedItem("widthRelTo").getNodeValue());
                     numStr = childAttrs.getNamedItem("height").getNodeValue();
-                    height = (short) Integer.parseInt(numStr);
+                    height = Integer.parseInt(numStr);
                     heightRelto = HeightRelTo.valueOf(childAttrs.getNamedItem("heightRelTo").getNodeValue());
                     // childAttrs.getNamedItem("protect").getNodeValue();
                     node.removeChild(child);
