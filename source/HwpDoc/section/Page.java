@@ -99,10 +99,10 @@ public class Page {
                     marginBottom = Integer.parseInt(numStr);
                     
                     numStr = childAttrs.getNamedItem("header").getNodeValue();
-                    marginHeader = Integer.parseInt(numStr);
+                    marginHeader = Integer.parseUnsignedInt(numStr);
                     
                     numStr = childAttrs.getNamedItem("footer").getNodeValue();
-                    marginFooter = Integer.parseInt(numStr);
+                    marginFooter = Integer.parseUnsignedInt(numStr);
                     
                     numStr = childAttrs.getNamedItem("gutter").getNodeValue();
                     marginGutter = Integer.parseInt(numStr);

@@ -173,7 +173,7 @@ public class Ctrl_Common extends Ctrl {
         NamedNodeMap attributes = node.getAttributes();
         
         String numStr = attributes.getNamedItem("id").getNodeValue();
-        objInstanceID = Integer.parseInt(numStr); 
+        objInstanceID = Integer.parseUnsignedInt(numStr); 
         
         if (attributes.getNamedItem("pageBreak")!=null) {
             switch(attributes.getNamedItem("pageBreak").getNodeValue()) {
