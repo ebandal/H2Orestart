@@ -112,9 +112,13 @@ public class ConvPara {
 		   	
 			XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xFamily.getByName(hwpStyleName));
 			
-			setParagraphProperties(xStyleProps, paraShape, wContext.getDocInfo().compatibleDoc, PARA_SPACING);
-			setCharacterProperties(xStyleProps, charShape, 1);
-
+			if (paraShape!=null) {
+				setParagraphProperties(xStyleProps, paraShape, wContext.getDocInfo().compatibleDoc, PARA_SPACING);
+			}
+			if (charShape!=null) {
+				setCharacterProperties(xStyleProps, charShape, 1);
+			}
+			
 			// NumberingRules 속성을 설정해야  Style이 변경된다. 
 	        XPropertySet xCursorProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
             xCursorProps.setPropertyValue("ParaStyleName", "Standard");

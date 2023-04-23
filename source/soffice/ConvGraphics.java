@@ -2300,6 +2300,8 @@ public class ConvGraphics {
 	}
 	
     private static void setFillStyle(XPropertySet xPropSet, Fill fill) {
+    	if (fill==null)	return;
+    		
 		try {
 			xPropSet.setPropertyValue("FillColor", fill.faceColor);
        		if (fill.isColorFill()) {
