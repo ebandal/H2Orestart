@@ -67,43 +67,43 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
             Ctrl_GeneralShape ctrl;
             switch(child.getNodeName()) {
             case "hp:container":    // 컨테이너 객체
-                ctrl = new Ctrl_Container("noc$", node, version);
+                ctrl = new Ctrl_Container("noc$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:line":     // 그리기 객체 - 선
-                ctrl = new Ctrl_ShapeLine("nil$", node, version);
+                ctrl = new Ctrl_ShapeLine("nil$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:rect":
-                ctrl = new Ctrl_ShapeRect("cer$", node, version);
+                ctrl = new Ctrl_ShapeRect("cer$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:ellipse":
-                ctrl = new Ctrl_ShapeEllipse("lle$", node, version);
+                ctrl = new Ctrl_ShapeEllipse("lle$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:arc":
-                ctrl = new Ctrl_ShapeArc("cra$", node, version);
+                ctrl = new Ctrl_ShapeArc("cra$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:polygon":
-                ctrl = new Ctrl_ShapePolygon("lop$", node, version);
+                ctrl = new Ctrl_ShapePolygon("lop$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:curve":
-                ctrl = new Ctrl_ShapeCurve("ruc$", node, version);
+                ctrl = new Ctrl_ShapeCurve("ruc$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:connectLine":
-                ctrl = new Ctrl_ShapeLine("loc$", node, version);
+                ctrl = new Ctrl_ShapeLine("loc$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:pic":
-                ctrl = new Ctrl_ShapePic("cip$", node, version);
+                ctrl = new Ctrl_ShapePic("cip$", child, version);
                 list.add(ctrl);
                 break;
             case "hp:ole":
-                ctrl = new Ctrl_ShapeOle("elo$", node, version);
+                ctrl = new Ctrl_ShapeOle("elo$", child, version);
                 list.add(ctrl);
                 break;
             default:
