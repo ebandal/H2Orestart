@@ -70,10 +70,10 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
         String numStr;
         
         NodeList nodeList = node.getChildNodes();
-        for (int i=0; i<nodeList.getLength(); i++) {
+        for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
-            case "hp:startPt":    // 시작점
+            case "hc:startPt":    // 시작점
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("x").getNodeValue();
@@ -81,8 +81,9 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
                     numStr = childAttrs.getNamedItem("y").getNodeValue();
                     startY = Integer.parseInt(numStr);
                 }
+                node.removeChild(child);
                 break;
-            case "hp:endPt":      // 끝점
+            case "hc:endPt":      // 끝점
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("x").getNodeValue();
@@ -90,8 +91,10 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
                     numStr = childAttrs.getNamedItem("y").getNodeValue();
                     endY = Integer.parseInt(numStr);
                 }
+                node.removeChild(child);
                 break;
             default:
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ShapeLine");
             }
         }

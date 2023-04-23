@@ -76,6 +76,7 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
                     numStr = childAttrs.getNamedItem("subjectIdx").getNodeValue();
                     startPt.subjectIdx = (short) Integer.parseInt(numStr);
                 }
+                node.removeChild(child);
                 break;
             case "hp:endPt":      // 끝점
                 {
@@ -89,8 +90,10 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
                     numStr = childAttrs.getNamedItem("subjectIdx").getNodeValue();
                     endPt.subjectIdx = (short) Integer.parseInt(numStr);
                 }
+                node.removeChild(child);
                 break;
             default:
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ShapeConnectLine");
             }
         }

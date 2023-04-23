@@ -98,7 +98,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 	    String numStr;
 	    
         NodeList nodeList = node.getChildNodes();
-        for (int i=0; i<nodeList.getLength(); i++) {
+        for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
             case "hp:lineShape":    // 그리기 객체의 테두리선 정보
@@ -118,10 +118,12 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                     childAttrs.getNamedItem("outlineStyle").getNodeValue();                // 테두리선의 형태
                     childAttrs.getNamedItem("alpha").getNodeValue();                       // 투명도
                     */       
+                    node.removeChild(child);
                 }
                 break;
             case "hc:fillBrush":    // 그리기 객체의 채우기 정보
                 fill = HwpRecord_BorderFill.readFillBrush(child);
+                node.removeChild(child);
                 break;
             case "hp:drawText":     // 그리기 객체 글상자용 텍스트   178 page
                 {
@@ -154,6 +156,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                             throw new NotImplementedException("Ctrl_GeneralShape");
                         }
                     }
+                    node.removeChild(child);
                 }
                 break;
             case "hp:shadow":       // 그리기 객체의 그림자 정보
@@ -165,6 +168,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 childAttrs.getNamedItem("offsetY").getNodeValue();
                 childAttrs.getNamedItem("alpha").getNodeValue();
                 */
+                node.removeChild(child);
                 break;
             case "hp:offset":
                 
@@ -224,10 +228,12 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 
                 break;
             case "hp:shapeComment":
-                
+            	
+                node.removeChild(child);
                 break;
             default:
-                throw new NotImplementedException("Ctrl_GeneralShape");
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
+                // throw new NotImplementedException("Ctrl_GeneralShape");
             }
         }
     }

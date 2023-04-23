@@ -60,18 +60,20 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
         
         NodeList nodeList = node.getChildNodes();
         points = new Point[nodeList.getLength()];
-        for (int i=0; i<nodeList.getLength(); i++) {
+        for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
             NamedNodeMap childAttrs = child.getAttributes();
             switch(child.getNodeName()) {
-            case "hp:pt":   // 다각형 좌표
+            case "hc:pt":   // 다각형 좌표
                 points[i] = new Point();
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 points[i].x = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 points[i].y = Integer.parseInt(numStr);
+                node.removeChild(child);
                 break;
             default:
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ShapePolygon");
             }
         }

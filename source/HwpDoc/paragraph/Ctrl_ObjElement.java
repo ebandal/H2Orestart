@@ -104,7 +104,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
 
         int matrixIdx = 0;
         NodeList nodeList = node.getChildNodes();
-        for (int i=0; i<nodeList.getLength(); i++) {
+        for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
             
             switch(child.getNodeName()) {
@@ -116,6 +116,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     numStr = childAttrs.getNamedItem("y").getNodeValue();
                     yGrpOffset = (int) Long.parseLong(numStr);
                 }
+                node.removeChild(child);
                 break;
             case "hp:orgSz":
                 {
@@ -125,6 +126,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     numStr = childAttrs.getNamedItem("height").getNodeValue();
                     iniHeight = Integer.parseInt(numStr);
                 }
+                node.removeChild(child);
                 break;
             case "hp:curSz":
                 {
@@ -132,8 +134,9 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     numStr = childAttrs.getNamedItem("width").getNodeValue();
                     curWidth = Integer.parseInt(numStr);
                     numStr = childAttrs.getNamedItem("height").getNodeValue();
-                    curHeight = Integer.parseInt(numStr);
+                    curHeight = Integer.parseUnsignedInt(numStr);
                 }
+                node.removeChild(child);
                 break;
             case "hp:flip":
                 {
@@ -152,6 +155,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                         verFlip = true;    break;
                     }
                 }
+                node.removeChild(child);
                 break;
             case "hp:rotationInfo":
                 {
@@ -166,6 +170,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     yCenter = Integer.parseInt(numStr);
                     // childAttrs.getNamedItem("rotateimage").getNodeValue()) {
                 }
+                node.removeChild(child);
                 break;
             case "hp:renderingInfo":
                 {
@@ -188,7 +193,9 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                         }
                     }
                     matrixIdx++;
+                    matCnt++;
                 }
+                node.removeChild(child);
                 break;
             case "hp:lineShape":
                 
@@ -245,7 +252,8 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 
                 break;
             default:
-                throw new NotImplementedException("Ctrl_ObjElement");
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
+                // throw new NotImplementedException("Ctrl_ObjElement");
             }
         }
     }

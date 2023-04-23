@@ -74,6 +74,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 points[0].x = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 points[0].y = Integer.parseInt(numStr);
+                node.removeChild(child);
                 break;
             case "hc:pt1":  // 두번째 좌표
                 points[1] = new Point();
@@ -81,6 +82,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 points[1].x = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 points[1].y = Integer.parseInt(numStr);
+                node.removeChild(child);
                 break;
             case "hc:pt2":  // 세번째 좌표
                 points[2] = new Point();
@@ -88,6 +90,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 points[2].x = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 points[2].y = Integer.parseInt(numStr);
+                node.removeChild(child);
                 break;
             case "hc:pt3":  // 네번째 좌표
                 points[3] = new Point();
@@ -95,6 +98,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 points[3].x = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 points[3].y = Integer.parseInt(numStr);
+                node.removeChild(child);
                 break;
             case "hp:offset":
                 
@@ -136,6 +140,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 
                 break;
             default:
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ShapeRect");
             }
         }
