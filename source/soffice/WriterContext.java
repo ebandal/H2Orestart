@@ -177,7 +177,7 @@ public class WriterContext {
 		return (id>0?(HwpRecord_BorderFill) docInfo.borderFillList.get(id-1):null);
 	}
 	
-	public HwpRecord_ParaShape getParaShape(short id) {
+	public HwpRecord_ParaShape getParaShape(int id) {
 	    HwpDocInfo docInfo = null;
         switch(hType) {
         case HWP:
@@ -187,7 +187,11 @@ public class WriterContext {
             docInfo = hwpx.getDocInfo();
             break;
         }
-        return (HwpRecord_ParaShape) docInfo.paraShapeList.get(id);
+        if (id >= 0 && id < docInfo.paraShapeList.size()) {
+            return (HwpRecord_ParaShape) docInfo.paraShapeList.get(id);
+        } else {
+        	return null;
+        }
 	}
 	
 	public HwpRecord_Style getParaStyle(short id) {
@@ -204,7 +208,7 @@ public class WriterContext {
 		return (HwpRecord_Style) docInfo.styleList.get(id);
 	}
 	
-	public HwpRecord_CharShape getCharShape(short id) {
+	public HwpRecord_CharShape getCharShape(int id) {
        HwpDocInfo docInfo = null;
         switch(hType) {
         case HWP:
@@ -214,7 +218,7 @@ public class WriterContext {
             docInfo = hwpx.getDocInfo();
             break;
         }
-        if (id < docInfo.charShapeList.size()) {
+        if (id >= 0 && id < docInfo.charShapeList.size()) {
         	return (HwpRecord_CharShape) docInfo.charShapeList.get(id);
         } else {
         	return null;

@@ -38,8 +38,8 @@ public class HwpRecord_Style extends HwpRecord {
 	public byte			type;				// 속성
 	public byte			nextStyle;			// 다음 스타일 아이디 참조값
 	public short		langId;				// 언어 아이디
-	public short		paraShape;			// 문단 모양 아이디 참조값(문단 모양의 아이디 속성)
-	public short		charShape;			// 글자 모양 아이디 참조값(글자 모양의 아이디 속성)
+	public int			paraShape;			// 문단 모양 아이디 참조값(문단 모양의 아이디 속성)
+	public int			charShape;			// 글자 모양 아이디 참조값(글자 모양의 아이디 속성)
 	public boolean		lockForm;			// 양식모드에서 style 보호하기
 	
 	HwpRecord_Style(int tagNum, int level, int size) {
@@ -110,10 +110,10 @@ public class HwpRecord_Style extends HwpRecord {
         engName = attributes.getNamedItem("engName").getNodeValue();
         
         String numStr = attributes.getNamedItem("paraPrIDRef").getNodeValue();
-        paraShape = (short) Integer.parseInt(numStr);
+        paraShape = Integer.parseUnsignedInt(numStr);
         
         numStr = attributes.getNamedItem("charPrIDRef").getNodeValue();
-        charShape = (short) Integer.parseInt(numStr);
+        charShape = Integer.parseUnsignedInt(numStr);
         
         numStr = attributes.getNamedItem("nextStyleIDRef").getNodeValue();
         nextStyle = (byte) Integer.parseInt(numStr);
