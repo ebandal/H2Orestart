@@ -318,7 +318,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
                     lineSpacingType = 1; break;
                 case "BETWEENLINES":
                     lineSpacingType = 2; break;
-                case "ATLEAST":
+                case "AT_LEAST":
                     lineSpacingType = 4; break;
                 default:
                     throw new NotImplementedException("HwpRecord_ParaShape");

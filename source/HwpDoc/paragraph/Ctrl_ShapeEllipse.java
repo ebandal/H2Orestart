@@ -80,7 +80,7 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
             throw new NotImplementedException("Ctrl_ShapeEllipse");
         };
         // 호로 바뀌었는지 여부
-        switch(attributes.getNamedItem("hasArcProperty").getNodeValue()) {
+        switch(attributes.getNamedItem("hasArcPr").getNodeValue()) {
         case "0":
             intervalDirty = false;      break;
         case "1":
@@ -98,49 +98,50 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
             Node child = nodeList.item(i);
             NamedNodeMap childAttrs = child.getAttributes();
             switch(child.getNodeName()) {
-            case "hp:center":   // 중심좌표
+            case "hc:center":   // 중심좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 centerX = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 centerY = Integer.parseInt(numStr);
                 break;
-            case "hp:ax1":  // 제1축 좌표
+            case "hc:ax1":  // 제1축 좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 axixX1 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 axixY1 = Integer.parseInt(numStr);
                 break;
-            case "hp:ax2":  // 제2축 좌표
+            case "hc:ax2":  // 제2축 좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 axixX2 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 axixY2 = Integer.parseInt(numStr);
                 break;
-            case "hp:start1":  // 시작지점 1 좌표
+            case "hc:start1":  // 시작지점 1 좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 startX1 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 startY1 = Integer.parseInt(numStr);
                 break;
-            case "hp:start2":  // 시작지점 2 좌표
+            case "hc:start2":  // 시작지점 2 좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 startX2 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 startY2 = Integer.parseInt(numStr);
                 break;
-            case "hp:end1":  // 끝지점 1좌표
+            case "hc:end1":  // 끝지점 1좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 endX1 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 endY1 = Integer.parseInt(numStr);
                 break;
-            case "hp:end2":  // 끝지점 2좌표
+            case "hc:end2":  // 끝지점 2좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 endX2 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 endY2 = Integer.parseInt(numStr);
                 break;
             default:
+            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ShapeEllipse");
             }
         }
