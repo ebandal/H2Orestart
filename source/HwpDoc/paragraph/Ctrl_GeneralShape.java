@@ -105,7 +105,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");   // 선색상
-                    lineColor = Integer.parseInt(numStr);
+                    lineColor = Integer.parseInt(numStr, 16);
                     numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
                     lineThick = (short) Integer.parseInt(numStr);
                     lineType = LineType2.valueOf(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
