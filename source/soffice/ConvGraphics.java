@@ -1157,6 +1157,14 @@ public class ConvGraphics {
 	    		frameProps.setPropertyValue("FillTransparence", 100);
 	        }
 	        
+            if (wContext.version >= 72) {
+                TextContentAnchorType anchorType = (TextContentAnchorType)xPropSet.getPropertyValue("AnchorType");
+        		if (((hasParas || hasCaption) && anchorType == TextContentAnchorType.AS_CHARACTER) ||
+        			anchorType == TextContentAnchorType.AT_PARAGRAPH) {
+                	wContext.mText.insertString(wContext.mTextCursor, " ", false);
+                }
+            }
+            
 	        // [21.11.24] "글상자 속성" 가진 개체 내에 문단 쓰기. 
   			if (hasParas) {
 				WriterContext context2 = new WriterContext();
@@ -2300,11 +2308,11 @@ public class ConvGraphics {
 	}
 	
     private static void setFillStyle(XPropertySet xPropSet, Fill fill) {
-    	if (fill==null)	return;
-    		
 		try {
-			xPropSet.setPropertyValue("FillColor", fill.faceColor);
-       		if (fill.isColorFill()) {
+       		if (fill==null) {
+       			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
+       		} else if (fill.isColorFill()) {
+				xPropSet.setPropertyValue("FillColor", fill.faceColor);
        			com.sun.star.drawing.Hatch hatch = new com.sun.star.drawing.Hatch();
        			switch(fill.hatchStyle) {
        			case NONE:
@@ -2366,6 +2374,7 @@ public class ConvGraphics {
            			break;
        			}
        		} else if (fill.isGradFill()) {
+				xPropSet.setPropertyValue("FillColor", fill.faceColor);
        			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.GRADIENT);
        			com.sun.star.awt.Gradient gradient = new com.sun.star.awt.Gradient();
    				gradient.StartColor = fill.colors[0];
