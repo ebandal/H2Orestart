@@ -61,10 +61,9 @@ public class PageBorderFill {
 
         switch(attributes.getNamedItem("textBorder").getNodeValue()) {
         case "PAPER":
-            textBorder = false; break;
-        default:
-            textBorder = true;
-            throw new NotImplementedException("pageBorderFill");
+            textBorder = true;	break;
+        case "CONTENT":
+        	textBorder = false;	break;
         }
 
         switch(attributes.getNamedItem("headerInside").getNodeValue()) {
