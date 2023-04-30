@@ -22,8 +22,10 @@ package soffice;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,10 +38,17 @@ import java.util.Optional;
 
 import com.sun.star.awt.Point;
 import com.sun.star.awt.Size;
+import com.sun.star.awt.XBitmap;
+import com.sun.star.awt.XDevice;
+import com.sun.star.awt.XDisplayBitmap;
+import com.sun.star.awt.XGraphics;
+import com.sun.star.awt.XToolkit;
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.PropertyVetoException;
 import com.sun.star.beans.UnknownPropertyException;
 import com.sun.star.beans.XPropertySet;
+import com.sun.star.container.XNameAccess;
+import com.sun.star.container.XNameContainer;
 import com.sun.star.drawing.CircleKind;
 import com.sun.star.drawing.FillStyle;
 import com.sun.star.drawing.HomogenMatrix3;
@@ -54,7 +63,10 @@ import com.sun.star.graphic.XGraphicProvider;
 import com.sun.star.lang.IllegalArgumentException;
 import com.sun.star.lang.WrappedTargetException;
 import com.sun.star.lib.uno.adapter.ByteArrayToXInputStreamAdapter;
+import com.sun.star.lib.uno.adapter.OutputStreamToXOutputStreamAdapter;
 import com.sun.star.style.ParagraphAdjust;
+import com.sun.star.style.XStyle;
+import com.sun.star.style.XStyleFamiliesSupplier;
 import com.sun.star.table.BorderLine2;
 import com.sun.star.table.BorderLineStyle;
 import com.sun.star.text.ControlCharacter;
@@ -74,6 +86,7 @@ import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
+import HwpDoc.HwpElement.HwpRecord_BinData;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.HwpElement.HwpRecord_BinData.Type;
@@ -82,6 +95,7 @@ import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_Common;
 import HwpDoc.paragraph.Ctrl_Container;
 import HwpDoc.paragraph.Ctrl_GeneralShape;
+import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.Ctrl_ShapeArc;
 import HwpDoc.paragraph.Ctrl_ShapeCurve;
 import HwpDoc.paragraph.Ctrl_ShapeEllipse;
@@ -93,6 +107,8 @@ import HwpDoc.paragraph.Ctrl_ShapeVideo;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.ParaText;
+import HwpDoc.paragraph.Ctrl_ShapePic.ImagePath;
+import HwpDoc.paragraph.Ctrl_ShapePic.ImagePathType;
 import HwpDoc.section.Page;
 import soffice.HwpCallback.TableFrame;
 
@@ -2311,100 +2327,106 @@ public class ConvGraphics {
 		try {
        		if (fill==null) {
        			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
-       		} else if (fill.isColorFill()) {
-				xPropSet.setPropertyValue("FillColor", fill.faceColor);
-       			com.sun.star.drawing.Hatch hatch = new com.sun.star.drawing.Hatch();
-       			switch(fill.hatchStyle) {
-       			case NONE:
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.SOLID);
-           			break;
-       			case VERTICAL:	// - - - 
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
-       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
-       				hatch.Color = fill.hatchColor;
-       				hatch.Distance = 100;
-       				hatch.Angle = 0;
-           			xPropSet.setPropertyValue("FillHatch", hatch);
-           			xPropSet.setPropertyValue("FillBackground", true);
-           			break;
-       			case HORIZONTAL: // |||||
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
-       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
-       				hatch.Color = fill.hatchColor;
-       				hatch.Distance = 100;
-       				hatch.Angle = 900; 
-           			xPropSet.setPropertyValue("FillHatch", hatch);
-           			xPropSet.setPropertyValue("FillBackground", true);
-           			break;
-       			case BACK_SLASH: // \\\\\
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
-       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
-       				hatch.Color = fill.hatchColor;
-       				hatch.Distance = 100;
-       				hatch.Angle = 1350;
-           			xPropSet.setPropertyValue("FillHatch", hatch);
-           			xPropSet.setPropertyValue("FillBackground", true);
-           			break;
-       			case SLASH:		// /////
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
-       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
-       				hatch.Color = fill.hatchColor;
-       				hatch.Distance = 100;
-       				hatch.Angle = 450;
-           			xPropSet.setPropertyValue("FillHatch", hatch);
-           			xPropSet.setPropertyValue("FillBackground", true);
-           			break;
-       			case CROSS:		// +++++
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
-       				hatch.Style = com.sun.star.drawing.HatchStyle.DOUBLE;
-       				hatch.Color = fill.hatchColor;
-       				hatch.Distance = 100;
-       				hatch.Angle = 0;
-           			xPropSet.setPropertyValue("FillHatch", hatch);
-           			xPropSet.setPropertyValue("FillBackground", true);
-           			break;
-       			case CROSS_DIAGONAL:			// xxxxx
-           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
-       				hatch.Style = com.sun.star.drawing.HatchStyle.DOUBLE;
-       				hatch.Color = fill.hatchColor;
-       				hatch.Distance = 100;
-       				hatch.Angle = 450;
-           			xPropSet.setPropertyValue("FillHatch", hatch);
-           			xPropSet.setPropertyValue("FillBackground", true);
-           			break;
-       			}
-       		} else if (fill.isGradFill()) {
-				xPropSet.setPropertyValue("FillColor", fill.faceColor);
-       			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.GRADIENT);
-       			com.sun.star.awt.Gradient gradient = new com.sun.star.awt.Gradient();
-   				gradient.StartColor = fill.colors[0];
-   				gradient.EndColor = fill.colors[1];
-   				gradient.Angle = (short) (fill.angle * 10);  // 1/10 degree로 맞춘다.
-   				gradient.XOffset = (short)Transform.translateHwp2Office(fill.centerX);
-   				gradient.YOffset = (short)Transform.translateHwp2Office(fill.centerY);
-   				gradient.StepCount = (short)fill.step;
-   				
-       			switch(fill.gradType) {
-       			case LINEAR:	// 줄무니형
-       				gradient.Style = com.sun.star.awt.GradientStyle.LINEAR;
-       				break;
-       			case RADIAL:	// 원형
-       				gradient.Style = com.sun.star.awt.GradientStyle.RADIAL;
-       				break;
-       			case CONICAL:		// 원뿔형
-       				gradient.Style = com.sun.star.awt.GradientStyle.AXIAL;
-       				break;
-       			case SQUARE:		// 사각형
-       				gradient.Style = com.sun.star.awt.GradientStyle.RECT;
-       				break;
-       			}
-       			xPropSet.setPropertyValue("FillGradient", gradient);
-       		} else if (fill.isImageFill()) {
-       			// xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
-       			// com.sun.star.awt.XBitmap bitmap = new com.sun.star.awt.XBitmap();
-       			// xPropSet.setPropertyValue("FillBitmap", bitmap);
        		} else {
-       			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
+       			if (fill.isColorFill()) {
+					xPropSet.setPropertyValue("FillColor", fill.faceColor);
+	       			com.sun.star.drawing.Hatch hatch = new com.sun.star.drawing.Hatch();
+	       			switch(fill.hatchStyle) {
+	       			case NONE:
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.SOLID);
+	           			break;
+	       			case VERTICAL:	// - - - 
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
+	       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
+	       				hatch.Color = fill.hatchColor;
+	       				hatch.Distance = 100;
+	       				hatch.Angle = 0;
+	           			xPropSet.setPropertyValue("FillHatch", hatch);
+	           			xPropSet.setPropertyValue("FillBackground", true);
+	           			break;
+	       			case HORIZONTAL: // |||||
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
+	       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
+	       				hatch.Color = fill.hatchColor;
+	       				hatch.Distance = 100;
+	       				hatch.Angle = 900; 
+	           			xPropSet.setPropertyValue("FillHatch", hatch);
+	           			xPropSet.setPropertyValue("FillBackground", true);
+	           			break;
+	       			case BACK_SLASH: // \\\\\
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
+	       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
+	       				hatch.Color = fill.hatchColor;
+	       				hatch.Distance = 100;
+	       				hatch.Angle = 1350;
+	           			xPropSet.setPropertyValue("FillHatch", hatch);
+	           			xPropSet.setPropertyValue("FillBackground", true);
+	           			break;
+	       			case SLASH:		// /////
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
+	       				hatch.Style = com.sun.star.drawing.HatchStyle.SINGLE;
+	       				hatch.Color = fill.hatchColor;
+	       				hatch.Distance = 100;
+	       				hatch.Angle = 450;
+	           			xPropSet.setPropertyValue("FillHatch", hatch);
+	           			xPropSet.setPropertyValue("FillBackground", true);
+	           			break;
+	       			case CROSS:		// +++++
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
+	       				hatch.Style = com.sun.star.drawing.HatchStyle.DOUBLE;
+	       				hatch.Color = fill.hatchColor;
+	       				hatch.Distance = 100;
+	       				hatch.Angle = 0;
+	           			xPropSet.setPropertyValue("FillHatch", hatch);
+	           			xPropSet.setPropertyValue("FillBackground", true);
+	           			break;
+	       			case CROSS_DIAGONAL:			// xxxxx
+	           			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.HATCH);
+	       				hatch.Style = com.sun.star.drawing.HatchStyle.DOUBLE;
+	       				hatch.Color = fill.hatchColor;
+	       				hatch.Distance = 100;
+	       				hatch.Angle = 450;
+	           			xPropSet.setPropertyValue("FillHatch", hatch);
+	           			xPropSet.setPropertyValue("FillBackground", true);
+	           			break;
+	       			}
+       			}
+       			if (fill.isGradFill()) {
+					xPropSet.setPropertyValue("FillColor", fill.faceColor);
+	       			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.GRADIENT);
+	       			com.sun.star.awt.Gradient gradient = new com.sun.star.awt.Gradient();
+	   				gradient.StartColor = fill.colors[0];
+	   				gradient.EndColor = fill.colors[1];
+	   				gradient.Angle = (short) (fill.angle * 10);  // 1/10 degree로 맞춘다.
+	   				gradient.XOffset = (short)Transform.translateHwp2Office(fill.centerX);
+	   				gradient.YOffset = (short)Transform.translateHwp2Office(fill.centerY);
+	   				gradient.StepCount = (short)fill.step;
+	   				
+	       			switch(fill.gradType) {
+	       			case LINEAR:	// 줄무니형
+	       				gradient.Style = com.sun.star.awt.GradientStyle.LINEAR;
+	       				break;
+	       			case RADIAL:	// 원형
+	       				gradient.Style = com.sun.star.awt.GradientStyle.RADIAL;
+	       				break;
+	       			case CONICAL:		// 원뿔형
+	       				gradient.Style = com.sun.star.awt.GradientStyle.AXIAL;
+	       				break;
+	       			case SQUARE:		// 사각형
+	       				gradient.Style = com.sun.star.awt.GradientStyle.RECT;
+	       				break;
+	       			}
+	       			xPropSet.setPropertyValue("FillGradient", gradient);
+       			}
+       			if (fill.isImageFill()) {
+	       			//xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
+	       			//com.sun.star.awt.XBitmap bitmap = new com.sun.star.awt.XBitmap();
+	       			//xPropSet.setPropertyValue("FillBitmap", bitmap);
+       			}
+       			
+       			if (fill.isColorFill()==false && fill.isImageFill()==false && fill.isGradFill()==false) {
+       				xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
+       			}
        		}
 		} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {
 			e.printStackTrace();
