@@ -78,6 +78,7 @@ import com.sun.star.text.XTextFrame;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.HwpElement.HwpRecord_BinData;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
@@ -183,23 +184,11 @@ public class ConvGraphics {
 
             byte[] imageAsByteArray = null;
             String imageType = "";
+            
+            imageAsByteArray = wContext.getBinBytes(pic.binDataID);
+            imageType = wContext.getBinFormat(pic.binDataID);
 
-    		switch(pic.imagePath.type) {
-    		case LINK:
-    		    imageAsByteArray =  Files.readAllBytes(new File(pic.imagePath.path).toPath());
-                imageType = pic.imagePath.path.substring(pic.imagePath.path.lastIndexOf(".") + 1);
-    		    break;
-    		case COMPOUND:
-    		    imageAsByteArray = wContext.hwp.getChildBytes(pic.imagePath.path, pic.imagePath.compressed);
-    		    imageType = pic.imagePath.path.substring(pic.imagePath.path.lastIndexOf(".") + 1);
-    		    break;
-    		case OWPML:
-    		    String entry = wContext.hwpx.findBinData(pic.imagePath.path);
-                imageType = entry.substring(entry.lastIndexOf(".") + 1);
-                imageAsByteArray = wContext.hwpx.getBinDataByEntry(entry);
-    		}
-
-    		if (imageAsByteArray==null || imageAsByteArray.length==0) {
+            if (imageAsByteArray==null || imageAsByteArray.length==0) {
     			log.severe("Something Wrong!!!. skip drawing");
     			return;
     		}
@@ -297,10 +286,6 @@ public class ConvGraphics {
     		e.printStackTrace();
     	} catch (SkipDrawingException e) {
     	    e.printStackTrace();
-    	} catch (IOException e) {
-            e.printStackTrace();
-        } catch (DataFormatException e) {
-			e.printStackTrace();
 		}
 
     }
@@ -344,7 +329,7 @@ public class ConvGraphics {
             v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
             v[1] = new PropertyValue();
             v[1].Name = "MimeType";
-            switch(WriterContext.getBinFormat(vid.thumnailBinID).toLowerCase()) {
+            switch(wContext.getBinFormat(vid.thumnailBinID).toLowerCase()) {
             case "png":
                 v[1].Value = "image/png";
                 break;
@@ -2411,7 +2396,7 @@ public class ConvGraphics {
        			if (fill.isImageFill()) {
        		        Object graphicProviderObject = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
        		        XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
-       		        byte[] imageAsByteArray = wContext.getBinBytes((short)(fill.binItem-1));
+       		        byte[] imageAsByteArray = wContext.getBinBytes(fill.binItemID);
        		        if (imageAsByteArray!=null) {
 	       		        PropertyValue[] v = new PropertyValue[2];
 	       		        v[0] = new PropertyValue();
@@ -2419,7 +2404,7 @@ public class ConvGraphics {
 	       		        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
 	       		        v[1] = new PropertyValue();
 	       		        v[1].Name = "MimeType";
-	       		        String imageFormat = WriterContext.getBinFormat((short)(fill.binItem-1)).toLowerCase();
+	       		        String imageFormat = wContext.getBinFormat(fill.binItemID).toLowerCase();
 	       		        switch(imageFormat) {
 	       		        case "png":	v[1].Value = "image/png";		break;
 	       		        case "bmp": v[1].Value = "image/bmp";		break;
@@ -2431,7 +2416,7 @@ public class ConvGraphics {
 	       		        }
 	       		        XGraphic graphic = xGraphicProvider.queryGraphic(v);
 	       				try {
-	       			        Path path = Files.createTempFile("H2Orestart", "_"+String.valueOf(fill.binItem)+"."+imageFormat);
+	       			        Path path = Files.createTempFile("H2Orestart", "_"+fill.binItemID+"."+imageFormat);
 	       			        URL url = path.toFile().toURI().toURL();
 	       			        String urlString = url.toExternalForm();
 		       		        v[0].Name = "URL";
@@ -2441,8 +2426,8 @@ public class ConvGraphics {
 		       				Object bt = wContext.mMSF.createInstance("com.sun.star.drawing.BitmapTable");
 		       		        XNameContainer bitmapContainer = UnoRuntime.queryInterface(XNameContainer.class, bt);
 		       		        try {
-		       		        	log.fine("FillBMP"+String.valueOf(fill.binItem) + " saved to " + urlString);
-		       		        	bitmapContainer.insertByName("FillBMP"+String.valueOf(fill.binItem), urlString);
+		       		        	log.fine("FillBMP"+fill.binItemID + " saved to " + urlString);
+		       		        	bitmapContainer.insertByName("FillBMP"+fill.binItemID, urlString);
 		       		        } catch (com.sun.star.container.ElementExistException e) {
 		       				}
 	           		        XNameAccess bitmapAccess = (XNameAccess)UnoRuntime.queryInterface(XNameAccess.class, bt);
@@ -2456,7 +2441,7 @@ public class ConvGraphics {
 		       		        } catch (com.sun.star.container.NoSuchElementException e) {
 		       		        }
 		       		        */
-	    	       			xPropSet.setPropertyValue("FillBitmapName", "FillBMP"+String.valueOf(fill.binItem));
+	    	       			xPropSet.setPropertyValue("FillBitmapName", "FillBMP"+fill.binItemID);
 	    	       			xPropSet.setPropertyValue("FillBitmapMode", BitmapMode.STRETCH);
 		    	       		Files.delete(path);
 	       				} catch (IOException e) {

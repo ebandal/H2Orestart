@@ -45,7 +45,7 @@ import HwpDoc.paragraph.Ctrl_Table.CellZone;
 public class Ctrl_ShapePic extends Ctrl_GeneralShape {
 	private static final Logger log = Logger.getLogger(Ctrl_ShapePic.class.getName());
 	private int size;
-	
+
 	public int 			borderColor;	// 테두리 색
 	public int			borderThick;	// 테두리 두께
 	public int			borderAttr;		// 테두리 속성
@@ -58,8 +58,8 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
 	public byte			bright;			// 그림 밝기
 	public byte			contrast;		// 그림 명암
 	public byte			effect;			// 그림 효과 (0:REAL_PIC,1:GRAY_SCALE,2:BLACK_WHTE,4:PATTERN8x8
-	// public short		binDataID;		// BinItem의 아이디 참조값
-	public ImagePath    imagePath;      // BinItemID값 대신 문자열을 사용하도록 함 (hwpx)       
+	public String		binDataID;		// BinItem의 아이디 참조값
+	// public ImagePath    imagePath;      // BinItemID값 대신 문자열을 사용하도록 함 (hwpx); Fill에서 Image 사용할 수 있도록 bindDataID 사용        
 	
 	public byte			borderOpaque;	// 테두리 투명도
 	public int			instanceID;		// 문서 내 각 개체에 대한 고유 아이디(instance ID)
@@ -94,6 +94,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
+            /*
             case "hp:lineShape":    // 테두리선 모양
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
@@ -111,6 +112,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                     // childAttrs.getNamedItem("alpha").getNodeValue();                       // 투명도       
                 }
                 break;
+            */
             case "hp:imgRect":      // 이미지 좌표 정보
                 {
                     NodeList childNodeList = child.getChildNodes();
@@ -236,11 +238,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                         throw new NotImplementedException("Ctrl_ShapePic");
                     }
                     numStr =  childAttrs.getNamedItem("binaryItemIDRef").getNodeValue();// BinDataItem 요소의 아이디 참조값
-                    
-                    imagePath = new ImagePath();
-                    imagePath.path = numStr;
-                    imagePath.type = ImagePathType.OWPML;
-                    imagePath.compressed = Compressed.NO_COMPRESS;
+                    binDataID = numStr;
                 }
                 break;
             case "hp:offset":
@@ -317,26 +315,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         obj.contrast        = buf[offset++];
         obj.effect          = buf[offset++];
 
-        short binDataID       = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+        short binItemID       = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
         
-        ArrayList<String> keyList = new ArrayList<String>(hwp.getDocInfo().binDataList.keySet());
-        String key = keyList.get(binDataID-1);
-        HwpRecord_BinData binData = (HwpRecord_BinData)hwp.getDocInfo().binDataList.get(key);
-        if (binData != null) {
-            obj.imagePath = new ImagePath();
-            if (binData.type==Type.LINK) {
-                obj.imagePath.compressed = binData.compressed;
-                obj.imagePath.type = ImagePathType.LINK;
-                obj.imagePath.path = binData.aPath;
-            } else {
-                obj.imagePath.compressed = binData.compressed;
-                obj.imagePath.type = ImagePathType.COMPOUND;
-                // obj.imagePath.path = String.format("BIN%04X.%s", key, binData.format);
-                obj.imagePath.path = binData.aPath;
-            }
-        }
-        
+        obj.binDataID = String.valueOf(binItemID-1);
         obj.borderOpaque    = buf[offset++];
         
         if (offset-off < size) {

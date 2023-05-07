@@ -20,6 +20,7 @@
  */
 package HwpDoc.HwpElement;
 
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -30,6 +31,10 @@ import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
+import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
+import HwpDoc.HwpElement.HwpRecord_BinData.Type;
+import HwpDoc.paragraph.Ctrl_ShapePic.ImagePath;
+import HwpDoc.paragraph.Ctrl_ShapePic.ImagePathType;
 
 public class HwpRecord_BorderFill extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_BorderFill.class.getName());
@@ -458,9 +463,9 @@ public class HwpRecord_BorderFill extends HwpRecord {
         for (int j=0; j<grandChildren.getLength(); j++) {
             Node grandChild = grandChildren.item(j);
             switch(grandChild.getNodeName()) {
-            case "img":
+            case "hc:img":
                 {
-                    NamedNodeMap gradChildAttrs = child.getAttributes();
+                    NamedNodeMap gradChildAttrs = grandChild.getAttributes();
                     numStr = gradChildAttrs.getNamedItem("bright").getNodeValue();
                     fill.bright = (byte)Integer.parseInt(numStr);
                     
@@ -476,10 +481,10 @@ public class HwpRecord_BorderFill extends HwpRecord {
                     }
 
                     numStr = gradChildAttrs.getNamedItem("binaryItemIDRef").getNodeValue();
-                    fill.binItem = (short)Integer.parseInt(numStr);
+                    fill.binItemID = numStr;
 
                     numStr = gradChildAttrs.getNamedItem("alpha").getNodeValue();
-                    fill.binItem = (byte)Float.parseFloat(numStr);
+                    fill.alpha = (byte)Float.parseFloat(numStr);
                 }
                 break;
             }
@@ -510,7 +515,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
 		public byte			bright;			// 밝기
 		public byte			contrast;		// 명암
 		public byte			effect;			// 그림효과. 0:REAL-PIC, 1:GRAY_SCALE, 2:BLACK_WHITE, 4:PATTERN8x8
-		public short		binItem;		// BinItem의 아이디 참조값
+		public String		binItemID;		// BinItem의 아이디 참조값
 		public byte			stepCenter;		// 그라데이션 번짐정도의 중심 (0..100)
 
 		public byte			alpha;			// 투명도 0~256 (0~100%)
@@ -565,8 +570,9 @@ public class HwpRecord_BorderFill extends HwpRecord {
 				bright 			= buf[offset++];
 				contrast 		= buf[offset++];
 				effect		 	= buf[offset++];
-				binItem		 	= (short) (buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
+				short binItem	= (short) (buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
 				offset += 2;
+				binItemID		= String.valueOf(binItem-1);
 			}
 			
 			int	moreSize	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;

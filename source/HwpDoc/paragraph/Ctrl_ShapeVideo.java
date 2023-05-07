@@ -37,7 +37,7 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
 	public int			videoType;		// 동영상타입 (0:로컬동영상, 1:웹동영상)
 	public short		vidoeBinID;
 	public String 		webURL;			
-	public short		thumnailBinID;
+	public String		thumnailBinID;
 
 	public Ctrl_ShapeVideo(String ctrlId, int size, byte[] buf, int off, int version) {
 		super(ctrlId, size, buf, off, version);
@@ -70,7 +70,7 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         vidoeBinID = (short) Integer.parseInt(numStr);
         
         numStr = attributes.getNamedItem("imageIDRef").getNodeValue();
-        thumnailBinID = (short) Integer.parseInt(numStr);
+        thumnailBinID = numStr;
         
         if (videoType==1) {
             webURL = attributes.getNamedItem("tag").getNodeValue();
@@ -91,8 +91,9 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
             obj.objDesc = new String(buf, offset, urlLen, StandardCharsets.UTF_16LE);
             offset += urlLen;
         }
-        obj.thumnailBinID   = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+        short binID 		= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
+        obj.thumnailBinID 	= String.valueOf(binID-1);
         
         if (offset-off-size!=0) {
             log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));

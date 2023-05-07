@@ -279,57 +279,75 @@ public class WriterContext {
 		return retString;
 	}
 	
-	public byte[] getBinBytes(short id) {
+	public byte[] getBinBytes(String id) {
 		byte[] imageBytes = null;
 		HwpDocInfo docInfo = null;
         switch(hType) {
         case HWP:
-            docInfo = hwp.getDocInfo();
-            ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
-            String key = keyList.get(id);
-            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(key);
-            if (binData != null) {
-                if (binData.type==Type.LINK) {
-                    File file = new File(binData.aPath);
-                    try {
-                        imageBytes = Files.readAllBytes(file.toPath());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    if (hwp.getBinData().size() >= binData.binDataID) {
+	        {
+	            docInfo = hwp.getDocInfo();
+	            ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
+	            String key = keyList.get(Integer.parseInt(id));
+	            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(key);
+	            if (binData != null) {
+	                if (binData.type==Type.LINK) {
+	                    File file = new File(binData.aPath);
+	                    try {
+	                        imageBytes = Files.readAllBytes(file.toPath());
+	                    } catch (IOException e) {
+	                        e.printStackTrace();
+	                    }
+	                } else {
                         String compoundFileName = String.format("BIN%04X.%s", binData.binDataID, binData.format);
                         try {
                             imageBytes = hwp.getChildBytes(compoundFileName, binData.compressed);
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                    }
-                }
-            }
+	                }
+	            }
+	        }
             break;
         case HWPX:
-            docInfo = hwpx.getDocInfo();
+	        {
+	            docInfo = hwpx.getDocInfo();
+	            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(id);
+	            if (binData != null) {
+	            	try {
+	            		String binShortName = binData.aPath.replaceAll("BinData/(.*)\\..*", "$1");
+						imageBytes = hwpx.getBinDataByIDRef(binShortName);
+					} catch (IOException | DataFormatException e) {
+						e.printStackTrace();
+					}
+	            }
+	        }
             break;
         }
 
 		return imageBytes;
 	}
 
-	public static String getBinFormat(short id) {
+	public String getBinFormat(String id) {
+		HwpRecord_BinData binData = null;
         HwpDocInfo docInfo = null;
         switch(hType) {
         case HWP:
-            docInfo = hwp.getDocInfo();
+	        {
+	            docInfo = hwp.getDocInfo();
+	            ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
+	            String key = keyList.get(Integer.parseInt(id));
+	            binData = (HwpRecord_BinData)docInfo.binDataList.get(key);
+	        }
             break;
         case HWPX:
-            docInfo = hwpx.getDocInfo();
+	        {
+	            docInfo = hwpx.getDocInfo();
+	    		binData = (HwpRecord_BinData)docInfo.binDataList.get(id);
+	        }
             break;
         }
         
-        ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
-        String key = keyList.get(id);
-		return ((HwpRecord_BinData)docInfo.binDataList.get(key)).format;
+        return binData.format;
 	}
 	
 	public static HwpRecord_TabDef getTabDef(short id) {
