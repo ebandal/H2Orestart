@@ -188,7 +188,9 @@ public class HwpFile {
 		for (DirectoryEntry entry: entries) {
 			if (entry.getObjectType()==0x01) {
 				Path childPath = Paths.get(basePath.toString(), entry.getDirectoryEntryName().trim());
-				Files.createDirectory(childPath);
+				if (childPath.toFile().exists()==false) {
+					Files.createDirectory(childPath);
+				}
 				saveChildEntries(childPath, entry.getDirectoryEntryName().trim(), compressed);
 			} else {
 				byte[] buf = oleFile.read(entry);
