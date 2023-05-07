@@ -28,6 +28,7 @@ import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.sun.star.awt.XBitmap;
 import com.sun.star.beans.Property;
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.UnknownPropertyException;
@@ -44,10 +46,15 @@ import com.sun.star.container.XNameAccess;
 import com.sun.star.io.IOException;
 import com.sun.star.lang.WrappedTargetException;
 import com.sun.star.lang.XMultiServiceFactory;
+import com.sun.star.text.TextContentAnchorType;
+import com.sun.star.text.XTextFrame;
+import com.sun.star.text.XTextColumns;
+import com.sun.star.text.XTextRange;
 import com.sun.star.ucb.XFileIdentifierConverter;
 import com.sun.star.ucb.XSimpleFileAccess;
 import com.sun.star.uno.Any;
 import com.sun.star.uno.Exception;
+import com.sun.star.uno.XInterface;
 import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.paragraph.CharShape;
@@ -176,28 +183,47 @@ public class ConvUtil {
     }
 
     public static <T> String printArrayRecursive(Class<T> c, Object obj, int step) {
-    	StringBuffer sb = new StringBuffer("{");
+    	StringBuffer sb = new StringBuffer("[");
 
     	try {
     		int len = Array.getLength(obj);
+    		len = Math.min(len, 100);
     		for (int i=0; i<len; i++) {
     			String value = "";
         		Object childObj = Array.get(obj, i);
         		Class arrayClass = childObj.getClass();
         		
-				if (arrayClass.getName().startsWith("java.lang.")) {
-					value = childObj==null?"null":childObj.equals("")?"\"\"":childObj.toString();
-				} else if (arrayClass.getName().startsWith("[")) {
-					value = "("+arrayClass.getName()+")"+printArrayRecursive(arrayClass, childObj, step+1);
-				} else {
-					value = "("+arrayClass.getName()+")"+printRecursive(arrayClass, childObj, step+1);
-				}
-        		sb.append("["+value+"]");
+        		switch(arrayClass.getName()) {
+        		case "java.lang.Byte":
+        		case "java.lang.Integer":
+        		case "java.lang.Long":
+        		case "java.lang.String":
+        		case "java.lang.Boolean":
+        			value = childObj.toString();
+        			break;
+        		case "com.sun.star.beans.PropertyValue":
+        		case "com.sun.star.style.TabStop":
+        		case "com.sun.star.drawing.EnhancedCustomShapeParameterPair":
+        		case "com.sun.star.drawing.EnhancedCustomShapeTextFrame":
+        		case "com.sun.star.drawing.EnhancedCustomShapeSegment":
+					value = printRecursive(arrayClass, childObj, step+1);
+        			break;
+    			default:
+    				log.finest("unhandled class = " + arrayClass.getName());
+					if (arrayClass.getName().startsWith("[]")) {
+						value = printArrayRecursive(arrayClass, childObj, step+1);
+					} else {
+						value = "("+arrayClass.getName()+")"+printRecursive(arrayClass, childObj, step+1);
+					}
+    				break;
+        		}
+        		
+        		sb.append("{"+value+"}");
     		}
 		} catch (IllegalArgumentException | SecurityException e) {
 			e.printStackTrace();
 		}
-		sb.append("}");
+		sb.append("]");
 		
     	return sb.toString();
     }
@@ -214,15 +240,158 @@ public class ConvUtil {
                 Object obj = setInfo.getPropertyByName(property.Name);
   				Class<?> c = obj.getClass();
   				
-  				if (c.getName().startsWith("java.lang.")) {
-  					value = obj==null?"null":obj.equals("")?"\"\"":obj.toString();
-				} else if (c.getName().startsWith("[")) {
-					value = "("+property.Type.getTypeName()+")"+printArrayRecursive(c, obj, step+1);
-				} else {
-					value = "("+property.Type.getTypeName()+")"+printRecursive(c, obj, step+1);
-				}
+  				if (property.Name.equals("FillBitmapURL")) {
+  					log.finest("FillBitmapURL");
+  				}
+  				
+  				switch(property.Type.getTypeName()) {
+  				case "boolean":
+  				case "short":
+  				case "long":
+  				case "string":
+  				case "byte":
+  				case "float":
+	  				{
+	  					Object propValue = xPropertySet.getPropertyValue(property.Name);
+	  					if (propValue instanceof Any) {
+	  						Any any = (Any)propValue;
+	  						com.sun.star.uno.Type type = any.getType();
+	  						Object ob = any.getObject();
+	  						if (type.getTypeName().equals("com.sun.star.awt.XBitmap")) {
+	  							XBitmap xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
+	  		  					value = Base64.getEncoder().encodeToString(xBitmap.getDIB());
+	  						} else {
+		  						value = ob==null?"":ob.toString();
+	  						}
+	  					} else {
+	  						value = propValue.toString();
+	  					}
+	  				}
+  					break;
+  				case "com.sun.star.lang.Locale":
+	  				{
+	  					com.sun.star.lang.Locale locale = (com.sun.star.lang.Locale)xPropertySet.getPropertyValue(property.Name);
+	  					value = locale.Country + "," + locale.Language;
+	  				}
+	  				break;
+  				case "com.sun.star.awt.Point":
+	  				{
+	  					com.sun.star.awt.Point point = (com.sun.star.awt.Point)xPropertySet.getPropertyValue(property.Name);
+	  					value = point.X + "," + point.Y;
+	  				}
+	  				break;
+  				case "com.sun.star.awt.XBitmap":
+	  				{
+	  					Object ob = xPropertySet.getPropertyValue(property.Name);
+	  					com.sun.star.awt.XBitmap xBitmap = (XBitmap) UnoRuntime.queryInterface(com.sun.star.awt.XBitmap.class, ob);
+	  					value = Base64.getEncoder().encodeToString(xBitmap.getDIB());
+	  				}
+	  				break;
+  				case "com.sun.star.awt.Rectangle":
+	  				{
+	  					com.sun.star.awt.Rectangle rect = (com.sun.star.awt.Rectangle)xPropertySet.getPropertyValue(property.Name);
+	  					value = rect.X + "," + rect.Y + "," + rect.Width + "," + rect.Height;
+	  				}
+	  				break;
+  				case "com.sun.star.text.TextContentAnchorType":
+  				case "com.sun.star.drawing.BitmapMode":
+  				case "com.sun.star.drawing.RectanglePoint":
+  				case "com.sun.star.drawing.FillStyle":
+  				case "com.sun.star.drawing.LineStyle":
+  				case "com.sun.star.awt.FontSlant":
+  				case "com.sun.star.text.WrapTextMode":
+  				case "com.sun.star.text.WritingMode":
+  				case "com.sun.star.drawing.LineCap":
+  				case "com.sun.star.drawing.LineJoint":
+  				case "com.sun.star.drawing.TextAnimationDirection":
+  				case "com.sun.star.drawing.TextAnimationKind":
+  				case "com.sun.star.drawing.TextFitToSizeType":
+  				case "com.sun.star.drawing.TextHorizontalAdjust":
+  				case "com.sun.star.drawing.TextVerticalAdjust":
+
+	  				{
+	  					com.sun.star.uno.Enum unoEnum = (com.sun.star.uno.Enum)xPropertySet.getPropertyValue(property.Name);
+	  					value = String.valueOf(unoEnum.getValue());
+	  				}
+	  				break;
+  				case "com.sun.star.awt.Gradient":
+	  				{
+	  					com.sun.star.awt.Gradient gra = (com.sun.star.awt.Gradient)xPropertySet.getPropertyValue(property.Name);
+						value = gra.StartColor + "," + gra.EndColor + "," + gra.Angle + "," + gra.Border + "," + gra.XOffset
+									+ "," + gra.YOffset + "," + gra.StartIntensity + "," + gra.EndIntensity + "," + gra.StepCount
+									+ "," + gra.Style.toString();
+	  				}
+	  				break;
+  				case "com.sun.star.drawing.Hatch":
+	  				{
+	  					com.sun.star.drawing.Hatch hatch = (com.sun.star.drawing.Hatch)xPropertySet.getPropertyValue(property.Name);
+	  					value = hatch.Color + "," + hatch.Distance + "," + hatch.Angle + "," + hatch.Style.toString();
+	  				}
+	  				break;
+  				case "com.sun.star.text.GraphicCrop":
+	  				{
+	  					com.sun.star.text.GraphicCrop crop = (com.sun.star.text.GraphicCrop)xPropertySet.getPropertyValue(property.Name);
+	  					value = crop.Top + "," + crop.Bottom + "," + crop.Left + "," + crop.Right;
+	  				}
+	  				break;
+  				case "com.sun.star.text.XTextColumns":
+	  				{
+	  					Object ob = xPropertySet.getPropertyValue(property.Name);
+	  					XTextColumns xTC = (XTextColumns) UnoRuntime.queryInterface(XTextColumns.class, ob);
+	  					value = xTC==null?"":String.valueOf(xTC.getColumnCount());
+	  				}
+	  				break;
+  				case "com.sun.star.text.XTextRange":
+	  				{
+	  					Object ob = xPropertySet.getPropertyValue(property.Name);
+	  					XTextRange xTR = (XTextRange) UnoRuntime.queryInterface(XTextRange.class, ob);
+	  					value = xTR.getString();
+	  				}
+	  				break;
+  				case "com.sun.star.drawing.LineDash":
+	  				{
+	  					com.sun.star.drawing.LineDash dash = (com.sun.star.drawing.LineDash)xPropertySet.getPropertyValue(property.Name);
+	  					value = dash.Dots + "," + dash.DotLen + "," + dash.Dashes + "," + dash.DashLen + "," + dash.Distance;
+	  				}
+	  				break;
+  				case "com.sun.star.drawing.PolyPolygonBezierCoords":
+	  				{
+	  					com.sun.star.drawing.PolyPolygonBezierCoords poly = (com.sun.star.drawing.PolyPolygonBezierCoords)xPropertySet.getPropertyValue(property.Name);
+	  					value = "" + poly.Coordinates.length + "[]";
+	  				}
+	  				break;
+  				case "com.sun.star.style.LineSpacing":
+	  				{
+	  					com.sun.star.style.LineSpacing space = (com.sun.star.style.LineSpacing)xPropertySet.getPropertyValue(property.Name);
+	  					value = space.Mode + "," + space.Height;
+	  				}
+	  				break;
+  				case "com.sun.star.text.XTextFrame":
+	  				{
+	  					Object ob = xPropertySet.getPropertyValue(property.Name);
+	  					XInterface xInterface = (XInterface)UnoRuntime.queryInterface(property.Type.getClass(), ob);
+	  					value = xInterface==null?"":xInterface.toString();
+	  				}
+	  				break;
+  				case "com.sun.star.container.XIndexReplace":
+  				case "com.sun.star.container.XNameContainer":
+  				case "com.sun.star.drawing.HomogenMatrix3":
+	  				log.finest("unhandled type = " + property.Type.getTypeName());
+  					break;
+				default:
+					if (property.Type.getTypeName().startsWith("[]")) {
+	  					Object propValue = xPropertySet.getPropertyValue(property.Name);
+						value = printArrayRecursive(c, propValue, step+1);
+					} else {
+		  				log.finest("unhandled type = " + property.Type.getTypeName());
+	  					Object propValue = xPropertySet.getPropertyValue(property.Name);
+						value = "("+property.Type.getTypeName()+")"+printRecursive(c, propValue, step+1);
+					}
+	  				break;
+  				}
+  				
   				log.finest(property.Name+"="+value);
-  			} catch (UnknownPropertyException | IllegalArgumentException e) {
+  			} catch (UnknownPropertyException | IllegalArgumentException | WrappedTargetException e) {
   				e.printStackTrace();
   			}
   		}
