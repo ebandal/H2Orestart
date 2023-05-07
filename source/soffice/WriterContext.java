@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
@@ -284,7 +285,9 @@ public class WriterContext {
         switch(hType) {
         case HWP:
             docInfo = hwp.getDocInfo();
-            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(id);
+            ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
+            String key = keyList.get(id);
+            HwpRecord_BinData binData = (HwpRecord_BinData)docInfo.binDataList.get(key);
             if (binData != null) {
                 if (binData.type==Type.LINK) {
                     File file = new File(binData.aPath);
@@ -323,8 +326,10 @@ public class WriterContext {
             docInfo = hwpx.getDocInfo();
             break;
         }
-	    
-		return ((HwpRecord_BinData)docInfo.binDataList.get(id-1)).format;
+        
+        ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
+        String key = keyList.get(id);
+		return ((HwpRecord_BinData)docInfo.binDataList.get(key)).format;
 	}
 	
 	public static HwpRecord_TabDef getTabDef(short id) {

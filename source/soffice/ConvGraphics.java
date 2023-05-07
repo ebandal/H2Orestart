@@ -24,7 +24,9 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -40,6 +42,9 @@ import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.PropertyVetoException;
 import com.sun.star.beans.UnknownPropertyException;
 import com.sun.star.beans.XPropertySet;
+import com.sun.star.container.XNameContainer;
+import com.sun.star.container.XNameAccess;
+import com.sun.star.drawing.BitmapMode;
 import com.sun.star.drawing.CircleKind;
 import com.sun.star.drawing.FillStyle;
 import com.sun.star.drawing.HomogenMatrix3;
@@ -655,7 +660,7 @@ public class ConvGraphics {
 			
 			// fill color
 			if (shape.fill!=null) {
-			    setFillStyle(frameProps, shape.fill);
+			    setFillStyle(wOuterContext, frameProps, shape.fill);
 			} else {
 			    // Fill 이 없는 경우는  Transparency 100%로 설정한다.
 			    frameProps.setPropertyValue("FillStyle", FillStyle.NONE);
@@ -793,7 +798,7 @@ public class ConvGraphics {
 
             // fill color
             if (shape.fill!=null) {
-                setFillStyle(xPropsSet, shape.fill);
+                setFillStyle(wOuterContext, xPropsSet, shape.fill);
             } else {
                 // Fill 이 없는 경우는  Transparency 100%로 설정한다.
                 xPropsSet.setPropertyValue("FillStyle", FillStyle.NONE);
@@ -1042,7 +1047,9 @@ public class ConvGraphics {
     	    setLineStyle(xPropSet, ell);
     	    
        		xPropSet.setPropertyValue("CircleKind", CircleKind.FULL);
-    		setFillStyle(xPropSet, ell.fill);
+       		if (ell.fill!=null) {
+       			setFillStyle(wContext, xPropSet, ell.fill);
+       		}
     		
 	        if (hasCaption) {
 	        	XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
@@ -1062,6 +1069,7 @@ public class ConvGraphics {
 		        }
                 // workaround-LibreOffice7.2 END
 	        }
+	        
 	        if (ell.nGrp==0) {
 	            ++autoNum;
 	        }
@@ -1147,7 +1155,7 @@ public class ConvGraphics {
    			aCoords.Flags[0] = pPolyFlags;    			
     		xPropSet.setPropertyValue("PolyPolygonBezier", aCoords);
     		
-    		setFillStyle(xPropSet, pol.fill);
+    		setFillStyle(wContext, xPropSet, pol.fill);
     		
 	        if (hasParas || hasCaption) {
 	        	XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
@@ -1324,7 +1332,7 @@ public class ConvGraphics {
    			aCoords.Flags[0] = pPolyFlags;
     		xPropSet.setPropertyValue("PolyPolygonBezier", aCoords);
 
-    		setFillStyle(xPropSet, cur.fill);
+    		setFillStyle(wContext, xPropSet, cur.fill);
             if (cur.nGrp==0) {
                 ++autoNum;
             }
@@ -1445,7 +1453,7 @@ public class ConvGraphics {
     		
     		setWrapStyle(xPropSet, arc);
     		setLineStyle(xPropSet, arc);
-    		setFillStyle(xPropSet, arc.fill);
+    		setFillStyle(wOuterContext, xPropSet, arc.fill);
     		xPropSet.setPropertyValue("CircleStartAngle", angle1*100 );
     		xPropSet.setPropertyValue("CircleEndAngle", angle2*100 );
 
@@ -2305,7 +2313,7 @@ public class ConvGraphics {
 		}
 	}
 	
-    private static void setFillStyle(XPropertySet xPropSet, Fill fill) {
+    private static void setFillStyle(WriterContext wContext, XPropertySet xPropSet, Fill fill) throws Exception {
 		try {
        		if (fill==null) {
        			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
@@ -2401,9 +2409,59 @@ public class ConvGraphics {
 	       			xPropSet.setPropertyValue("FillGradient", gradient);
        			}
        			if (fill.isImageFill()) {
-	       			//xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
-	       			//com.sun.star.awt.XBitmap bitmap = new com.sun.star.awt.XBitmap();
-	       			//xPropSet.setPropertyValue("FillBitmap", bitmap);
+       		        Object graphicProviderObject = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
+       		        XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
+       		        byte[] imageAsByteArray = wContext.getBinBytes((short)(fill.binItem-1));
+       		        if (imageAsByteArray!=null) {
+	       		        PropertyValue[] v = new PropertyValue[2];
+	       		        v[0] = new PropertyValue();
+	       		        v[0].Name = "InputStream";
+	       		        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+	       		        v[1] = new PropertyValue();
+	       		        v[1].Name = "MimeType";
+	       		        String imageFormat = WriterContext.getBinFormat((short)(fill.binItem-1)).toLowerCase();
+	       		        switch(imageFormat) {
+	       		        case "png":	v[1].Value = "image/png";		break;
+	       		        case "bmp": v[1].Value = "image/bmp";		break;
+	       		        case "wmf": v[1].Value = "image/x-wmf";		break;
+	       		        case "jpg": v[1].Value = "image/jpeg";		break;
+	       		        case "gif":	v[1].Value = "image/gif";		break;
+	       		        case "tif": v[1].Value = "image/tiff";		break;
+	       		        case "svg":	v[1].Value = "image/svg+xml";	break;
+	       		        }
+	       		        XGraphic graphic = xGraphicProvider.queryGraphic(v);
+	       				try {
+	       			        Path path = Files.createTempFile("H2Orestart", "_"+String.valueOf(fill.binItem)+"."+imageFormat);
+	       			        URL url = path.toFile().toURI().toURL();
+	       			        String urlString = url.toExternalForm();
+		       		        v[0].Name = "URL";
+		       		        v[0].Value = urlString;
+		       		        xGraphicProvider.storeGraphic(graphic, v);
+		       		        
+		       				Object bt = wContext.mMSF.createInstance("com.sun.star.drawing.BitmapTable");
+		       		        XNameContainer bitmapContainer = UnoRuntime.queryInterface(XNameContainer.class, bt);
+		       		        try {
+		       		        	log.fine("FillBMP"+String.valueOf(fill.binItem) + " saved to " + urlString);
+		       		        	bitmapContainer.insertByName("FillBMP"+String.valueOf(fill.binItem), urlString);
+		       		        } catch (com.sun.star.container.ElementExistException e) {
+		       				}
+	           		        XNameAccess bitmapAccess = (XNameAccess)UnoRuntime.queryInterface(XNameAccess.class, bt);
+	           		        Object ob = null; 
+	    	       			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
+	    	       			/* 여러개 FillBitmap 처리시 같은 이미지만 반복됨. 대신 FillBitmapName을 사용하도록 함
+	           		        try {
+	           		        	ob = bitmapAccess.getByName("FillBMP"+String.valueOf(fill.binItem));
+		           		        XBitmap xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
+		       		        	xPropSet.setPropertyValue("FillBitmap", xBitmap);
+		       		        } catch (com.sun.star.container.NoSuchElementException e) {
+		       		        }
+		       		        */
+	    	       			xPropSet.setPropertyValue("FillBitmapName", "FillBMP"+String.valueOf(fill.binItem));
+	    	       			xPropSet.setPropertyValue("FillBitmapMode", BitmapMode.STRETCH);
+		    	       		Files.delete(path);
+	       				} catch (IOException e) {
+	       				}
+       		        }
        			}
        			
        			if (fill.isColorFill()==false && fill.isImageFill()==false && fill.isGradFill()==false) {
