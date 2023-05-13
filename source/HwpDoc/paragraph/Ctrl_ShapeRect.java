@@ -118,12 +118,6 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
             case "hp:renderingInfo":
                 
                 break;
-            case "hp:lineShape":
-                
-                break;
-            case "hc:fillBrush":
-                
-                break;
             case "hp:shadow":
                 
                 break;

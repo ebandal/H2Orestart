@@ -197,12 +197,6 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 }
                 node.removeChild(child);
                 break;
-            case "hp:lineShape":
-                
-                break;
-            case "hc:fillBrush":
-                
-                break;
             case "hp:shadow":
                 
                 break;

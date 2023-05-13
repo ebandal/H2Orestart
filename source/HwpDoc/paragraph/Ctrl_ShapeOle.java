@@ -90,6 +90,7 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
                     extentY = Integer.parseInt(numStr);
                 }
                 break;
+            /*
             case "hp:lineShape":      // 테두리선 모양
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
@@ -107,6 +108,7 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
                     // childAttrs.getNamedItem("alpha").getNodeValue();                       // 투명도      
                 }
                 break;
+            */
             default:
                 throw new NotImplementedException("ShpaeOLE");
             }
