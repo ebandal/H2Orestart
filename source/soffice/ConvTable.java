@@ -474,10 +474,10 @@ public class ConvTable {
 		// wrapStyle;		// 0:어울림, 1:자리차지, 2:글 뒤로, 3:글 앞으로
 		// wrapText;		// 0:양쪽, 1:왼쪽, 2:오른쪽, 3:큰쪽
 		try {
-			switch(shape.wrapStyle) {
-			case 0x0:			// 어울림
+			switch(shape.textWrap) {
+			case SQUARE:			// 어울림
 				WrapTextMode wrapText = WrapTextMode.NONE;
-				switch(shape.wrapText) {
+				switch(shape.textFlow) {
 				case 0x0:	// 양쪽
 					wrapText = WrapTextMode.PARALLEL;
 					break;
@@ -493,13 +493,13 @@ public class ConvTable {
 				}
 				xPropSet.setPropertyValue("TextWrap", wrapText);
 				break;
-			case 0x1:		// 자리차지
+			case TOP_AND_BOTTOM:	// 자리차지
 				xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
 				break;
-			case 0x2:		// 글 뒤로
+			case BEHIND_TEXT:		// 글 뒤로
 				xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
 				break;
-			case 0x3:		// 글 앞으로
+			case IN_FRONT_OF_TEXT:	// 글 앞으로
 				xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
 				break;
 			}
@@ -761,13 +761,13 @@ public class ConvTable {
 		// wrapStyle;		// 0:어울림, 1:자리차지, 2:글 뒤로, 3:글 앞으로
 		// wrapText;		// 0:양쪽, 1:왼쪽, 2:오른쪽, 3:큰쪽
 		try {
-			switch(shape.wrapStyle) {
-			case 0x0:			// 어울림
+			switch(shape.textWrap) {
+			case SQUARE:			// 어울림
 				xPropSet.setPropertyValue("Opaque", true);
 				xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
 				
 				WrapTextMode wrapText = WrapTextMode.NONE;
-				switch(shape.wrapText) {
+				switch(shape.textFlow) {
 				case 0x0:	// 양쪽
 					wrapText = WrapTextMode.PARALLEL;
 					break;
@@ -786,14 +786,14 @@ public class ConvTable {
 				}
 				xPropSet.setPropertyValue("TextWrap", wrapText);
 				break;
-			case 0x1:		// 자리차지
+			case TOP_AND_BOTTOM:		// 자리차지
 				xPropSet.setPropertyValue("Opaque", true);
 				if (shape.treatAsChar==false) {
 					xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
 				}
 				xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
 				break;
-			case 0x2:		// 글 뒤로
+			case BEHIND_TEXT:		// 글 뒤로
 				xPropSet.setPropertyValue("Opaque", false);
 				if (shape.treatAsChar==false) {
 					xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
@@ -801,7 +801,7 @@ public class ConvTable {
 				}
 				xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
 				break;
-			case 0x3:		// 글 앞으로
+			case IN_FRONT_OF_TEXT:		// 글 앞으로
 				xPropSet.setPropertyValue("Opaque", true);
 				if (shape.treatAsChar==false) {
 					xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.

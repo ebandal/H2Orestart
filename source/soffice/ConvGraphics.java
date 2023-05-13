@@ -603,8 +603,8 @@ public class ConvGraphics {
 			
 			int sizeWidth = 0, sizeHeight = 0;
 			if (shapeWidth<=0 && shapeHeight<=0) {
-    			sizeWidth = shape.curWidth;
-    			sizeHeight = shape.curHeight;
+                sizeWidth = shape.width==0?shape.curWidth:shape.width;
+                sizeHeight = shape.height==0?shape.curHeight:shape.height;
                 if (shape.rotat != 0) {
                     Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                     Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -644,14 +644,8 @@ public class ConvGraphics {
 			frameProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(shape.downSpace)<=100?0:Transform.translateHwp2Office(shape.downSpace)-100);
 			
 			// fill color
-			if (shape.fill!=null) {
-			    setFillStyle(wOuterContext, frameProps, shape.fill);
-			} else {
-			    // Fill 이 없는 경우는  Transparency 100%로 설정한다.
-			    frameProps.setPropertyValue("FillStyle", FillStyle.NONE);
-			    frameProps.setPropertyValue("FillTransparence", 100);
-			}
-
+		    setFillStyle(wOuterContext, frameProps, shape.fill);
+		    
 			// insert text frame into document (order is important here)
 			XText xText = wOuterContext.mTextCursor.getText();
 			xText.insertTextContent(wOuterContext.mTextCursor, xInternalFrame, false);
@@ -728,8 +722,8 @@ public class ConvGraphics {
             if (shape.nGrp==0) {
                 int sizeWidth = 0, sizeHeight = 0;
                 if (shapeWidth<=0 && shapeHeight<=0) {
-                    sizeWidth = shape.curWidth;
-                    sizeHeight = shape.curHeight;
+                    sizeWidth = shape.width==0?shape.curWidth:shape.width;
+                    sizeHeight = shape.height==0?shape.curHeight:shape.height;
                     if (shape.rotat != 0) {
                         Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                         Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -782,13 +776,7 @@ public class ConvGraphics {
             xPropsSet.setPropertyValue("BottomMargin", 0);
 
             // fill color
-            if (shape.fill!=null) {
-                setFillStyle(wOuterContext, xPropsSet, shape.fill);
-            } else {
-                // Fill 이 없는 경우는  Transparency 100%로 설정한다.
-                xPropsSet.setPropertyValue("FillStyle", FillStyle.NONE);
-                xPropsSet.setPropertyValue("FillTransparence", 100);
-            }
+            setFillStyle(wOuterContext, xPropsSet, shape.fill);
             
             if (wOuterContext.version >= 72) {
                 TextContentAnchorType anchorType = (TextContentAnchorType)xPropsSet.getPropertyValue("AnchorType");
@@ -1001,8 +989,8 @@ public class ConvGraphics {
 	        XTextContent xTextContentShape = (XTextContent)UnoRuntime.queryInterface(XTextContent.class, xObj);
 	        XShape xShape = (XShape)UnoRuntime.queryInterface(XShape.class, xObj);
 	        
-	        int sizeWidth = shapeWidth<=0 ? ell.curWidth : shapeWidth;
-	        int sizeHeight = shapeHeight<=0 ? ell.curHeight : shapeHeight;
+	        int sizeWidth = shapeWidth<=0 ? (ell.width==0?ell.curWidth:ell.width):shapeWidth;
+	        int sizeHeight = shapeHeight<=0 ? (ell.height==0?ell.curHeight:ell.height):shapeHeight;
 	        
 	        // 그릴 위치
 	        Point aPos = new Point(0, 0);
@@ -1032,9 +1020,7 @@ public class ConvGraphics {
     	    setLineStyle(xPropSet, ell);
     	    
        		xPropSet.setPropertyValue("CircleKind", CircleKind.FULL);
-       		if (ell.fill!=null) {
-       			setFillStyle(wContext, xPropSet, ell.fill);
-       		}
+       		setFillStyle(wContext, xPropSet, ell.fill);
     		
 	        if (hasCaption) {
 	        	XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
@@ -2019,14 +2005,14 @@ public class ConvGraphics {
                 }
                 xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
 		    } else {
-    			switch(shape.wrapStyle) {
-    			case 0x0:			// 어울림
+    			switch(shape.textWrap) {
+    			case SQUARE:			// 어울림
     				xPropSet.setPropertyValue("Opaque", true);
     				xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
     				
     				WrapTextMode wrapText = WrapTextMode.NONE;
     				boolean isAutomaticContour = false;
-    				switch(shape.wrapText) {
+    				switch(shape.textFlow) {
     				case 0x0:	// 양쪽
     					wrapText = WrapTextMode.PARALLEL;
     					break;
@@ -2060,7 +2046,7 @@ public class ConvGraphics {
     				}
     				xPropSet.setPropertyValue("TextWrap", wrapText);
     				break;
-    			case 0x1:		// 자리차지
+    			case TOP_AND_BOTTOM:		// 자리차지
     				xPropSet.setPropertyValue("Opaque", true);
     				if (shape.treatAsChar==false) {
     					xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
@@ -2082,7 +2068,7 @@ public class ConvGraphics {
     				}
     				xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
     				break;
-    			case 0x2:		// 글 뒤로
+    			case BEHIND_TEXT:		// 글 뒤로
     				xPropSet.setPropertyValue("Opaque", false);
     				if (shape.treatAsChar==false) {
     					xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
@@ -2106,7 +2092,7 @@ public class ConvGraphics {
     				}
     				xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
     				break;
-    			case 0x3:		// 글 앞으로
+    			case IN_FRONT_OF_TEXT:		// 글 앞으로
     				xPropSet.setPropertyValue("Opaque", true);
     				if (shape.treatAsChar==false) {
     					xPropSet.setPropertyValue("AllowOverlap", true);	// THROUGH에서는 효과 없음.
@@ -2302,6 +2288,8 @@ public class ConvGraphics {
 		try {
        		if (fill==null) {
        			xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
+			    // Fill 이 없는 경우는  Transparency 100%로 설정한다.
+       			xPropSet.setPropertyValue("FillTransparence", 100);
        		} else {
        			if (fill.isColorFill()) {
 					xPropSet.setPropertyValue("FillColor", fill.faceColor);
@@ -2451,6 +2439,8 @@ public class ConvGraphics {
        			
        			if (fill.isColorFill()==false && fill.isImageFill()==false && fill.isGradFill()==false) {
        				xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
+    			    // Fill 이 없는 경우는  Transparency 100%로 설정한다.
+           			xPropSet.setPropertyValue("FillTransparence", 100);
        			}
        		}
 		} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {

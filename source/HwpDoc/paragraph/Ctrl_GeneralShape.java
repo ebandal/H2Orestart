@@ -35,6 +35,7 @@ import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
+import HwpDoc.paragraph.Ctrl_Common.VertAlign;
 
 public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 	private static final Logger log = Logger.getLogger(Ctrl_GeneralShape.class.getName());
@@ -243,6 +244,32 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         if (paras==null) {
             paras = new ArrayList<HwpParagraph>();
         }
+        
+        NamedNodeMap attrs = node.getAttributes();
+        if (attrs.getNamedItem("textDirection")!=null) {
+        	switch(attrs.getNamedItem("textDirection").getNodeValue()) {
+        	case "HORIZONTAL":
+        		break;
+            case "VERTICAL":
+                break;
+        	}
+        }
+        if (attrs.getNamedItem("lineWrap")!=null) {
+        	switch(attrs.getNamedItem("lineWrap").getNodeValue()) {
+        	case "BREAK":
+        		break;
+        	}
+        }
+        if (attrs.getNamedItem("vertAlign")!=null) {
+        	textVerAlign = VertAlign.valueOf(attrs.getNamedItem("vertAlign").getNodeValue());
+        }
+        // attrs.getNamedItem("linkListIDRef").getNodeValue()
+        // attrs.getNamedItem("linkListNextIDRef").getNodeValue()
+        // attrs.getNamedItem("textWidth").getNodeValue()
+        // attrs.getNamedItem("textHeight").getNodeValue()
+        // attrs.getNamedItem("hasTextRef").getNodeValue()
+        // attrs.getNamedItem("hasNumRef").getNodeValue()
+        
         NodeList nodeList = node.getChildNodes();
         int nodeLength = nodeList.getLength();
         for (int i=0; i<nodeLength; i++) {

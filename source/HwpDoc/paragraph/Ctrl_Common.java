@@ -48,8 +48,8 @@ public class Ctrl_Common extends Ctrl {
 	public boolean     allowOverlap;	// 다른 오브젝트와 겹치는 것을 허용할지 여부. (TreatAsChar가 false일대만 사용, flowWithText가 true이면 언제나 false로 간주함)
 	public WidthRelTo  widthRelto;		// 오브젝트 폭의 기준
 	public HeightRelTo heightRelto;	// 오브젝트 높이의 기준
-	public byte        wrapStyle;		// 0:Squre, 1:Tight, 2:Through, 3:TopAndBottom, 4:BehindText, 5:InFrontOfText
-	public byte        wrapText;		// 0:양쪽, 1:왼쪽, 2:오른쪽, 3:큰쪽
+	public TextWrap    textWrap;		// 0:어울림(Square), 1:자리차지(TopAndBottom),2:글뒤로(BehindText), 3:글앞으로(InFrontOfText)
+	public byte        textFlow;		// 0:양쪽, 1:왼쪽, 2:오른쪽, 3:큰쪽
 	public byte        numberingType;  // 이 객체가 속하는 번호 범위
 	
 	public int         vertOffset;		// 세로 오프셋 값
@@ -69,7 +69,7 @@ public class Ctrl_Common extends Ctrl {
 	public int         captionMaxW;		// 텍스트의 최대 길이 (=개체의 폭)
 	public List<CapParagraph> caption;	// 캡션이 담길 Paragraph
 	
-	public VertAlign   textVerAlign;	// [20210428] (shape)컨트롤 내  문단의 vertical align
+	public VertAlign   textVerAlign;	// (shape)컨트롤 내  문단의 vertical align
 
 	public Ctrl_Common() {
 		super();
@@ -97,8 +97,8 @@ public class Ctrl_Common extends Ctrl {
 		allowOverlap	= (objAttr&0x4000)==0x4000?true:false;
 		widthRelto		= WidthRelTo.from(objAttr>>15&0x07);
 		heightRelto		= HeightRelTo.from(objAttr>>18&0x03);
-		wrapStyle		= (byte) (objAttr>>21&0x07);
-		wrapText		= (byte) (objAttr>>24&0x03);
+		textWrap		= TextWrap.from(objAttr>>21&0x07);
+		textFlow		= (byte) (objAttr>>24&0x03);
 		numberingType   = (byte) (objAttr>>26&0x07);
 		
 		vertOffset 		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
@@ -147,8 +147,8 @@ public class Ctrl_Common extends Ctrl {
 		this.allowOverlap 	= common.allowOverlap;
 		this.widthRelto 	= common.widthRelto;
 		this.heightRelto 	= common.heightRelto;
-		this.wrapStyle		= common.wrapStyle;
-		this.wrapText		= common.wrapText;
+		this.textWrap		= common.textWrap;
+		this.textFlow		= common.textFlow;
 		this.numberingType  = common.numberingType;
 		this.vertOffset 	= common.vertOffset;
 		this.horzOffset 	= common.horzOffset;
@@ -190,13 +190,13 @@ public class Ctrl_Common extends Ctrl {
         if (attributes.getNamedItem("textFlow")!=null) {
             switch(attributes.getNamedItem("textFlow").getNodeValue()) {
             case "BOTH_SIDES":  // 0:양쪽, 1:왼쪽, 2:오른쪽, 3:큰쪽
-                wrapText = 0;   break; 
+            	textFlow = 0;   break; 
             case "LEFT_ONLY":
-                wrapText = 1;   break; 
+            	textFlow = 1;   break; 
             case "RIGHT_ONLY":
-                wrapText = 2;   break; 
+            	textFlow = 2;   break; 
             case "LARGEST_ONLY":
-                wrapText = 3;   break; 
+            	textFlow = 3;   break; 
             default:
                 throw new NotImplementedException("Ctrl_Common");
             }
@@ -206,17 +206,13 @@ public class Ctrl_Common extends Ctrl {
         if (attributes.getNamedItem("textWrap")!=null) {
             switch(attributes.getNamedItem("textWrap").getNodeValue()) {
             case "SQUARE":              // bound rect를 따라
-                wrapStyle = 0;  break;
-            case "TIGHT":               // 오브젝트의 outline을 따라
-                wrapStyle = 1;  break;
-            case "THROUGH":             // 오브젝트 내부의 빈 공간까지
-                wrapStyle = 2;  break;
+            	textWrap = TextWrap.SQUARE;  			break;
             case "TOP_AND_BOTTOM":      // 좌, 우에는 텍스트를 배치하지 않음.
-                wrapStyle = 3;  break;
+            	textWrap = TextWrap.TOP_AND_BOTTOM; 	break;
             case "BEHIND_TEXT":         // 글과 겹치게 하여 글 뒤로
-                wrapStyle = 4;  break;
+            	textWrap = TextWrap.BEHIND_TEXT; 		break;
             case "IN_FRONT_OF_TEXT":    // 글과 겹치게 하여 글 앞으로
-                wrapStyle = 5;  break;
+            	textWrap = TextWrap.IN_FRONT_OF_TEXT;	break;
             default:
                 throw new NotImplementedException("Ctrl_Common");
             }
@@ -520,8 +516,8 @@ public class Ctrl_Common extends Ctrl {
 			.append(",높이:"+height)
 			.append(",가로기준:"+horzRelTo.toString())
 			.append(",세로기준:"+vertRelTo.toString())
-			.append(",본문배치="+(wrapStyle==0?"어울림":wrapStyle==1?"자리차지":wrapStyle==2?"글뒤로":wrapStyle==3?"글앞으로":""+wrapStyle))
-			.append(wrapStyle!=0?"":wrapText==0?" 양쪽":wrapText==1?" 왼쪽":wrapText==2?" 오른쪽":wrapText==3?" 큰쪽":""+wrapText)
+			.append(",본문배치="+(textWrap.toString()))
+			.append(textWrap!=TextWrap.SQUARE?"":textFlow==0?" 양쪽":textFlow==1?" 왼쪽":textFlow==2?" 오른쪽":textFlow==3?" 큰쪽":""+textFlow)
 			.append(",고유아이디="+objInstanceID)
 			.append(",쪽나눔방지="+blockPageBreak)
 			.append(",개체설명="+objDesc+"}=");
@@ -646,6 +642,25 @@ public class Ctrl_Common extends Ctrl {
             }
             return LEFT;
         }
-    }
+   }
+
+   public static enum TextWrap {
+       SQUARE      		(0x0),
+       TOP_AND_BOTTOM	(0x1),
+       BEHIND_TEXT      (0x2),
+       IN_FRONT_OF_TEXT (0x3);
+       
+       private int num;
+       private TextWrap(int num) { 
+           this.num = num;
+       }
+       public static TextWrap from(int num) {
+           for (TextWrap type: values()) {
+               if (type.num == num)
+                   return type;
+           }
+           return SQUARE;
+       }
+   }
 
 }
