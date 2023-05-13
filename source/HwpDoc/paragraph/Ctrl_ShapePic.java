@@ -20,13 +20,9 @@
  */
 package HwpDoc.paragraph;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -37,10 +33,7 @@ import org.w3c.dom.NodeList;
 import HwpDoc.HwpFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord_BinData;
 import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
-import HwpDoc.HwpElement.HwpRecord_BinData.Type;
-import HwpDoc.paragraph.Ctrl_Table.CellZone;
 
 public class Ctrl_ShapePic extends Ctrl_GeneralShape {
 	private static final Logger log = Logger.getLogger(Ctrl_ShapePic.class.getName());
@@ -61,7 +54,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
 	public String		binDataID;		// BinItem의 아이디 참조값
 	// public ImagePath    imagePath;      // BinItemID값 대신 문자열을 사용하도록 함 (hwpx); Fill에서 Image 사용할 수 있도록 bindDataID 사용        
 	
-	public byte			borderOpaque;	// 테두리 투명도
+	public byte			borderAlpha;	// 테두리 투명도
 	public int			instanceID;		// 문서 내 각 개체에 대한 고유 아이디(instance ID)
 	public int			picEffectInfo;	// 그림효과정보(그림자,네온,부드러운,가장자리,반사)
 	public List<PicEffect>	picEffect;		// 각 효과 정보
@@ -319,7 +312,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         offset += 2;
         
         obj.binDataID = String.valueOf(binItemID-1);
-        obj.borderOpaque    = buf[offset++];
+        obj.borderAlpha	    = buf[offset++];
         
         if (offset-off < size) {
             obj.instanceID      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
