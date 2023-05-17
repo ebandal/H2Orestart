@@ -38,7 +38,7 @@ public class HwpRecord_Numbering extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_Numbering.class.getName());
 	private HwpDocInfo	parent;
 
-	public Numbering[]	numbering = new Numbering[7];		// 문단머리정보+번호형식[1~7]
+	public Numbering[]	numbering = new Numbering[10];		// 문단머리정보+번호형식[1~7]
 	public short		start;								// 시작번호
 	public String[]		extLevelFormat	= new String[3];	// 확장 번호 형식
 	public int[]		extLevelStart 	= new int[3];		// 확장 수준별 시작번호
