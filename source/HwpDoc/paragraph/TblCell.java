@@ -169,7 +169,7 @@ public class TblCell {
                             // HwpRecord.dumpNode(grandChild, 1);
                             CellParagraph cellP = new CellParagraph(grandChild, version);
                             paras.add(cellP);
-                            lastCtrl = (cellP.p==null ? null : cellP.p.getLast());
+                            lastCtrl = (cellP.p==null||cellP.p.size()==0 ? null : cellP.p.getLast());
                             break;
                         default:
                             throw new NotImplementedException("TblCell");

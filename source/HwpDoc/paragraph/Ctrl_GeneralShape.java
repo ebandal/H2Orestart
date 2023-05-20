@@ -44,7 +44,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 
 	// 테두리선 정보
 	public int		lineColor;	// 선색상
-	public short	lineThick;	// 선굵기
+	public int		lineThick;	// 선굵기
 	public int		lineAttr;	// 테두리선 정보 속성
 	public LineType2	lineType;	
 	public byte		outline;	// Outline style
@@ -106,9 +106,11 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");   // 선색상
-                    lineColor = Integer.parseInt(numStr, 16);
+                    if (!numStr.equals("none")) {
+                    	lineColor = Integer.parseInt(numStr, 16);
+                    }
                     numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
-                    lineThick = (short) Integer.parseInt(numStr);
+                    lineThick = Integer.parseUnsignedInt(numStr);
                     lineType = LineType2.valueOf(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
                     /*
                     childAttrs.getNamedItem("endCap").getNodeValue();                      // 선 끝 모양
@@ -256,8 +258,8 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         }
         if (attrs.getNamedItem("lineWrap")!=null) {
         	switch(attrs.getNamedItem("lineWrap").getNodeValue()) {
-        	case "BREAK":
-        		break;
+        	case "BREAK":	break;
+            case "SQUEEZE":	break;
         	}
         }
         if (attrs.getNamedItem("vertAlign")!=null) {
@@ -416,7 +418,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 
         obj.lineColor   = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
         offset += 4;
-        obj.lineThick   = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+        obj.lineThick   = (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
 
         // 문서와 다르게  선 굵기에서 4byte 후에 선 속성이 온다.

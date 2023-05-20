@@ -253,7 +253,6 @@ public class HwpRecord_ParaShape extends HwpRecord {
             break;
         case "hh:breakSetting":
             {
-                // keepLines=0,lineWrap=BREAK,pageBreakBefore=0]
                 NamedNodeMap childAttrs = child.getAttributes();
                 switch(childAttrs.getNamedItem("breakLatinWord").getNodeValue()) {
                 case "KEEP_WORD":
@@ -287,7 +286,6 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "1":
                     keepWithNext = true;    break;
                 }
-    
                 /*
                 switch(childAttrs.getNamedItem("keepLines").getNodeValue()) {
                 case "0":
@@ -295,7 +293,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "1":
                     keepLines = true;    break;
                 }
-                */
+				*/
                 switch(childAttrs.getNamedItem("pageBreakBefore").getNodeValue()) {
                 case "0":
                     pageBreakBefore = false;    break;
@@ -306,6 +304,8 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 switch(childAttrs.getNamedItem("lineWrap").getNodeValue()) {
                 case "BREAK":
                     lineWrap = 0;    break;
+                case "SQUEEZE":
+                	lineWrap = 1;	break;
                 default:
                     throw new NotImplementedException("HwpRecord_ParaShape");
                 }

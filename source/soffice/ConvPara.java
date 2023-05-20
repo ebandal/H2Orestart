@@ -441,45 +441,47 @@ public class ConvPara {
 			
 			// charShape.underline;							// 밑줄 종류					// ut
 			// charShape.underlineShape;						// 밑줄 모양					// us
-			switch(charShape.underline) {
-			case NONE:
-				xStyleProps.setPropertyValue("CharUnderline", FontUnderline.NONE);
-				break;
-			case BOTTOM:
-			case CENTER:
-			case TOP:
-				switch (charShape.underlineShape) {
-				case SOLID:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
+			if (charShape.underline!=null) {
+				switch(charShape.underline) {
+				case NONE:
+					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.NONE);
 					break;
-				case DASH:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASH);
-					break;
-				case DOT:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DOTTED);
-					break;
-				case DASH_DOT:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASHDOT);
-					break;
-				case DASH_DOT_DOT:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASHDOTDOT);
-					break;
-				case LONG_DASH:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.LONGDASH);
-					break;
-				case DOUBLE_SLIM:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DOUBLE);
-					break;
-				case CIRCLE:
-				case SLIM_THICK:
-				case THICK_SLIM:
-				case SLIM_THICK_SLIM:
-					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
-					break;
-				default:
+				case BOTTOM:
+				case CENTER:
+				case TOP:
+					switch (charShape.underlineShape) {
+					case SOLID:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
+						break;
+					case DASH:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASH);
+						break;
+					case DOT:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DOTTED);
+						break;
+					case DASH_DOT:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASHDOT);
+						break;
+					case DASH_DOT_DOT:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASHDOTDOT);
+						break;
+					case LONG_DASH:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.LONGDASH);
+						break;
+					case DOUBLE_SLIM:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DOUBLE);
+						break;
+					case CIRCLE:
+					case SLIM_THICK:
+					case THICK_SLIM:
+					case SLIM_THICK_SLIM:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
+						break;
+					default:
+						break;
+					}
 					break;
 				}
-				break;
 			}
 			// charShape.underlineColor;						// 밑줄 색
 			xStyleProps.setPropertyValue("CharUnderlineColor", charShape.underlineColor);

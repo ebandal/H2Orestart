@@ -96,7 +96,7 @@ public class Ctrl_PageNumPos extends Ctrl {
 		CENTER_TOP		(0x2),	// 가운데 위
 		RIGHT_TOP		(0x3),	// 오른쪽 위
 		LEFT_BOTTOM		(0x4),	// 왼쪽 아래
-		CENTER_BOTTOM	(0x5),	// 가운데 아래
+		BOTTOM_CENTER	(0x5),	// 가운데 아래  [20230518]
 		RIGHT_BOTTOM	(0x6),	// 오른쪽 아래
 		OUTER_TOP		(0x7),	// 바깥쪽 위
 		OUTER_BOTTOM	(0x8),	// 바깥쪽 아래

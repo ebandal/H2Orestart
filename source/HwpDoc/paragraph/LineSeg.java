@@ -22,6 +22,10 @@ package HwpDoc.paragraph;
 
 import java.util.logging.Logger;
 
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import HwpDoc.Exception.HwpParseException;
 
 public class LineSeg {
@@ -38,35 +42,46 @@ public class LineSeg {
     public int lineTag;
     public boolean isHeadingApplied;
     
-    public static LineSeg parse(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
+    public LineSeg (int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
-        LineSeg lineSeg = new LineSeg();
-        
-        lineSeg.startPos        = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.startPos        = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.lineVerticalPos = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.lineVerticalPos = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.lineHeight      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.lineHeight      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.textHeight      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.textHeight      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.lineDistanceToBase  = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.lineDistanceToBase  = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.lineSpacing     = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.lineSpacing     = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.columnStartPos  = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.columnStartPos  = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.segmentWidth    = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.segmentWidth    = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.lineTag         = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        this.lineTag         = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        lineSeg.isHeadingApplied= (lineSeg.lineTag>>21&0x01)==0x01?true:false;
+        this.isHeadingApplied= (this.lineTag>>21&0x01)==0x01?true:false;
         
         if (offset-off-size != 0 && offset-off!=36) {
             log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
             throw new HwpParseException();
         }
-        return lineSeg;
+    }
+    
+    public LineSeg (Node node, int version) {
+        NamedNodeMap attrs = node.getAttributes();
+        
+        String numStr = attrs.getNamedItem("baseline").getNodeValue();
+        numStr = attrs.getNamedItem("flags").getNodeValue();
+        numStr = attrs.getNamedItem("horzpos").getNodeValue();
+        numStr = attrs.getNamedItem("horzsize").getNodeValue();
+        numStr = attrs.getNamedItem("spacing").getNodeValue();
+        numStr = attrs.getNamedItem("textheight").getNodeValue();
+        numStr = attrs.getNamedItem("textpos").getNodeValue();
+        numStr = attrs.getNamedItem("vertpos").getNodeValue();
+        numStr = attrs.getNamedItem("vertsize").getNodeValue();
     }
 }

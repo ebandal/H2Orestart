@@ -363,13 +363,21 @@ public class HwpRecord_CharShape extends HwpRecord {
                     underlineShape = LineType2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
                     
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
-                    underlineColor = (short)Integer.parseInt(numStr, 16);
+                    if (!numStr.equals("none")) {
+                    	underlineColor = (short)Integer.parseInt(numStr, 16);
+                    }
                 }
                 break;
             case "hh:strikeout":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    strikeOutShape = LineType2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
+                    // strikeOutShape = LineType2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
+                    switch(childAttrs.getNamedItem("shape").getNodeValue()) {
+                   	case "3D":
+                   		strikeOutShape = LineType2.NONE; 	break;
+                   	default:
+                   		log.warning("Not Implemented:" + childAttrs.getNamedItem("shape").getNodeValue());
+                    }
                     
                     // numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
                     // strikeoutColor = (short)Integer.parseInt(numStr, 16);
@@ -393,8 +401,9 @@ public class HwpRecord_CharShape extends HwpRecord {
                         shadow = Shadow.CONTINUOUS; break;
                     }
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
-                    shadowColor = (int)Integer.parseInt(numStr, 16);
-                    
+                    if (!numStr.equals("none")) {
+                    	shadowColor = (int)Integer.parseInt(numStr, 16);
+                    }
                     numStr = childAttrs.getNamedItem("offsetX").getNodeValue();
                     shadowOffsetX = (byte)Integer.parseInt(numStr);
 

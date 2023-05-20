@@ -267,6 +267,22 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             case "hp:shapeComment":
                 
                 break;
+            case "hp:parameterset":
+	            {
+                    NamedNodeMap childAttrs = child.getAttributes();
+                    numStr = childAttrs.getNamedItem("cnt").getNodeValue();
+                    numStr = childAttrs.getNamedItem("name").getNodeValue();
+                    NodeList childNodeList = child.getChildNodes();
+                    for (int j=0; j<childNodeList.getLength(); j++) {
+                        Node grandChild = childNodeList.item(j);
+                        switch(grandChild.getNodeName()) {
+                        case "hp:listParam":	break;
+                        default:
+                            throw new NotImplementedException("Ctrl_ShapePic");
+                        }
+                    }
+	            }
+            	break;
             default:
                 throw new NotImplementedException("Ctrl_ShapePic");
             }

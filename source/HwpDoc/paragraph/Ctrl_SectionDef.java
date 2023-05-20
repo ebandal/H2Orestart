@@ -311,7 +311,7 @@ public class Ctrl_SectionDef extends Ctrl {
                     borderFills.add(borderFill);
                 }
                 break;
-            case "masterPage":
+            case "hp:masterPage":
                 {
                     // childAttrs.getNamedItem("idRef").getNodeValue()
                 }
@@ -321,6 +321,7 @@ public class Ctrl_SectionDef extends Ctrl {
             case "hp:lineNumberShape":
                 break;
             default:
+            	log.warning("Not implmented:" + child.getNodeName());
                 throw new NotImplementedException("Ctrl_SectionDef");
             }
         }

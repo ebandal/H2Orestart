@@ -86,7 +86,6 @@ public class HwpParagraph {
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
-            
             switch(child.getNodeName()) {
             case "hp:run":
                 {
@@ -108,6 +107,17 @@ public class HwpParagraph {
                 }
                 break;
             case "hp:linesegarray":
+	            {
+                    NodeList childNodeList = child.getChildNodes();
+                    for (int j=0; j<childNodeList.getLength(); j++) {
+                        Node grandChild = childNodeList.item(j);
+                        switch(grandChild.getNodeName()) {
+                        case "hp:lineseg":	
+                            lineSegs = new LineSeg(grandChild, version);
+                        	break;
+                        }
+                    }
+	            }
                 break;
             default:
                 throw new NotImplementedException("HwpParagraph");
@@ -115,7 +125,7 @@ public class HwpParagraph {
         }
         
         // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
-        if (p!=null && !(p.getLast() instanceof Ctrl_Character)) {
+        if (p!=null && p.size()>0 && !(p.getLast() instanceof Ctrl_Character)) {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
         }
 	}

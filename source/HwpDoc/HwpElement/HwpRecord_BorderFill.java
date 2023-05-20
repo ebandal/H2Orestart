@@ -279,7 +279,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
         border.type = LineType2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
         String colorStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("^#([0-9A-F]+)$", "$1");
         if (!colorStr.equals("none")) {
-        	border.color = Integer.parseInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
+        	border.color = Integer.parseUnsignedInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
         }
         switch(childAttrs.getNamedItem("width").getNodeValue()) {
         case "0.1":

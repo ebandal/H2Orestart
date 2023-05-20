@@ -140,14 +140,15 @@ public class Ctrl_Table extends Ctrl_Common {
                     inDSpace = (short) Integer.parseInt(numStr);
                 }
                 break;
-            case "hp:cellzonList":
+            case "hp:cellzoneList":
                 {
+                	if (cellzoneList==null) cellzoneList = new ArrayList<>();
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
                         
                         switch(grandChild.getNodeName()) {
-                        case "cellzone":
+                        case "hp:cellzone":
                             CellZone cellzone = new CellZone();
                             NamedNodeMap childAttrs = grandChild.getAttributes();
                             numStr = childAttrs.getNamedItem("startRowAddr").getNodeValue();

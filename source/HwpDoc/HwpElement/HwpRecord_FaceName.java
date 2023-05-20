@@ -45,14 +45,14 @@ public class HwpRecord_FaceName extends HwpRecord {
 	
 	public byte			familyType;			// 글꼴 유형정보 - 글꼴 계열
 	public byte			serifStyle;			// 글꼴 유형정보 - 세리프 유형
-	public byte			weight;				// 글꼴 유형정보 - 굵기
-	public byte			propotion;			// 글꼴 유형정보 - 비례
-	public byte			contrast;			// 글꼴 유형정보 - 대조
-	public byte 		strokeVariation;	// 글꼴 유형정보 - 스트로크 편차
-	public byte			armStyle;			// 글꼴 유형정보 - 자획유형
-	public byte			letterform;			// 글꼴 유형정보 - 글자형
-	public byte			midLine;			// 글꼴 유형정보 - 중간선
-	public byte 		xHeight;			// 글꼴 유형정보 - X-높이
+	public short		weight;				// 글꼴 유형정보 - 굵기
+	public short		propotion;			// 글꼴 유형정보 - 비례
+	public short		contrast;			// 글꼴 유형정보 - 대조
+	public short		strokeVariation;	// 글꼴 유형정보 - 스트로크 편차
+	public short		armStyle;			// 글꼴 유형정보 - 자획유형
+	public short		letterform;			// 글꼴 유형정보 - 글자형
+	public short		midLine;			// 글꼴 유형정보 - 중간선
+	public short 		xHeight;			// 글꼴 유형정보 - X-높이
 	
 	HwpRecord_FaceName(int tagNum, int level, int size) {
 		super(tagNum, level, size);
@@ -201,28 +201,28 @@ public class HwpRecord_FaceName extends HwpRecord {
                         serifStyle = Byte.parseByte(substAttr.getNodeValue());
                         break;
                     case "weight":
-                        weight = Byte.parseByte(substAttr.getNodeValue());
+                        weight = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "proportion":
-                        propotion = Byte.parseByte(substAttr.getNodeValue());
+                        propotion = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "contrast":
-                        contrast = Byte.parseByte(substAttr.getNodeValue());
+                        contrast = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "strokeVariation":
-                        strokeVariation = Byte.parseByte(substAttr.getNodeValue());
+                        strokeVariation = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "armStyle":
-                        armStyle = Byte.parseByte(substAttr.getNodeValue());
+                        armStyle = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "letterform":
-                        letterform = Byte.parseByte(substAttr.getNodeValue());
+                        letterform = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "midline":
-                        midLine = Byte.parseByte(substAttr.getNodeValue());
+                        midLine = Short.parseShort(substAttr.getNodeValue());
                         break;
                     case "xHeight":
-                        xHeight = Byte.parseByte(substAttr.getNodeValue());
+                        xHeight = Short.parseShort(substAttr.getNodeValue());
                         break;
                     default:
                         log.severe("unhandled attribute name=" + substAttr.getNodeName());

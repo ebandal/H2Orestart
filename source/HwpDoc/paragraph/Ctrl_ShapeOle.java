@@ -36,7 +36,7 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
 	public int			attr;			// 속성
 	public int			extentX;		// 오브젝트 자체의 extent x크기
 	public int			extentY;		// 오브젝트 자체의 extent y크기
-	public short		binDataID;		// 오브젝트가 사용하는 스토리지의 BinData ID
+	public String		binDataID;		// 오브젝트가 사용하는 스토리지의 BinData ID
 	public int			borderColor;	// 테두리 색
 	public int			borderThick;	// 테두리 두께
 	public int			borderAttr;		// 테두리 속성 (표 87참조)
@@ -59,29 +59,29 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
         
         NamedNodeMap attributes = node.getAttributes();
         switch(attributes.getNamedItem("objectType").getNodeValue()) {  // OLE 객체 종류
-        case "0":
-            break;
+        case "STATIC":
+        	break;
         default:
             throw new NotImplementedException("ShpaeOLE");
         }
 
         String numStr = attributes.getNamedItem("binaryItemIDRef").getNodeValue();   // OLE 객체 바이너리 데이터에 대한 아이디 참조값
-        binDataID = (short) Integer.parseInt(numStr);
-
+        binDataID = numStr;
         /*
         switch(attributes.getNamedItem("hasMoniker").getNodeValue()) {   // moniker가 설정되어 있는지 여부
         case "0":
         case "1":
         }
-        attributes.getNamedItem("drawAspect").getNodeValue();   // 화면에 어떤 형태로 표시될지에 대한 설정
-        attributes.getNamedItem("eqBaseLine").getNodeValue();   // 베이스라인
+        attributes.getNamedItem("drawAspect").getNodeValue();   // 화면에 어떤 형태로 표시될지에 대한 설정; "CONTENT"
+        attributes.getNamedItem("dropcapstyle").getNodeValue();   //  "None"
+        attributes.getNamedItem("eqBaseLine").getNodeValue();   // 베이스라인; "0"
         */
         
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
-            case "hp:extent":    // 오브젝트 자체의 extent 크기
+            case "hc:extent":    // 오브젝트 자체의 extent 크기
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("x").getNodeValue();
@@ -124,7 +124,7 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
         offset += 4;
         obj.extentY     = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        obj.binDataID   = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+        obj.binDataID	= String.valueOf((short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF));   
         offset += 2;
         obj.borderColor = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
         offset += 4;

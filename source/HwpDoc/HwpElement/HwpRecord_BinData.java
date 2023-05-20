@@ -120,7 +120,12 @@ public class HwpRecord_BinData extends HwpRecord {
             switch(tempNode.getNodeValue()) {
             case "0":
                 type = type.LINK;
-                aPath = attributes.getNamedItem("sub-path").getNodeValue();
+                if (attributes.getNamedItem("sub-path")!=null) {
+                	aPath = attributes.getNamedItem("sub-path").getNodeValue();
+                }
+                if (aPath==null) {
+                    aPath = attributes.getNamedItem("href").getNodeValue();
+                }
                 break;
             case "1":
                 type = Type.EMBEDDING;

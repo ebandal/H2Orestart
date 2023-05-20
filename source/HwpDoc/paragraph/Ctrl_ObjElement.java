@@ -160,14 +160,18 @@ public class Ctrl_ObjElement extends Ctrl_Common {
             case "hp:rotationInfo":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    numStr = childAttrs.getNamedItem("angle").getNodeValue();
-                    rotat = (short) Integer.parseInt(numStr);
-
-                    numStr = childAttrs.getNamedItem("centerX").getNodeValue();
-                    xCenter = Integer.parseInt(numStr);
-
-                    numStr = childAttrs.getNamedItem("centerY").getNodeValue();
-                    yCenter = Integer.parseInt(numStr);
+                    if (childAttrs.getNamedItem("angle")!=null) {
+	                    numStr = childAttrs.getNamedItem("angle").getNodeValue();
+	                    rotat = (short) Integer.parseInt(numStr);
+                    }
+                    if (childAttrs.getNamedItem("centerX")!=null) {
+	                    numStr = childAttrs.getNamedItem("centerX").getNodeValue();
+	                    xCenter = Integer.parseInt(numStr);
+                    }
+                    if (childAttrs.getNamedItem("centerY")!=null) {
+	                    numStr = childAttrs.getNamedItem("centerY").getNodeValue();
+	                    yCenter = Integer.parseInt(numStr);
+                    }
                     // childAttrs.getNamedItem("rotateimage").getNodeValue()) {
                 }
                 node.removeChild(child);

@@ -162,7 +162,7 @@ public class Transform {
 				line.Color= shape.lineColor;
 				line.LineStyle= Transform.toBorderLineStyle(shape.lineType);
 				line.InnerLineWidth = 0;
-				line.OuterLineWidth = shape.lineType==LineType2.NONE?0:Transform.toLineWidth((byte)shape.lineThick);
+				line.OuterLineWidth = shape.lineType==LineType2.NONE?0:Transform.toLineWidth((short)shape.lineThick);
 				line.LineDistance = (short)(shape.lineType==LineType2.NONE?0:100);
 				line.LineWidth = shape.lineType==LineType2.NONE?0:Transform.translateHwp2Office(shape.lineThick);
 				if (line.LineStyle!=BorderLineStyle.NONE && line.LineWidth==0) {
