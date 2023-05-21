@@ -78,6 +78,8 @@ import com.sun.star.text.XTextFrame;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
+import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
 import HwpDoc.HwpElement.HwpRecord_BinData;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
@@ -725,7 +727,7 @@ public class ConvGraphics {
                     sizeWidth = shape.width==0?shape.curWidth:shape.width;
                     sizeHeight = shape.height==0?shape.curHeight:shape.height;
                     if (shape.rotat != 0) {
-                        Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
+                        Point2D ptSrc = new Point2D.Double(shape.curWidth, shape.curHeight);
                         Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
                         sizeWidth = (int)ptDst.getX(); sizeHeight = (int)ptDst.getY();
                     }
@@ -953,8 +955,8 @@ public class ConvGraphics {
 	            }
 	        }
 
-    		setArrowStyle(xPropsSet, (shape.lineAttr>>10)&0x3F, (shape.lineAttr>>22)&0x0F, ((shape.lineAttr>>30)&0x1)==1?true:false, true);
-    		setArrowStyle(xPropsSet, (shape.lineAttr>>16)&0x3F, (shape.lineAttr>>26)&0x0F, ((shape.lineAttr>>31)&0x1)==1?true:false, false);
+    		setArrowStyle(xPropsSet, shape.lineHead, shape.lineHeadSz, true);
+    		setArrowStyle(xPropsSet, shape.lineTail, shape.lineTailSz, false);
              if (shape.nGrp==0) {
                 ++autoNum;
             }
@@ -1513,7 +1515,7 @@ public class ConvGraphics {
 
 		XText xText = wContext.mTextCursor.getText();
 		xText.insertTextContent(wContext.mTextCursor, xFrame, false);
-        if (step==2 && wContext.version >= 72) {
+        if (wContext.version >= 72) {
             TextContentAnchorType anchorType = (TextContentAnchorType)frameProps.getPropertyValue("AnchorType");
             if (anchorType == TextContentAnchorType.AT_PARAGRAPH) {
                 xText.insertString(wContext.mTextCursor, " ", false);
@@ -2128,10 +2130,10 @@ public class ConvGraphics {
     }
     
     private static void setLineStyle(XPropertySet xPropSet, Ctrl_GeneralShape shape) {
-    	if (shape.lineType==null) return;
+    	if (shape.lineStyle==null) return;
     	
         try {
-			switch(shape.lineType) {
+			switch(shape.lineStyle) {
 			case NONE:
 				xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.NONE);
 	    		break;
@@ -2199,71 +2201,71 @@ public class ConvGraphics {
 			e.printStackTrace();
 		}
     }
-    
-	private static void setArrowStyle(XPropertySet xPropSet, int arrowStyle, int arrowWidth, boolean fill, boolean start) {
+
+	private static void setArrowStyle(XPropertySet xPropSet, LineArrowStyle arrowStyle, LineArrowSize arrowWidth, boolean head) {
 		
 		String arrowStyleName = null;
 		// UI에서 보이는 StyleName을 그대로 쓰면 안된다. IllegalArgumentException 발생. 검증된 영문기준 ArrowStyleName만 쓰도록 한다.
 		switch(arrowStyle) {
-		case 0:		// 모양없음
+		case NORMAL:		// 모양없음
 			arrowStyleName = null;
 			break;
-		case 1:		// 화살모양
+		case ARROW:		// 화살모양
 			if (WriterContext.version>=70) {
-				arrowStyleName = arrowWidth<3?"Arrow short":arrowWidth<6?"Arrow":"Arrow large";
+				arrowStyleName = arrowWidth.ordinal()<3?"Arrow short":arrowWidth.ordinal()<6?"Arrow":"Arrow large";
 			} else {
 				arrowStyleName = "Arrow";
 			}
 			break;
-		case 2:		// 라인모양
+		case SPEAR:		// 라인모양
 			if (WriterContext.version>=70) {
-				arrowStyleName = arrowWidth<3?"Line short":"Line";
+				arrowStyleName = arrowWidth.ordinal()<3?"Line short":"Line";
 			} else {
 				arrowStyleName = "Arrow";
 			}
 			break;
-		case 3: 	// 오목한 화살모양
+		case CONCAVE_ARROW: 	// 오목한 화살모양
 			if (WriterContext.version>=70) {
-				arrowStyleName = arrowWidth<3?"Concave short":"Concave";
+				arrowStyleName = arrowWidth.ordinal()<3?"Concave short":"Concave";
 			} else {
 				arrowStyleName = "Arrow concave";
 			}
 			break;
-		case 4:		// 속이 찬 다이아몬드 모양
-			arrowStyleName = fill?"Diamond":"Diamond unfilled";
+		case DIAMOND:		// 속이 찬 다이아몬드 모양
+			arrowStyleName = "Diamond";
 			break;
-		case 5:		// 속이 찬 원 모양
-			arrowStyleName = fill?"Circle":"Circle unfilled";
+		case CIRCLE:		// 속이 찬 원 모양
+			arrowStyleName = "Circle";
 			break;
-		case 6:		// 속이 찬 사각모양
-			arrowStyleName = fill?"Square":"Square unfilled";
+		case BOX:		// 속이 찬 사각모양
+			arrowStyleName = "Square";
 			break;
-		case 7:		// 속이 빈 다이아몬드 모양
-			arrowStyleName = fill?"Diamond":"Diamond unfilled";
+		case EMPTY_DIAMOND:		// 속이 빈 다이아몬드 모양
+			arrowStyleName = "Diamond unfilled";
 			break;
-		case 8:		// 속이 빈 원 모양
-			arrowStyleName = fill?"Circle":"Circle unfilled";
+		case EMPTY_CIRCLE:		// 속이 빈 원 모양
+			arrowStyleName = "Circle unfilled";
 			break;
-		case 9:		// 속이 빈 사각모양
-			arrowStyleName = fill?"Square":"Square unfilled";
+		case EMPTY_BOX:		// 속이 빈 사각모양
+			arrowStyleName = "Square unfilled";
 			break;
 		}
 		
 		long arrowWidthNum = 0;
 		switch(arrowWidth) {
-		case 0:		// 작은-작은
-		case 3:		// 중간-작은
-		case 6:		// 큰-작은
+		case SMALL_SMALL:		// 작은-작은
+		case MEDIUM_SMALL:		// 중간-작은
+		case LARGE_SMALL:		// 큰-작은
 			arrowWidthNum = 203;
 			break;
-		case 1:		// 작은-중간
-		case 4:		// 중간-중간
-		case 7:		// 큰-중간
+		case SMALL_MEDIUM:		// 작은-중간
+		case MEDIUM_MEDIUM:		// 중간-중간
+		case LARGE_MEDIUM:		// 큰-중간
 			arrowWidthNum = 353;
 			break;
-		case 2:		// 작은-큰
-		case 5:		// 중간-큰
-		case 8:		// 큰-큰
+		case SMALL_LARGE:		// 작은-큰
+		case MEDIUM_LARGE:		// 중간-큰
+		case LARGE_LARGE:		// 큰-큰
 			arrowWidthNum = 499;
 		}
 		
@@ -2275,15 +2277,15 @@ public class ConvGraphics {
 			}
 			*/
 			if (arrowStyleName!=null && !arrowStyleName.isEmpty()) {
-				xPropSet.setPropertyValue(start?"LineStartName":"LineEndName", arrowStyleName);
+				xPropSet.setPropertyValue(head?"LineStartName":"LineEndName", arrowStyleName);
 			}
-			xPropSet.setPropertyValue(start?"LineStartCenter":"LineEndCenter", false);
+			xPropSet.setPropertyValue(head?"LineStartCenter":"LineEndCenter", false);
 		} catch (Exception e) {
 			log.severe(e.getMessage());
 			e.printStackTrace();
 		}
 	}
-	
+
     private static void setFillStyle(WriterContext wContext, XPropertySet xPropSet, Fill fill) throws Exception {
 		try {
        		if (fill==null) {

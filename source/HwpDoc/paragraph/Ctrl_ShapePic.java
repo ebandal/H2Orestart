@@ -87,25 +87,6 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
-            /*
-            case "hp:lineShape":    // 테두리선 모양
-                {
-                    NamedNodeMap childAttrs = child.getAttributes();
-                    numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");   // 선색상
-                    borderColor = Integer.parseInt(numStr, 16);
-                    numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
-                    borderThick = Integer.parseInt(numStr);
-                    // childAttrs.getNamedItem("style").getNodeValue();                       // 선 종류
-                    // childAttrs.getNamedItem("endCap").getNodeValue();                      // 선 끝 모양
-                    // childAttrs.getNamedItem("headStyle").getNodeValue();                   // 화살표 시작 모양
-                    // childAttrs.getNamedItem("tailStyle").getNodeValue();                   // 화살표 끝 모양
-                    // childAttrs.getNamedItem("headSz").getNodeValue();                      // 화살표 시작 크기
-                    // childAttrs.getNamedItem("tailSz").getNodeValue();                      // 화살표 끝 크기
-                    // childAttrs.getNamedItem("outlineStyle").getNodeValue();                // 테두리선의 형태
-                    // childAttrs.getNamedItem("alpha").getNodeValue();                       // 투명도       
-                }
-                break;
-            */
             case "hp:imgRect":      // 이미지 좌표 정보
                 {
                     NodeList childNodeList = child.getChildNodes();
