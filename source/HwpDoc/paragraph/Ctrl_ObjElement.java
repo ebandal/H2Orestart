@@ -102,7 +102,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
         matrix = new double[(nGrp+1)*6];
         matrixSeq = new double[(nGrp+1)*6*2];
 
-        int matrixIdx = 0;
+        short scaMatCnt=0, rotMatCnt=0;	// scaMatrix 갯수 카운트, rotMatrix 갯수 카운트
         NodeList nodeList = node.getChildNodes();
         for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
@@ -184,20 +184,21 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                         
                         switch(grandChild.getNodeName()) {
                         case "hc:transMatrix":
-                            setMatrix(grandChild, matrix, matrixIdx*6);
+                            setMatrix(grandChild, matrix, 0);
                             break;
                         case "hc:scaMatrix":
-                            setMatrix(grandChild, matrixSeq, matrixIdx*6*2);
+                            setMatrix(grandChild, matrixSeq, scaMatCnt*12+0);
+                            scaMatCnt++;
                             break;
                         case "hc:rotMatrix":
-                            setMatrix(grandChild, matrixSeq, matrixIdx*6*2+6);
+                            setMatrix(grandChild, matrixSeq, rotMatCnt*12+6);
+                            rotMatCnt++;
                             break;
                         default:
                             throw new NotImplementedException("Ctrl_ObjElement");
                         }
                     }
-                    matrixIdx++;
-                    matCnt++;
+                    matCnt = scaMatCnt;
                 }
                 node.removeChild(child);
                 break;
