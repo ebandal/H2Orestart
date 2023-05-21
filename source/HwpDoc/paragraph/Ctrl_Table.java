@@ -32,8 +32,6 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
 
 public class Ctrl_Table extends Ctrl_Common {
 	private static final Logger log = Logger.getLogger(Ctrl_Table.class.getName());

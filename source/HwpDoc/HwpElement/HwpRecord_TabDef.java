@@ -30,7 +30,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 
 public class HwpRecord_TabDef extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_TabDef.class.getName());
@@ -73,7 +73,7 @@ public class HwpRecord_TabDef extends HwpRecord {
 			tab.pos		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 			offset += 4;
 			tab.type 	= Tab.Type.from(buf[offset++]);
-			tab.leader	= LineType2.from(buf[offset++]);
+			tab.leader	= LineStyle2.from(buf[offset++]);
 			// reserved 2 bytes for align
 			offset += 2;
 			tabs.add(tab);
@@ -139,7 +139,7 @@ public class HwpRecord_TabDef extends HwpRecord {
                     numStr = childAttrs.getNamedItem("pos").getNodeValue();
                     tabItem.pos = Integer.parseInt(numStr);
                     tabItem.type = Tab.Type.valueOf(childAttrs.getNamedItem("type").getNodeValue());
-                    tabItem.leader = LineType2.valueOf(childAttrs.getNamedItem("leader").getNodeValue());
+                    tabItem.leader = LineStyle2.valueOf(childAttrs.getNamedItem("leader").getNodeValue());
 
                     tabs.add(tabItem);
                 }
@@ -150,7 +150,7 @@ public class HwpRecord_TabDef extends HwpRecord {
     public static class Tab {
 		public int 			pos;
 		public Type			type;
-		public LineType2	leader;
+		public LineStyle2	leader;
 		
 		public static enum Type {
 			LEFT		(0),

@@ -21,7 +21,6 @@
 package HwpDoc.HwpElement;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -31,8 +30,6 @@ import org.w3c.dom.NodeList;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
-import HwpDoc.HwpElement.HwpRecord_TabDef.Tab;
 
 public class HwpRecord_Numbering extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_Numbering.class.getName());
@@ -224,6 +221,7 @@ public class HwpRecord_Numbering extends HwpRecord {
 	                    }
 	                    break;
                     case "HANGUL_SYLLABLE":
+                    case "HANGUL_JAMO":
                     	switch(level) {
                     	case 1:
 	                        numbering[i].numFormat = "^가.";		break;
@@ -259,6 +257,25 @@ public class HwpRecord_Numbering extends HwpRecord {
 	                        numbering[i].numFormat = "^\u2466.";		break;
                     	}
                     	break;
+                    case "LATIN_SMALL":
+                    	switch(level) {
+                    	case 1:
+	                        numbering[i].numFormat = "^a.";		break;
+                    	case 2:
+	                        numbering[i].numFormat = "^b.";		break;
+                    	case 3:
+	                        numbering[i].numFormat = "^c.";		break;
+                    	case 4:
+	                        numbering[i].numFormat = "^d.";		break;
+                    	case 5:
+	                        numbering[i].numFormat = "^e.";		break;
+                    	case 6:
+	                        numbering[i].numFormat = "^f.";		break;
+                    	case 7:
+	                        numbering[i].numFormat = "^g.";		break;
+                    	}
+                    	break;
+                    	
                     default:
                     	throw new NotImplementedException("HwpRecord_Numbering");
                     }

@@ -27,22 +27,22 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 
 public class Ctrl_ColumnDef extends Ctrl {
 	private static final Logger log = Logger.getLogger(Ctrl_ColumnDef.class.getName());
 
 	private int size;
 	
-	public int         attr;
-	public short       colCount;
-	public boolean     sameSz;
-	public short       sameGap;
-	public short[]     colSzWidths;
-	public short[]     colSzGaps;
-	public LineType2   colLineType;
-	public byte        colLineWidth;
-	public int         colLineColor;
+	public int    	    attr;
+	public short        colCount;
+	public boolean      sameSz;
+	public short        sameGap;
+	public short[]      colSzWidths;
+	public short[]      colSzGaps;
+	public LineStyle2   colLineStyle;
+	public byte         colLineWidth;
+	public int          colLineColor;
 
 	public Ctrl_ColumnDef(String ctrlId) {
 	    super(ctrlId);
@@ -78,7 +78,7 @@ public class Ctrl_ColumnDef extends Ctrl {
 		short attrHighBits	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
 		offset += 2;
 		// 단 구분선 종류(테두리/배경이 테두리 선 종류 참조)
-		colLineType		= LineType2.from(buf[offset++]);
+		colLineStyle		= LineStyle2.from(buf[offset++]);
 		// 단 구분선 굵기(테두리/배경이 테두리 선 굵기 참조)
 		colLineWidth		= buf[offset++];
 		// 단 구분선 굵기(테두리/배경이 테두리 선 굵기 참조)
@@ -144,7 +144,7 @@ public class Ctrl_ColumnDef extends Ctrl {
             case "hp:colLine":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    colLineType = LineType2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+                    colLineStyle = LineStyle2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
 
                     switch(childAttrs.getNamedItem("width").getNodeValue()) {
                     case "0.1":
@@ -237,7 +237,7 @@ public class Ctrl_ColumnDef extends Ctrl {
 				strb.append(",너비"+i+":"+colSzWidths[i]);
 			}
 		}
-		strb.append(",구분선종류:"+colLineType)
+		strb.append(",구분선종류:"+colLineStyle)
 			.append(",구분선굵기:"+colLineWidth)
 			.append(",구분선색상:"+colLineColor);
 		return strb.toString();

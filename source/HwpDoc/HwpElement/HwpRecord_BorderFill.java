@@ -30,7 +30,7 @@ import org.w3c.dom.NodeList;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
 import HwpDoc.HwpElement.HwpRecord_BinData.Type;
 import HwpDoc.paragraph.Ctrl_ShapePic.ImagePath;
@@ -86,23 +86,23 @@ public class HwpRecord_BorderFill extends HwpRecord {
 	
 		// Hwp 문서 파일 구조 5.0 에는 4방향정보로 4byte, 4byte, 16byte 읽어내는 것으로 명시했으나, 
 		// 실제 hwp 문서를 파싱하면서 판단하기에  1byte,1byte,4byte 4회 반복이 맞는 것 같다고 보임. 
-		left.type		= LineType2.from(buf[offset++]);
+		left.style		= LineStyle2.from(buf[offset++]);
 		left.width 		= buf[offset++];
         left.color      = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;    // 0x00rrggbb
 		offset += 4;
-		right.type		= LineType2.from(buf[offset++]);
+		right.style		= LineStyle2.from(buf[offset++]);
 		right.width 	= buf[offset++];
         right.color     = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
 		offset += 4;
-		top.type		= LineType2.from(buf[offset++]);
+		top.style		= LineStyle2.from(buf[offset++]);
 		top.width 		= buf[offset++];
         top.color       = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
 		offset += 4;
-		bottom.type		= LineType2.from(buf[offset++]);
+		bottom.style		= LineStyle2.from(buf[offset++]);
 		bottom.width 	= buf[offset++];
         bottom.color    = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
 		offset += 4;
-		diagonal.type		= LineType2.from(buf[offset++]);
+		diagonal.style	= LineStyle2.from(buf[offset++]);
 		diagonal.width 	= buf[offset++];
         diagonal.color  = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
 		offset += 4;
@@ -121,10 +121,10 @@ public class HwpRecord_BorderFill extends HwpRecord {
 				+",S회전="+(counterSlash?"Y":"N")
 				+",BS회전="+(counterBackSlash?"Y":"N")
 				+",중심선="+(breakCellSeparateLine?"Y":"N")
-				+",4테선종류=("+left.type.toString()+","+right.type.toString()+","+top.type.toString()+","+bottom.type.toString()+")"
+				+",4테선종류=("+left.style.toString()+","+right.style.toString()+","+top.style.toString()+","+bottom.style.toString()+")"
 				+",4테선굵기=("+(LINE_THICK[left.width])+","+(LINE_THICK[right.width])+","+(LINE_THICK[top.width])	+","+(LINE_THICK[bottom.width])+")"
 				+",4테선색=("+String.format("%06X", left.color)+","+String.format("%06X", right.color)+","+String.format("%06X", top.color)+","+String.format("%06X", bottom.color)+")"
-				+",대각선="+diagonal.type.toString()
+				+",대각선="+diagonal.style.toString()
 				+",대각선굵기="+(LINE_THICK[diagonal.width])
 				+",대각선색깔="+String.format("%06X", diagonal.color)
 				+",단색채우기="+(fill.isColorFill()?"Y"+String.format("(%06X)", fill.faceColor):"N")
@@ -276,7 +276,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
         NamedNodeMap childAttrs = child.getAttributes();
         // [color="none", type="NONE", width="0.1 mm"]
         
-        border.type = LineType2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+        border.style = LineStyle2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
         String colorStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("^#([0-9A-F]+)$", "$1");
         if (!colorStr.equals("none")) {
         	border.color = Integer.parseUnsignedInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
@@ -623,7 +623,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
 	}
 
 	public static class Border {
-		public LineType2	type;	// 선 종류
+		public LineStyle2	style;	// 선 종류
 		public byte			width;	// 굵기  (0.1/0.12/0.15/0.2/0.25/0.3/0.4/0.5/0.6/0.7/1.0/1.5/2.0/3.0/4.0/5.0 mm)
 		public int			color;	// 색상  0xRRGGBB 값으로 저장하자.  
 

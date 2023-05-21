@@ -31,11 +31,13 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
+import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
+import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
-import HwpDoc.paragraph.Ctrl_Common.VertAlign;
+import soffice.WriterContext;
 
 public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 	private static final Logger log = Logger.getLogger(Ctrl_GeneralShape.class.getName());
@@ -43,22 +45,26 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 	private int	size;
 
 	// 테두리선 정보
-	public int		lineColor;	// 선색상
-	public int		lineThick;	// 선굵기
-	public int		lineAttr;	// 테두리선 정보 속성
-	public LineType2	lineType;	
-	public byte		outline;	// Outline style
+	public int				lineColor;	// 선색상
+	public int				lineThick;	// 선굵기
+	// public int			lineAttr;	// 테두리선 정보 속성
+	public LineArrowStyle	lineHead;
+	public LineArrowStyle	lineTail;
+	public LineArrowSize	lineHeadSz;
+	public LineArrowSize	lineTailSz;
+	public LineStyle2		lineStyle;
+	public byte				outline;	// Outline style
 	
 	// 채우기 정보
-	public int		fillType;	// 채우기 종류 (0:없음, 1:단색, 2:이미지, 4:그라데이션)
-	public Fill		fill;		// 채우기
+	public int				fillType;	// 채우기 종류 (0:없음, 1:단색, 2:이미지, 4:그라데이션)
+	public Fill				fill;		// 채우기
 	
 	// 글상자 텍스트 속성
-	public short	leftSpace;	// 글상자 텍스트 왼쪽 여백
-	public short	rightSpace;	// 글상자 텍스트 오른쪽 여백
-	public short	upSpace;	// 글상자 텍스트 위쪽 여백
-	public short 	downSpace;	// 글상자 텍스트 아래쪽 여백
-	public int		maxTxtWidth;// 텍스트 문자열 최대 폭
+	public short			leftSpace;	// 글상자 텍스트 왼쪽 여백
+	public short			rightSpace;	// 글상자 텍스트 오른쪽 여백
+	public short			upSpace;	// 글상자 텍스트 위쪽 여백
+	public short 			downSpace;	// 글상자 텍스트 아래쪽 여백
+	public int				maxTxtWidth;// 텍스트 문자열 최대 폭
 
 	public Ctrl_GeneralShape() {
 		super();
@@ -81,8 +87,12 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 		
 		this.lineColor 		= shape.lineColor;
 		this.lineThick 		= shape.lineThick;
-		this.lineAttr 		= shape.lineAttr;
-		this.lineType		= shape.lineType;
+		// this.lineAttr 		= shape.lineAttr;
+		this.lineHead		= shape.lineHead;
+		this.lineTail		= shape.lineTail;	
+		this.lineHeadSz		= shape.lineHeadSz;
+		this.lineTailSz		= shape.lineTailSz;
+		this.lineStyle		= shape.lineStyle;
 		this.outline 		= shape.outline;
 		this.fillType 		= shape.fillType;
 		this.fill 			= shape.fill;
@@ -111,16 +121,128 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                     }
                     numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
                     lineThick = Integer.parseUnsignedInt(numStr);
-                    lineType = LineType2.valueOf(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
+                    lineStyle = LineStyle2.valueOf(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
+                    
                     /*
                     childAttrs.getNamedItem("endCap").getNodeValue();                      // 선 끝 모양
-                    childAttrs.getNamedItem("headStyle").getNodeValue();                   // 화살표 시작 모양
-                    childAttrs.getNamedItem("tailStyle").getNodeValue();                   // 화살표 끝 모양
-                    childAttrs.getNamedItem("headSz").getNodeValue();                      // 화살표 시작 크기
-                    childAttrs.getNamedItem("tailSz").getNodeValue();                      // 화살표 끝 크기
                     childAttrs.getNamedItem("outlineStyle").getNodeValue();                // 테두리선의 형태
                     childAttrs.getNamedItem("alpha").getNodeValue();                       // 투명도
                     */       
+                    boolean headFill = true;
+                    if (childAttrs.getNamedItem("headfill")!=null) {
+                    	switch(childAttrs.getNamedItem("headfill").getNodeValue()) {
+                    	case "1":	headFill = true; 	break;
+                    	case "0":	headFill = false;	break;
+                    	}
+                    }
+                    if (childAttrs.getNamedItem("headStyle")!=null) {
+                        switch(childAttrs.getNamedItem("headStyle").getNodeValue()) {                   // 화살표 시작 모양
+                        case "ARROW":
+                        	lineHead = LineArrowStyle.ARROW;
+                        	break;
+                        case "SPEAR":
+                        	lineHead = LineArrowStyle.SPEAR;
+                        	break;
+                        case "CONCAVE_ARROW":
+                        	lineHead = LineArrowStyle.CONCAVE_ARROW;
+                        	break;
+                        case "EMPTY_DIAMOND":
+                        	lineHead = headFill?LineArrowStyle.DIAMOND:LineArrowStyle.EMPTY_DIAMOND;
+                        	break;
+                        case "EMPTY_CIRCLE":
+                        	lineHead = headFill?LineArrowStyle.CIRCLE:LineArrowStyle.EMPTY_CIRCLE;
+                        	break;
+                        case "EMPTY_BOX":
+                        	lineHead = headFill?LineArrowStyle.BOX:LineArrowStyle.EMPTY_BOX;
+                        	break;
+                        case "NORMAL":	
+                        default:
+                        	lineHead = LineArrowStyle.NORMAL;
+                        	break;
+                        }
+                    }
+                    if (childAttrs.getNamedItem("headSz")!=null) {
+                        switch(childAttrs.getNamedItem("headSz").getNodeValue()) {                   // 화살표 시작 모양
+                        case "SMALL_SMALL":
+                        	lineHeadSz = LineArrowSize.SMALL_SMALL;		break;
+                        case "SMALL_MEDIUM":
+                        	lineHeadSz = LineArrowSize.SMALL_MEDIUM;	break;
+                        case "SMALL_LARGE":
+                        	lineHeadSz = LineArrowSize.SMALL_LARGE;		break;
+                        case "MEDIUM_SMALL":
+                        	lineHeadSz = LineArrowSize.MEDIUM_SMALL;	break;
+                        case "MEDIUM_MEDIUM":
+                        	lineHeadSz = LineArrowSize.MEDIUM_MEDIUM;	break;
+                        case "MEDIUM_LARGE":
+                        	lineHeadSz = LineArrowSize.MEDIUM_LARGE;	break;
+                        case "LARGE_SMALL":
+                        	lineHeadSz = LineArrowSize.LARGE_SMALL;		break;
+                        case "LARGE_MEDIUM":
+                        	lineHeadSz = LineArrowSize.LARGE_MEDIUM;	break;
+                        case "LARGE_LARGE":
+                        	lineHeadSz = LineArrowSize.LARGE_LARGE;		break;
+                        default:
+                        	lineHeadSz = LineArrowSize.MEDIUM_MEDIUM;	break;
+                        }
+                    }
+                    
+                    boolean tailFill = true;
+                    if (childAttrs.getNamedItem("tailfill")!=null) {
+                    	switch(childAttrs.getNamedItem("tailfill").getNodeValue()) {
+                    	case "1":	tailFill = true; 	break;
+                    	case "0":	tailFill = false;	break;
+                    	}
+                    }
+                    if (childAttrs.getNamedItem("tailStyle")!=null) {
+                        switch(childAttrs.getNamedItem("tailStyle").getNodeValue()) {                   // 화살표 시작 모양
+                        case "ARROW":
+                        	lineTail = LineArrowStyle.ARROW;
+                        	break;
+                        case "SPEAR":
+                        	lineTail = LineArrowStyle.SPEAR;
+                        	break;
+                        case "CONCAVE_ARROW":
+                        	lineTail = LineArrowStyle.CONCAVE_ARROW;
+                        	break;
+                        case "EMPTY_DIAMOND":
+                        	lineTail = headFill?LineArrowStyle.DIAMOND:LineArrowStyle.EMPTY_DIAMOND;
+                        	break;
+                        case "EMPTY_CIRCLE":
+                        	lineTail = headFill?LineArrowStyle.CIRCLE:LineArrowStyle.EMPTY_CIRCLE;
+                        	break;
+                        case "EMPTY_BOX":
+                        	lineTail = headFill?LineArrowStyle.BOX:LineArrowStyle.EMPTY_BOX;
+                        	break;
+                        case "NORMAL":	
+                        default:
+                        	lineTail = LineArrowStyle.NORMAL;
+                        	break;
+                        }
+                    }
+                    if (childAttrs.getNamedItem("tailSz")!=null) {
+                        switch(childAttrs.getNamedItem("tailSz").getNodeValue()) {                   // 화살표 시작 모양
+                        case "SMALL_SMALL":
+                        	lineTailSz = LineArrowSize.SMALL_SMALL;		break;
+                        case "SMALL_MEDIUM":
+                        	lineTailSz = LineArrowSize.SMALL_MEDIUM;	break;
+                        case "SMALL_LARGE":
+                        	lineTailSz = LineArrowSize.SMALL_LARGE;		break;
+                        case "MEDIUM_SMALL":
+                        	lineTailSz = LineArrowSize.MEDIUM_SMALL;	break;
+                        case "MEDIUM_MEDIUM":
+                        	lineTailSz = LineArrowSize.MEDIUM_MEDIUM;	break;
+                        case "MEDIUM_LARGE":
+                        	lineTailSz = LineArrowSize.MEDIUM_LARGE;	break;
+                        case "LARGE_SMALL":
+                        	lineTailSz = LineArrowSize.LARGE_SMALL;		break;
+                        case "LARGE_MEDIUM":
+                        	lineTailSz = LineArrowSize.LARGE_MEDIUM;	break;
+                        case "LARGE_LARGE":
+                        	lineTailSz = LineArrowSize.LARGE_LARGE;		break;
+                        default:
+                        	lineTailSz = LineArrowSize.MEDIUM_MEDIUM;	break;
+                        }
+                    }
                     node.removeChild(child);
                 }
                 break;
@@ -424,9 +546,13 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         // 문서와 다르게  선 굵기에서 4byte 후에 선 속성이 온다.
         offset += 2;
         
-        obj.lineAttr    = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        int lineAttr    = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        obj.lineType    = LineType2.from(obj.lineAttr&0x3F);
+        obj.lineStyle   = LineStyle2.from(lineAttr&0x3F);
+        obj.lineHead	= LineArrowStyle.from((lineAttr>>10)&0x3F, ((lineAttr>>30)&0x1)==1);
+        obj.lineHeadSz	= LineArrowSize.from((lineAttr>>22)&0x0F);
+        obj.lineTail	= LineArrowStyle.from((lineAttr>>16)&0x3F, ((lineAttr>>31)&0x1)==1);
+        obj.lineTailSz  = LineArrowSize.from((lineAttr>>26)&0x0F);
         obj.outline     = buf[offset++];
         
         obj.fill = new Fill(buf, offset, size-(offset-off)-22);

@@ -30,8 +30,8 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 import HwpDoc.HwpElement.HwpRecordTypes.LineType1;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
 
 public class HwpRecord_CharShape extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_CharShape.class.getName());
@@ -48,7 +48,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 	public boolean 		italic;									// 기울임 여부					// it
 	public boolean 		bold;									// 진하게 여부					// bo
 	public Underline	underline;								// 밑줄 종류					// ut
-	public LineType2	underlineShape;							// 밑줄 모양					// us
+	public LineStyle2	underlineShape;							// 밑줄 모양					// us
 	public int			underlineColor;							// 밑줄 색
 	public Outline		outline;								// 외곽선종류					// 
 	public Shadow		shadow;									// 그림자 종류					// 
@@ -59,7 +59,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 	public byte			strikeOut;								// 취소선 여부
 	public Accent		symMark;								// 강조점 종류
 	public boolean		useFontSpace;							// 글꼴에 어울리는 빈칸 사용 여부		// uf?
-	public LineType2	strikeOutShape;							// 취소선 모양
+	public LineStyle2	strikeOutShape;							// 취소선 모양
 	public boolean		useKerning;								// kerning여부				// uk?
 	
 	public byte			shadowOffsetX;							// 그림자 간격, -100%~100%
@@ -107,7 +107,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 		italic			= (attrBits&0x01)==0x01?true:false;
 		bold			= (attrBits&0x02)==0x02?true:false;
 		underline   	= Underline.from((attrBits>>>2)&0x03);
-		underlineShape 	= LineType2.from((attrBits>>>4)&0x0F);
+		underlineShape 	= LineStyle2.from((attrBits>>>4)&0x0F);
 		outline			= Outline.from((attrBits>>>8)&0x7);
 		shadow			= Shadow.from((attrBits>>11)&0x03);
 		emboss			= (attrBits&0x2000)==0x2000?true:false;
@@ -117,7 +117,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 		strikeOut		= (byte) ((attrBits>>>18)&0x07);
 		symMark			= Accent.from((attrBits>>>21)&0x0F);
 		useFontSpace	= (attrBits&0x2000000)==0x2000000?true:false;
-		strikeOutShape	= LineType2.from((attrBits>>>26)&0x0F);
+		strikeOutShape	= LineStyle2.from((attrBits>>>26)&0x0F);
 		useKerning		= (attrBits&0x40000000)==0x40000000?true:false;
 		// Attributes
 		
@@ -156,10 +156,10 @@ public class HwpRecord_CharShape extends HwpRecord {
 				+",글자색="+String.format("%06X", textColor)
 				+",음영색="+String.format("%06X", shadeColor)
 				+",테두리ID="+borderFillIDRef
-				+(borderFillIDRef>0?",테두리=("+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).left.type):"")
-				+(borderFillIDRef>0?","+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).right.type):"")
-				+(borderFillIDRef>0?","+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).top.type):"")
-				+(borderFillIDRef>0?","+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).bottom.type):"")+")"
+				+(borderFillIDRef>0?",테두리=("+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).left.style):"")
+				+(borderFillIDRef>0?","+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).right.style):"")
+				+(borderFillIDRef>0?","+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).top.style):"")
+				+(borderFillIDRef>0?","+(((HwpRecord_BorderFill) (parent.borderFillList.get(borderFillIDRef-1))).bottom.style):"")+")"
 		 	);
 		
 		if (offset-off-size != 0 && offset-off-size+1 != 0) {
@@ -360,7 +360,7 @@ public class HwpRecord_CharShape extends HwpRecord {
                     NamedNodeMap childAttrs = child.getAttributes();
                     underline = Underline.valueOf(childAttrs.getNamedItem("type").getNodeValue());
                     
-                    underlineShape = LineType2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
+                    underlineShape = LineStyle2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
                     
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
                     if (!numStr.equals("none")) {
@@ -374,7 +374,7 @@ public class HwpRecord_CharShape extends HwpRecord {
                     // strikeOutShape = LineType2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
                     switch(childAttrs.getNamedItem("shape").getNodeValue()) {
                    	case "3D":
-                   		strikeOutShape = LineType2.NONE; 	break;
+                   		strikeOutShape = LineStyle2.NONE; 	break;
                    	default:
                    		log.warning("Not Implemented:" + childAttrs.getNamedItem("shape").getNodeValue());
                     }

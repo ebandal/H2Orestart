@@ -38,7 +38,7 @@ import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecordTypes;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType2;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 import HwpDoc.paragraph.Ctrl_GeneralShape;
 import HwpDoc.paragraph.Ctrl_ShapePic;
 
@@ -65,7 +65,7 @@ public class Transform {
 			line.Color= border.color;
 			// line.LineStyle= Transform.toBorderLineStyle(border.type);
 			line.InnerLineWidth = 0;
-			line.OuterLineWidth = border.type==LineType2.NONE?0:Transform.toLineWidth(border.width);
+			line.OuterLineWidth = border.style==LineStyle2.NONE?0:Transform.toLineWidth(border.width);
 			line.LineDistance = 0;
 		}
 		return line;
@@ -73,7 +73,7 @@ public class Transform {
 
 	public static BorderLine2 toBorderLine2(HwpRecord_BorderFill.Border border) {
 		BorderLine2 line = new BorderLine2();
-		if (border==null || border.type == LineType2.NONE) {
+		if (border==null || border.style == LineStyle2.NONE) {
 			line.Color= 0x000000;
 			line.LineStyle = BorderLineStyle.NONE;
 			line.InnerLineWidth = 0;
@@ -81,7 +81,7 @@ public class Transform {
 			line.LineDistance = 0;
 			line.LineWidth = 0;
 		} else {
-			line.LineStyle= Transform.toBorderLineStyle(border.type);
+			line.LineStyle= Transform.toBorderLineStyle(border.style);
 			line.Color= border.color;
 			
 			switch(line.LineStyle) {
@@ -125,7 +125,7 @@ public class Transform {
 
 	public static BorderLine2 toBorderLineDefault(HwpRecord_BorderFill.Border border) {
 		BorderLine2 line = new BorderLine2();
-		if (border==null || border.type == LineType2.NONE) {
+		if (border==null || border.style == LineStyle2.NONE) {
 			line.Color= 0x000000;
 			line.LineStyle = BorderLineStyle.NONE;
 			line.InnerLineWidth = 0;
@@ -160,11 +160,11 @@ public class Transform {
 				line.LineWidth = Transform.translateHwp2Office(((Ctrl_ShapePic)shape).borderThick);
 			} else {
 				line.Color= shape.lineColor;
-				line.LineStyle= Transform.toBorderLineStyle(shape.lineType);
+				line.LineStyle= Transform.toBorderLineStyle(shape.lineStyle);
 				line.InnerLineWidth = 0;
-				line.OuterLineWidth = shape.lineType==LineType2.NONE?0:Transform.toLineWidth((short)shape.lineThick);
-				line.LineDistance = (short)(shape.lineType==LineType2.NONE?0:100);
-				line.LineWidth = shape.lineType==LineType2.NONE?0:Transform.translateHwp2Office(shape.lineThick);
+				line.OuterLineWidth = shape.lineStyle==LineStyle2.NONE?0:Transform.toLineWidth((short)shape.lineThick);
+				line.LineDistance = (short)(shape.lineStyle==LineStyle2.NONE?0:100);
+				line.LineWidth = shape.lineStyle==LineStyle2.NONE?0:Transform.translateHwp2Office(shape.lineThick);
 				if (line.LineStyle!=BorderLineStyle.NONE && line.LineWidth==0) {
 					line.LineWidth = 1;
 				}
@@ -270,7 +270,7 @@ public class Transform {
 		return lineWidth;
 	}
 	
-	public static short toBorderLineStyle(HwpRecordTypes.LineType2 line) {
+	public static short toBorderLineStyle(HwpRecordTypes.LineStyle2 line) {
 		short lineStyle = BorderLineStyle.NONE;
 		if (line==null) return lineStyle;
 		

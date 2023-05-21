@@ -54,7 +54,7 @@ public class HwpRecordTypes {
 	    }
 	}
 	
-	public static enum LineType2 {
+	public static enum LineStyle2 {
 		NONE				(0),
 		SOLID				(1),	// 실선
 		DASH				(2),	// 긴 점선
@@ -69,11 +69,11 @@ public class HwpRecordTypes {
 		SLIM_THICK_SLIM		(11); 	// 가는선+굵은선+가는선 3중선
 		
 		private int num;
-	    private LineType2(int num) { 
+	    private LineStyle2(int num) { 
 	    	this.num = num;
 	    }
-	    public static LineType2 from(int num) {
-	    	for (LineType2 shape: values()) {
+	    public static LineStyle2 from(int num) {
+	    	for (LineStyle2 shape: values()) {
 	    		if (shape.num == num)
 	    			return shape;
 	    	}
@@ -143,5 +143,71 @@ public class HwpRecordTypes {
 	    	return DIGIT;
 	    }
 	}
+	
+	public static enum LineArrowStyle {
+		NORMAL			(0),	// 모양없음
+		ARROW			(1),	// 화살모양
+		SPEAR			(2),	// 라인모양
+		CONCAVE_ARROW	(3),	// 오목한 화살모양
+		DIAMOND			(4),	// 속이 찬 다이아몬드 모양
+		CIRCLE			(5),	// 속이 찬 원 모양
+		BOX				(6),	// 속이 찬 사각모양
+		EMPTY_DIAMOND	(7),	// 속이 빈 다이아몬드 모양
+		EMPTY_CIRCLE	(8),	// 속이 빈 원 모양
+		EMPTY_BOX		(9);	// 속이 빈 사각모양
+		
+		private int num;
+	    private LineArrowStyle(int num) { 
+	    	this.num = num;
+	    }
+	    public static LineArrowStyle from(int num, boolean fill) {
+	    	switch(num) {
+	    	case 0:	
+	    		return NORMAL;
+	    	case 1: 
+	    		return ARROW;
+	    	case 2: 
+	    		return SPEAR;
+	    	case 3: 
+	    		return CONCAVE_ARROW;
+	    	case 4: 
+	    	case 7:
+	    		return fill?DIAMOND:EMPTY_DIAMOND;
+	    	case 5:
+	    	case 8:
+	    		return fill?CIRCLE:EMPTY_CIRCLE;
+	    	case 6:
+	    	case 9:
+	    		return fill?BOX:EMPTY_BOX;
+    		default:
+    			return NORMAL;
+	    	}
+	    }
+	}
+	
+	public static enum LineArrowSize {
+		SMALL_SMALL			(0),	// 작은-작은
+		SMALL_MEDIUM		(1),	// 작은-중간
+		SMALL_LARGE			(2),	// 작은-큰
+		MEDIUM_SMALL		(3),	// 중간-작은
+		MEDIUM_MEDIUM		(4),	// 중간-중간
+		MEDIUM_LARGE		(5),	// 중간-큰
+		LARGE_SMALL			(6),	// 큰-작은
+		LARGE_MEDIUM		(7),	// 큰-중간
+		LARGE_LARGE			(8);	// 큰-큰
+		
+		private int num;
+	    private LineArrowSize(int num) { 
+	    	this.num = num;
+	    }
+	    public static LineArrowSize from(int num) {
+	    	for (LineArrowSize shape: values()) {
+	    		if (shape.num == num)
+	    			return shape;
+	    	}
+	    	return MEDIUM_MEDIUM;
+	    }
+	}
+
 	
 }
