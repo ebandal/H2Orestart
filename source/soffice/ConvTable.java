@@ -362,110 +362,133 @@ public class ConvTable {
     	int posY = 0;
 
 		HwpDoc.section.Page page = ConvPage.getCurrentPage().page;
-		try {
-			switch(shape.vertRelTo) {
-			case PARA:
-	        	switch(shape.vertAlign) {
-	        	case TOP:
-	        		posY = Transform.translateHwp2Office(shape.vertOffset);
-	        		if (posY > 0) {
-	        		    xProps.setPropertyValue("TopMargin", posY);
-	        		}
-	        		break;
-	        	}
-				break;
+		if (shape.treatAsChar==true) {
+    		posX = Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(page.marginLeft);
+    		posX = Math.max(posX, 0);
+    		try {
+	    		xProps.setPropertyValue("LeftMargin", posX);
+	            xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+        		switch(paraShape.align) {
+        		case LEFT:              // 왼쪽 정렬
+    	    		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT); break;	
+        		case RIGHT:             // 오른쪽 정렬
+    	    		xProps.setPropertyValue("HoriOrient", HoriOrientation.RIGHT); break;	
+        		case CENTER:            // 가운데 정렬
+    	    		xProps.setPropertyValue("HoriOrient", HoriOrientation.CENTER); break;	
+        		case JUSTIFY:           // 양쪽 정렬
+        		case DISTRIBUTE:   		// 배분 정렬
+        		case DISTRIBUTE_SPACE:	// 나눔 정렬
+    	    		xProps.setPropertyValue("HoriOrient", HoriOrientation.NONE); break;	
+        		}
+			} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {
+				e.printStackTrace();
+    		}
+		} else {		
+			try {
+				switch(shape.vertRelTo) {
+				case PARA:
+		        	switch(shape.vertAlign) {
+		        	case TOP:
+		        		posY = Transform.translateHwp2Office(shape.vertOffset);
+		        		if (posY > 0) {
+		        		    xProps.setPropertyValue("TopMargin", posY);
+		        		}
+		        		break;
+		        	}
+					break;
+				}
+			} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {
+				e.printStackTrace();
 			}
-		} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {
-			e.printStackTrace();
-		}
-
-		try {
-			switch(shape.horzRelTo) {
-			case PAPER:
-	        	switch(shape.horzAlign) {
-	        	case LEFT:	// LEFT
-	        	case INSIDE:
-	        		posX = Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(page.marginLeft);
-	        		posX = Math.max(posX, 0);
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
-                    xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	case CENTER:
-	        		posX = Transform.translateHwp2Office(page.width)/2+Transform.translateHwp2Office(shape.horzOffset);
-	        		posX = posX-Transform.translateHwp2Office(page.marginLeft);
-	        		posX = posX-Transform.translateHwp2Office(shape.width)/2;
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	case RIGHT:	// RIGHT
-	        	case OUTSIDE:
-	        		posX = Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(shape.horzOffset);
-	        		posX = posX-Transform.translateHwp2Office(shape.width);
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	}
-				break;
-			case PAGE:
-	        	switch(shape.horzAlign) {
-	        	case LEFT:	// LEFT
-	        	case INSIDE:
-	        		posX = Transform.translateHwp2Office(shape.horzOffset);
-	        		posX = Math.max(posX, 0);
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	case CENTER:
-	        		posX = (Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight))/2;
-	        		posX = posX+Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width)/2;
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	case RIGHT:	// RIGHT
-	        	case OUTSIDE:
-	        		posX = Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight);
-	        		posX = posX-Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width);
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	}
-				break;
-			case COLUMN:
-			case PARA:
-	        	switch(shape.horzAlign) {
-	        	case LEFT:	// LEFT.  왼쪽맞춤 일때  width,rightMargin이 필요(width+rightMargin이 전체 Para Width).  왼쪽에서부터 일때  width,leftMargin이 필요(width+leftMargin이 전체 width일 필요 없음).  
-	        	case INSIDE:
-	        		posX = Transform.translateHwp2Office(shape.horzOffset)+Transform.translateHwp2Office(paraShape.marginLeft/2);
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	case CENTER:  // 가운데맞춤일때  width,leftMargin이 필요 (width+leftMagin+leftMargin이 전체 width. leftMargin=rightMargin 으로 봄)
-	        		posX = (Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight))/2;
-	        		posX = posX+Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width)/2;
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	case RIGHT:	// RIGHT.  오른쪽맞춤 일때, width, leftMargin이 필요(width+leftMargin이 전체 Para Width 이어야 함)
-	        	case OUTSIDE:
-	        		posX = Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight);
-	        		posX = posX-Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width);
-	        		xProps.setPropertyValue("LeftMargin", posX);
-	        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
-	        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-	        		break;
-	        	}
-				break;
+	
+			try {
+				switch(shape.horzRelTo) {
+				case PAPER:
+		        	switch(shape.horzAlign) {
+		        	case LEFT:	// LEFT
+		        	case INSIDE:
+		        		posX = Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(page.marginLeft);
+		        		posX = Math.max(posX, 0);
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
+	                    xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	case CENTER:
+		        		posX = Transform.translateHwp2Office(page.width)/2+Transform.translateHwp2Office(shape.horzOffset);
+		        		posX = posX-Transform.translateHwp2Office(page.marginLeft);
+		        		posX = posX-Transform.translateHwp2Office(shape.width)/2;
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	case RIGHT:	// RIGHT
+		        	case OUTSIDE:
+		        		posX = Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(shape.horzOffset);
+		        		posX = posX-Transform.translateHwp2Office(shape.width);
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	}
+					break;
+				case PAGE:
+		        	switch(shape.horzAlign) {
+		        	case LEFT:	// LEFT
+		        	case INSIDE:
+		        		posX = Transform.translateHwp2Office(shape.horzOffset);
+		        		posX = Math.max(posX, 0);
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	case CENTER:
+		        		posX = (Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight))/2;
+		        		posX = posX+Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width)/2;
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	case RIGHT:	// RIGHT
+		        	case OUTSIDE:
+		        		posX = Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight);
+		        		posX = posX-Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width);
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	}
+					break;
+				case COLUMN:
+				case PARA:
+		        	switch(shape.horzAlign) {
+		        	case LEFT:	// LEFT.  왼쪽맞춤 일때  width,rightMargin이 필요(width+rightMargin이 전체 Para Width).  왼쪽에서부터 일때  width,leftMargin이 필요(width+leftMargin이 전체 width일 필요 없음).  
+		        	case INSIDE:
+		        		posX = Transform.translateHwp2Office(shape.horzOffset)+Transform.translateHwp2Office(paraShape.marginLeft/2);
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	case CENTER:  // 가운데맞춤일때  width,leftMargin이 필요 (width+leftMagin+leftMargin이 전체 width. leftMargin=rightMargin 으로 봄)
+		        		posX = (Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight))/2;
+		        		posX = posX+Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width)/2;
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	case RIGHT:	// RIGHT.  오른쪽맞춤 일때, width, leftMargin이 필요(width+leftMargin이 전체 Para Width 이어야 함)
+		        	case OUTSIDE:
+		        		posX = Transform.translateHwp2Office(page.width)-Transform.translateHwp2Office(page.marginLeft)-Transform.translateHwp2Office(page.marginRight);
+		        		posX = posX-Transform.translateHwp2Office(shape.horzOffset)-Transform.translateHwp2Office(shape.width);
+		        		xProps.setPropertyValue("LeftMargin", posX);
+		        		xProps.setPropertyValue("HoriOrient", HoriOrientation.LEFT_AND_WIDTH);	
+		        		xProps.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
+		        		break;
+		        	}
+					break;
+				}
+			} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {
+				e.printStackTrace();
 			}
-		} catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException | WrappedTargetException e) {
-			e.printStackTrace();
 		}
     }
     
