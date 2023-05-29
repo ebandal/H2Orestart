@@ -125,9 +125,7 @@ public class HwpRecurs {
     		    {
     		        switch(((Ctrl_Character)ctrl).ctrlChar) {
     		        case LINE_BREAK:
-                        if (oweParaBreak == false && (callback==null || callback.onParaBreak()==false)) {
-                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
-                        }
+    		        	wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
     		            break;
     		        case PARAGRAPH_BREAK:
                         if (callback==null || callback.onParaBreak()==false) {
@@ -135,14 +133,10 @@ public class HwpRecurs {
                         }
                         break;
     		        case HARD_HYPHEN:
-                        if (callback==null || callback.onParaBreak()==false) {
-                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_HYPHEN, false);
-                        }
+    		        	wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_HYPHEN, false);
                         break;
     		        case HARD_SPACE:
-                        if (callback==null || callback.onParaBreak()==false) {
-                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_SPACE, false);
-                        }
+    		        	wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_SPACE, false);
                         break;
     		        }
     		    }

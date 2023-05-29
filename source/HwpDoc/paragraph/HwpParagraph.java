@@ -173,18 +173,24 @@ public class HwpParagraph {
                     case "#text":
                         p.add(new ParaText("____", child.getNodeValue(), 0, charShapeId));
                         break;
-                    case "markpenBegin":    // 134 page
-                    case "markpenEnd":
-                    case "titleMark":
-                    case "tab":
-                    case "lineBreak":
-                    case "hyphen":
-                    case "nbSpace":
-                    case "fwSpace":
-                    case "insertBegin":
-                    case "insertEnd":
-                    case "deleteBegin":
-                    case "deleteEnd":
+                    case "hp:lineBreak":
+                        p.add(new Ctrl_Character("   _", CtrlCharType.LINE_BREAK));
+                        break;
+                    case "hp:hyphen":
+                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN));
+                        break;
+                    case "hp:nbSpace":
+                    case "hp:fwSpace":
+                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE));
+                        break;
+                    case "hp:markpenBegin":    // 134 page
+                    case "hp:markpenEnd":
+                    case "hp:titleMark":
+                    case "hp:tab":
+                    case "hp:insertBegin":
+                    case "hp:insertEnd":
+                    case "hp:deleteBegin":
+                    case "hp:deleteEnd":
                         throw new NotImplementedException("hp:t");
                     }
                 }
