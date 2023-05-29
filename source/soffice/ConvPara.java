@@ -62,8 +62,8 @@ public class ConvPara {
 	private static Map<Integer, String> paragraphStyleNameMap = new HashMap<Integer, String>();
 	private static final String PARAGRAPH_STYLE_PREFIX = "HWP ";
 
-	static final double PARABREAK_SPACING = 0.91;
-    static final double PARA_SPACING = 0.87;
+	static final double PARABREAK_SPACING = 0.75; // 0.91;
+    static final double PARA_SPACING = 0.75; // 0.87;
     
 	public static void reset(WriterContext wContext) {
 		deleteCustomStyles(wContext);
@@ -411,10 +411,11 @@ public class ConvPara {
 			// charShape.ratio[0];						// 언어별 장평, 50%~200%		// r#
 			log.finest("CharWidth="+charShape.ratio[0]);
 			xStyleProps.setPropertyValue("CharScaleWidth", charShape.ratio[0]);
-			
 			// charShape.spacing[0];							// 언어별 자간, -50%~50%		// s#
-			// 자간 -24%~50% -> 100mm 로 변환 (-2pt~4.5pt; LibreOffice 최소는 -2pt)
-			double spacing = charShape.spacing[0]*3.02330746+10.58334; // char 가로% -> mm로 변환
+			// 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)*한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
+			double spacing = ((double)charShape.height)/100 * (charShape.spacing[0] / 100.0f) * 0.8 + 0.4; 
+			// 1pt = 0.35278mm = 35.278 (1/100 mm)
+			spacing *= 35.278;
 			xStyleProps.setPropertyValue("CharKerning", (short)Math.round(spacing));
 			// charShape.relSize[0];							// 언어별 상대 크기, 10%~250%	// e#
 			// charShape.charOffset[0];						// 언어별 글자 위치, -100%~100%	// o#
