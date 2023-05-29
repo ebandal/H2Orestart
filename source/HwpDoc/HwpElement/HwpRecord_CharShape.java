@@ -173,8 +173,6 @@ public class HwpRecord_CharShape extends HwpRecord {
         super(HwpTag.HWPTAG_CHAR_SHAPE, 0, 0);
         this.parent = docInfo;
         
-        dumpNode(node, 1);
-
         NamedNodeMap attributes = node.getAttributes();
         
         // id값은 처리하지 않는다. List<HwpRecord_CharShape>에 순차적으로 추가한다.

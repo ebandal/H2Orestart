@@ -30,11 +30,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
 import HwpDoc.HwpElement.HwpRecord_Numbering.Numbering;
-import HwpDoc.paragraph.Ctrl_ShapePic.ImagePath;
-import HwpDoc.paragraph.Ctrl_ShapePic.ImagePathType;
 
 public class HwpRecord_Bullet extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_Bullet.class.getName());

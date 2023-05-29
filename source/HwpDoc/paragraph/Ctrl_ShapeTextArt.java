@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -132,17 +133,23 @@ public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
                         outline[j].y = Integer.parseInt(numStr);
                         break;
                     default:
-                        throw new NotImplementedException("Ctrl_ShapeRect");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("Ctrl_ShapeRect");
+                    	}
+                    	break;
                     }
                 }
                 break;
             default:
-                throw new NotImplementedException("Ctrl_ShapeRect");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_ShapeRect");
+            	}
+            	break;
             }
         }
     }
 	
-	public static int parseElement(Ctrl_ShapeTextArt obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeTextArt obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
 
         // [HWP ambiguous] following 120bytes are unknown.
@@ -155,7 +162,7 @@ public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
         return size;
     }
     
-    public static int parseCtrl(Ctrl_ShapeTextArt shape,  int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapeTextArt shape,  int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         int len = Ctrl_GeneralShape.parseCtrl(shape, size,  buf,  off,  version);
         offset += len;

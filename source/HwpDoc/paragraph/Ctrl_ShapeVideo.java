@@ -21,6 +21,7 @@
 package HwpDoc.paragraph;
 
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -63,7 +64,10 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         case "VT_WEB":
             videoType = 1;   break;
         default:
-            throw new NotImplementedException("Ctrl_ShapeVideo");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl_ShapeVideo");
+        	}
+        	break;
         }
         
         String numStr = attributes.getNamedItem("fileIDRef").getNodeValue();
@@ -77,7 +81,7 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         }
     }
 
-	public static int parseElement(Ctrl_ShapeVideo obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeVideo obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         obj.videoType   = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;

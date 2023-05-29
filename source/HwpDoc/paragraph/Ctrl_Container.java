@@ -23,6 +23,7 @@ package HwpDoc.paragraph;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -107,7 +108,10 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
                 list.add(ctrl);
                 break;
             default:
-                throw new NotImplementedException("Ctrl_Container");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_Container");
+            	}
+            	break;
             }
         }
     }
@@ -192,7 +196,9 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
                 break;
             default:
                 log.severe("Neither known ctrlID=" + ctrlId+" nor implemented.");
-                throw new NotImplementedException(ctrlId);
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException(ctrlId);
+            	}
             }
             obj.list.add(chldObj);
         }
@@ -201,7 +207,7 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
         return offset-off;
     }
     
-    public static int parseCtrl(Ctrl_Container obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_Container obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         // 문서에는 나와있지 않으나, 개체요소속성 (표 83)이 포함된다.

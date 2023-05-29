@@ -107,7 +107,7 @@ public class Page {
         }
     }
 
-    public static Page parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static Page parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         Page page = new Page();

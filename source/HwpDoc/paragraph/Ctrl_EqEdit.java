@@ -21,6 +21,7 @@
 package HwpDoc.paragraph;
 
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -84,7 +85,10 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         case "LINE":
         case "CHAR":
         default:
-            throw new NotImplementedException("EqEdit");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("EqEdit");
+        	}
+        	break;
         }
         
         font = attributes.getNamedItem("font").getNodeValue();  // 수식 폰트
@@ -97,13 +101,16 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
                 eqn = child.getNodeValue();
                 break;
             default:
-                throw new NotImplementedException("EqEdit");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("EqEdit");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;
     }
 	
-    public static int parseElement(Ctrl_EqEdit obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseElement(Ctrl_EqEdit obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         obj.attr        = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
@@ -144,7 +151,7 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         return offset-off;
     }
     
-    public static int parseCtrl(Ctrl_EqEdit shape, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_EqEdit shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         int len = Ctrl_Common.parseCtrl(shape, size, buf, offset, version);
@@ -153,7 +160,7 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         return offset-off;
     }
 
-    public static int parseListHeaderAppend(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseListHeaderAppend(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         if (size==24) {
             offset += 2;

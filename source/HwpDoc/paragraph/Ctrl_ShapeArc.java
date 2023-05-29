@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -90,13 +91,15 @@ public class Ctrl_ShapeArc extends Ctrl_GeneralShape {
                 axixY2 = Integer.parseInt(numStr);
                 break;
             default:
-                throw new NotImplementedException("Ctrl_ShapeArc");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_ShapeArc");
+            	}
             }
         }
 
     }
 
-	public static int parseElement(Ctrl_ShapeArc obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeArc obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         obj.type    = ArcType.from(buf[offset++]);
@@ -127,7 +130,7 @@ public class Ctrl_ShapeArc extends Ctrl_GeneralShape {
         return offset-off;
     }
 
-    public static int parseCtrl(Ctrl_ShapeArc shape, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapeArc shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size, buf, off, version);
         

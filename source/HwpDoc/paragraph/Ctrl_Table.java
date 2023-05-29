@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -112,14 +113,6 @@ public class Ctrl_Table extends Ctrl_Common {
 
         //dropcapstyle="None"
         
-        //id="1905325604"
-        
-        //lock="0"
-        
-        for (String leftover: nodeNames) {
-            log.info("LeftOver: " + leftover);
-        }
-        
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
@@ -161,8 +154,6 @@ public class Ctrl_Table extends Ctrl_Common {
                             cellzone.borderFillIDRef = (short)Integer.parseInt(numStr);
                             cellzoneList.add(cellzone);
                             break;
-                        default:
-                            throw new NotImplementedException("Ctrl_Table");
                         }
                     }
                 }
@@ -175,14 +166,11 @@ public class Ctrl_Table extends Ctrl_Common {
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
-                        
                         switch(grandChild.getNodeName()) {
                         case "hp:tc":
                             TblCell cell = new TblCell(grandChild, version);
                             cells.add(cell);
                             break;
-                        default:
-                            throw new NotImplementedException("Ctrl_Table");
                         }
                     }
                 }
@@ -190,7 +178,10 @@ public class Ctrl_Table extends Ctrl_Common {
             case "hp:label":
                 break;
             default:
-                throw new NotImplementedException("Ctrl_Table");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_Table");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;
@@ -260,7 +251,7 @@ public class Ctrl_Table extends Ctrl_Common {
         return offset-off;
     }
     
-    public static int parseListHeaderAppend(Ctrl_Table obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseListHeaderAppend(Ctrl_Table obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         if (size==24) {
             offset += 2;

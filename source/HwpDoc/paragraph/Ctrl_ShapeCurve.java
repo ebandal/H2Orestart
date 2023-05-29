@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -71,7 +72,10 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
                 case "LINE":
                     segmentType[i] = 0;     break;
                 default:
-                    throw new NotImplementedException("Ctrl_ShapeCurve");
+                	if (log.isLoggable(Level.FINE)) {
+                		throw new NotImplementedException("Ctrl_ShapeCurve");
+                	}
+                	break;
                 }
                 points[i] = new Point();
                 numStr = childAttrs.getNamedItem("x1").getNodeValue();
@@ -82,12 +86,15 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
                 // childAttrs.getNamedItem("y2").getNodeValue();
                 break;
             default:
-                throw new NotImplementedException("Ctrl_ShapeCurve");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_ShapeCurve");
+            	}
+            	break;
             }
         }
     }
 
-	public static int parseElement(Ctrl_ShapeCurve obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeCurve obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         obj.nPoints             = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
@@ -122,7 +129,7 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
         return offset-off;
     }
     
-    public static int parseCtrl(Ctrl_ShapeCurve shape,  int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapeCurve shape,  int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         int len = Ctrl_GeneralShape.parseCtrl(shape, size,  buf,  off,  version);
         offset += len;

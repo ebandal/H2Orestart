@@ -108,7 +108,7 @@ public class HwpSection {
         return true;
     }
 
-	boolean parse(byte[] buf, int version) throws HwpParseException, NotImplementedException {
+	boolean parse(byte[] buf, int version) throws HwpParseException {
 		int off = 0;
 
 		while(off < buf.length) {
@@ -144,7 +144,7 @@ public class HwpSection {
 	}
 	
 
-	private int parseRecurse(HwpParagraph currPara, int runLevel, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	private int parseRecurse(HwpParagraph currPara, int runLevel, byte[] buf, int off, int version) throws HwpParseException {
 		int offset = off;
 		
 		while(offset < buf.length) {
@@ -334,7 +334,7 @@ public class HwpSection {
 		return offset-off;
 	}
 	
-	int parseCtrlRecurse(Ctrl currCtrl, int runLevel, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	int parseCtrlRecurse(Ctrl currCtrl, int runLevel, byte[] buf, int off, int version) throws HwpParseException {
 		int offset = off;
 		Ctrl ctrl = currCtrl;
 		
@@ -709,7 +709,7 @@ public class HwpSection {
 		return offset-off;
 	}
 	
-	int parseContainerRecurse(Ctrl_Container container, int runLevel, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	int parseContainerRecurse(Ctrl_Container container, int runLevel, byte[] buf, int off, int version) throws HwpParseException {
 		int offset = off;
 		
 		while(offset<buf.length) {
@@ -1002,7 +1002,7 @@ public class HwpSection {
 		}
 		return offset-off;
 	}
-	private int parseListAppend(Ctrl_Common obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	private int parseListAppend(Ctrl_Common obj, int size, byte[] buf, int off, int version) throws HwpParseException {
 		int len = 0;
 		
 		switch(obj.ctrlId) {
@@ -1024,14 +1024,12 @@ public class HwpSection {
 		case "lle$":
 			len = Ctrl_ShapeEllipse.parseListHeaderAppend((Ctrl_ShapeEllipse)obj, size, buf, off, version);
 			break;
-		default:
-			throw new NotImplementedException(obj.ctrlId);
 		}
 		
 		return len;
 	}
 
-	private int parseListAppend(Ctrl obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	private int parseListAppend(Ctrl obj, int size, byte[] buf, int off, int version) throws HwpParseException {
 		int len = 0;
 		
 		switch(obj.ctrlId) {
@@ -1049,8 +1047,6 @@ public class HwpSection {
 		case "  nf":
 			len = size;
 			break;
-		default:
-			throw new NotImplementedException(obj.ctrlId);
 		}
 		
 		return len;

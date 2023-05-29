@@ -96,7 +96,7 @@ public class HwpDocInfo {
         this.parentHwp = parent;
     }
 	
-	boolean parse(byte[] buf, int version) throws HwpParseException, NotImplementedException {
+	boolean parse(byte[] buf, int version) throws HwpParseException {
 		int off = 0;
 		while(off < buf.length) {
 			int header = buf[off+3]<<24&0xFF000000 | buf[off+2]<<16&0xFF0000 | buf[off+1]<<8&0xFF00 | buf[off]&0xFF;

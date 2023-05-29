@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -62,7 +63,10 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
         case "STATIC":
         	break;
         default:
-            throw new NotImplementedException("ShpaeOLE");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("ShpaeOLE");
+        	}
+        	break;
         }
 
         String numStr = attributes.getNamedItem("binaryItemIDRef").getNodeValue();   // OLE 객체 바이너리 데이터에 대한 아이디 참조값
@@ -90,32 +94,16 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
                     extentY = Integer.parseInt(numStr);
                 }
                 break;
-            /*
-            case "hp:lineShape":      // 테두리선 모양
-                {
-                    NamedNodeMap childAttrs = child.getAttributes();
-                    numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");   // 선색상
-                    borderColor = Integer.parseInt(numStr, 16);
-                    numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
-                    borderThick = Integer.parseInt(numStr);
-                    // childAttrs.getNamedItem("style").getNodeValue();                       // 선 종류
-                    // childAttrs.getNamedItem("endCap").getNodeValue();                      // 선 끝 모양
-                    // childAttrs.getNamedItem("headStyle").getNodeValue();                   // 화살표 시작 모양
-                    // childAttrs.getNamedItem("tailStyle").getNodeValue();                   // 화살표 끝 모양
-                    // childAttrs.getNamedItem("headSz").getNodeValue();                      // 화살표 시작 크기
-                    // childAttrs.getNamedItem("tailSz").getNodeValue();                      // 화살표 끝 크기
-                    // childAttrs.getNamedItem("outlineStyle").getNodeValue();                // 테두리선의 형태
-                    // childAttrs.getNamedItem("alpha").getNodeValue();                       // 투명도      
-                }
-                break;
-            */
             default:
-                throw new NotImplementedException("ShpaeOLE");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("ShpaeOLE");
+            	}
+            	break;
             }
         }
     }
 
-	public static int parseElement(Ctrl_ShapeOle obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeOle obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         obj.attr        = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;

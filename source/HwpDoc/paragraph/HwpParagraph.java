@@ -23,6 +23,7 @@ package HwpDoc.paragraph;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -68,7 +69,10 @@ public class HwpParagraph {
         case "1":
             breakType |= 0b00000100;   break;
         default:
-            throw new NotImplementedException("HwpParagraph");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("HwpParagraph");
+        	}
+        	break;
         }
 
         switch(attributes.getNamedItem("columnBreak").getNodeValue()) {
@@ -77,7 +81,10 @@ public class HwpParagraph {
         case "1":
             breakType |= 0b00001000;   break;
         default:
-            throw new NotImplementedException("HwpParagraph");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("HwpParagraph");
+        	}
+        	break;
         }
 
         // attributes.getNamedItem("merged").getNodeValue();
@@ -120,7 +127,10 @@ public class HwpParagraph {
 	            }
                 break;
             default:
-                throw new NotImplementedException("HwpParagraph");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("HwpParagraph");
+            	}
+            	break;
             }
         }
         
@@ -193,7 +203,10 @@ public class HwpParagraph {
                     case "hp:insertEnd":
                     case "hp:deleteBegin":
                     case "hp:deleteEnd":
-                        throw new NotImplementedException("hp:t");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("hp:t");
+                    	}
+                    	break;
                     }
                 }
             }
@@ -265,7 +278,10 @@ public class HwpParagraph {
 	    case "hp:scrollBar":
 	        break;
         default:
-            throw new NotImplementedException("parseHwpPargraph");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("parseHwpPargraph");
+        	}
+        	break;
 	    }
 	}
 

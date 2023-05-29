@@ -132,8 +132,6 @@ public class HwpRecord_FaceName extends HwpRecord {
         super(HwpTag.HWPTAG_FACE_NAME, 0, 0);
         this.parent = docInfo;
 
-        dumpNode(node, 1);
-        
         // TagName = hh:font
         // attributes = [face="돋움", id="0", isEmbedded="0", type="TTF"]
         // children = hh:typeInfo

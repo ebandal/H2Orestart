@@ -21,10 +21,10 @@
 package HwpDoc.HwpElement;
 
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.paragraph.Ctrl;
 
 public class HwpRecord_CtrlData extends HwpRecord {
@@ -36,7 +36,7 @@ public class HwpRecord_CtrlData extends HwpRecord {
 		super(tagNum, level, size);
 	}
 
-	public static int parseCtrl(Ctrl ctrl, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseCtrl(Ctrl ctrl, int size, byte[] buf, int off, int version) throws HwpParseException {
 		int offset = off;
 
 		// 한컴문서의 내용만으로는 어떻게 해석해야 하는지 알수 없다.
@@ -63,7 +63,9 @@ public class HwpRecord_CtrlData extends HwpRecord {
 		}
 		*/
 		
-		log.fine("                                                  ctrlID="+ctrl.ctrlId);
+    	if (log.isLoggable(Level.FINE)) {
+    		log.fine("                                                  ctrlID="+ctrl.ctrlId);
+    	}
 		// ctrlId를 거꾸로 읽어 비교한다.
 		switch(ctrl.ctrlId) {
 		case "klc%":	// FIELD_CLICKHERE
@@ -80,7 +82,9 @@ public class HwpRecord_CtrlData extends HwpRecord {
 		case "gmm%":	// FIELD_MAILMERGE
 		case "umf%":	// FIELD_FORMULA
 		case "mkob":	// ???
-			log.fine(ctrl.ctrlId+"("+size+")를 해석할 수 없음. Just skipping...");
+        	if (log.isLoggable(Level.FINE)) {
+        		log.fine(ctrl.ctrlId+"("+size+")를 해석할 수 없음. Just skipping...");
+        	}
 			break;
 		default:
 			log.severe("Neither known ctrlID=" + ctrl.ctrlId+" nor implemented.");

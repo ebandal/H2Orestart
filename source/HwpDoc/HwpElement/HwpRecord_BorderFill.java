@@ -21,6 +21,7 @@
 package HwpDoc.HwpElement;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -67,7 +68,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
 		diagonal 	= new Border();
 	}
 	
-	public HwpRecord_BorderFill(HwpDocInfo docInfo, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public HwpRecord_BorderFill(HwpDocInfo docInfo, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
 		this(tagNum, level, size);
 		this.parent = docInfo;
 
@@ -135,7 +136,6 @@ public class HwpRecord_BorderFill extends HwpRecord {
 		if (offset-off-size!=0) {
 			log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
 			dump(buf, off, size);
-			// throw new HwpParseException();
 		}
 
 	}
@@ -263,7 +263,10 @@ public class HwpRecord_BorderFill extends HwpRecord {
             case "hc:fillBrush":
                 fill = readFillBrush(child); break;
             default:
-                throw new NotImplementedException("HwpRecord_BorderFill");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("HwpRecord_BorderFill");
+            	}
+            	break;
             }
         }
     }
@@ -354,7 +357,10 @@ public class HwpRecord_BorderFill extends HwpRecord {
                 fill.fillType = fill.fillType | 0x02;
                 break;
             default:
-                throw new NotImplementedException("readFillBrush");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("readFillBrush");
+            	}
+            	break;
             }
         }
         return fill;
@@ -589,7 +595,6 @@ public class HwpRecord_BorderFill extends HwpRecord {
 				alpha			= buf[offset++];
 			}					
 			
-			
 			// 문서상에는 없으나, "추가 채우기 속성 길이"가 큰 값일 경우  무시하도록 한다.
 //			if (extraSize>0 && offset-off-size==extraSize) {
 //				extraFill = new byte[extraSize];
@@ -600,7 +605,6 @@ public class HwpRecord_BorderFill extends HwpRecord {
 			if (offset-off-size!=0) {
 				log.fine("[Fill] size=" + size + ", but currentSize=" + (offset-off));
 				dump(buf, off, size);
-				// throw new HwpParseException();
 			}
 			this.size = offset-off;
 		}

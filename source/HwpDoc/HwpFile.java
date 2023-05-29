@@ -401,7 +401,7 @@ public class HwpFile {
 			return docInfo.parse(getComponent("DocInfo"), version);
 	}
 	
-	private boolean getBodyText(int version) throws HwpParseException, NotImplementedException, IOException, DataFormatException {
+	private boolean getBodyText(int version) throws HwpParseException, IOException, DataFormatException {
 		List<DirectoryEntry> sections = oleFile.getChildEntries("BodyText");
 		log.fine("BodyText has " + sections.size() + " children");
 		for (DirectoryEntry section: sections) {

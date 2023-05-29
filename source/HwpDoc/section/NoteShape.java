@@ -56,7 +56,7 @@ public class NoteShape {
 	public NoteShape(Node child, int version) {
     }
 
-    public static NoteShape parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static NoteShape parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
 
         NoteShape noteShape = new NoteShape();

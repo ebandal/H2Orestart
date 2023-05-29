@@ -21,10 +21,10 @@
 package HwpDoc.HwpElement;
 
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.paragraph.Ctrl_Form;
 
 public class HwpRecord_FormObject extends HwpRecord {
@@ -35,7 +35,7 @@ public class HwpRecord_FormObject extends HwpRecord {
 		super(tagNum, level, size);
 	}
 	
-	public static int parseCtrl(Ctrl_Form form,  int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseCtrl(Ctrl_Form form,  int size, byte[] buf, int off, int version) throws HwpParseException {
 		int offset = off;
 		
 		offset += 4;	// tbp+
@@ -49,10 +49,12 @@ public class HwpRecord_FormObject extends HwpRecord {
 			offset += strLen;
 		}
 		
-		log.fine("                                                  "
-				+"ctrlID="+form.ctrlId
-				+",문자열="+(formStr==null?"":formStr));
-		
+    	if (log.isLoggable(Level.FINE)) {
+			log.fine("                                                  "
+					+"ctrlID="+form.ctrlId
+					+",문자열="+(formStr==null?"":formStr));
+    	}
+    	
 		return offset-off;
 	}
 }

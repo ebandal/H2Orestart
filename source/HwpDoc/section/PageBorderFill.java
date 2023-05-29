@@ -110,7 +110,7 @@ public class PageBorderFill {
         }
     }
 
-	public static PageBorderFill parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static PageBorderFill parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
 
         PageBorderFill borderFill = new PageBorderFill();

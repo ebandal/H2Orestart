@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -93,14 +94,11 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
                 }
                 node.removeChild(child);
                 break;
-            default:
-            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
-                throw new NotImplementedException("Ctrl_ShapeLine");
             }
         }
     }
 
-   public static int parseElement(Ctrl_ShapeLine obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+   public static int parseElement(Ctrl_ShapeLine obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         if (obj.ctrlId!=null && obj.ctrlId.equals("loc$")) {
@@ -131,7 +129,7 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
         }
     }
 
-    public static int parseCtrl(Ctrl_ShapeLine shape, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapeLine shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size, buf, offset, version);
 

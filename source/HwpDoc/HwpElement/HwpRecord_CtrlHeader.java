@@ -50,7 +50,7 @@ public class HwpRecord_CtrlHeader extends HwpRecord {
 		super(tagNum, level, size);
 	}
 	
-	public static Ctrl parse(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static Ctrl parse(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
 
 		int offset = off;
 		// hwp포맷에는  역순으로 ctrlId를 구성한다. 여기서는 순방향으로 구성한다.
@@ -168,12 +168,6 @@ public class HwpRecord_CtrlHeader extends HwpRecord {
 			break;
 		}
 
-//		if (offset-off-size != 0) {
-//			log.warning("[TAG]=" + tag.toString() + ", ctrlId=" + ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-//			dump(buf, off, size);
-//			throw new HwpParseException();
-//		}
-		
 		return ctrl;
 	}
 }

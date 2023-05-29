@@ -23,6 +23,7 @@ package HwpDoc.paragraph;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -182,7 +183,10 @@ public class Ctrl_Common extends Ctrl {
             case "NONE":
                 break;
             default:
-                throw new NotImplementedException("Ctrl_Common");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_Common");
+            	}
+            	break;
             }
             attributes.removeNamedItem("pageBreak");
         }
@@ -198,7 +202,10 @@ public class Ctrl_Common extends Ctrl {
             case "LARGEST_ONLY":
             	textFlow = 3;   break; 
             default:
-                throw new NotImplementedException("Ctrl_Common");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_Common");
+            	}
+            	break;
             }
             attributes.removeNamedItem("textFlow");
         }
@@ -214,7 +221,10 @@ public class Ctrl_Common extends Ctrl {
             case "IN_FRONT_OF_TEXT":    // 글과 겹치게 하여 글 앞으로
             	textWrap = TextWrap.IN_FRONT_OF_TEXT;	break;
             default:
-                throw new NotImplementedException("Ctrl_Common");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_Common");
+            	}
+            	break;
             }
             attributes.removeNamedItem("textWrap");
         }
@@ -236,7 +246,10 @@ public class Ctrl_Common extends Ctrl {
             case "EQUATION":
                 numberingType = 3;  break;
             default:
-                throw new NotImplementedException("Ctrl_Common");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_Common");
+            	}
+            	break;
             }
             attributes.removeNamedItem("numberingType");
         }
@@ -360,7 +373,10 @@ public class Ctrl_Common extends Ctrl {
         case "BOTTOM":
             captionAttr = 0b11;      break;
         default:
-            throw new NotImplementedException("setCaption");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("setCaption");
+        	}
+        	break;
         }
 
         switch(attrs.getNamedItem("fullSz").getNodeValue()) {
@@ -368,8 +384,6 @@ public class Ctrl_Common extends Ctrl {
             break;
         case "1":
             captionAttr |= 0b100;    break;
-        default:
-            throw new NotImplementedException("setCaption");
         }
 
         String numStr = attrs.getNamedItem("width").getNodeValue();
@@ -413,7 +427,10 @@ public class Ctrl_Common extends Ctrl {
                 break;
             default:
             	log.warning(child.getNodeName() + " : " + child.getNodeValue());
-                throw new NotImplementedException("setCaption");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("setCaption");
+            	}
+            	break;
             }
         }
 	}

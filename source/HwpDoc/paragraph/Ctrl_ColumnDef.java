@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -105,7 +106,9 @@ public class Ctrl_ColumnDef extends Ctrl {
         case "PARALLEL":
             break;
         default:
-            throw new NotImplementedException("Ctrl_ColumnDef");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl_ColumnDef");
+        	}
         }
         
         switch(attributes.getNamedItem("layout").getNodeValue()) {
@@ -114,7 +117,9 @@ public class Ctrl_ColumnDef extends Ctrl {
         case "MIRROR":
             break;
         default:
-            throw new NotImplementedException("Ctrl_ColumnDef");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl_ColumnDef");
+        	}
         }
 
         String numStr = attributes.getNamedItem("colCount").getNodeValue();
@@ -125,8 +130,6 @@ public class Ctrl_ColumnDef extends Ctrl {
             sameSz = false;    break;
         case "1":
             sameSz = true;     break;
-        default:
-            throw new NotImplementedException("Ctrl_ColumnDef");
         }
 
         // attributes.getNamedItem("sameGap").getNodeValue()
@@ -220,7 +223,10 @@ public class Ctrl_ColumnDef extends Ctrl {
                 break;
             default:
         		log.warning(child.getNodeName() + "," + child.getNodeValue());
-                throw new NotImplementedException("Ctrl_ColumnDef");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_ColumnDef");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;

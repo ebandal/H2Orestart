@@ -98,8 +98,6 @@ public class HwpRecord_TabDef extends HwpRecord {
         super(HwpTag.HWPTAG_TAB_DEF, 0, 0);
         this.parent = docInfo;
         
-        dumpNode(node, 1);
-        
         NamedNodeMap attributes = node.getAttributes();
         
         // id는 처리하지 않는다. List<HwpRecord_TabDef>에 순차적으로 추가한다. 

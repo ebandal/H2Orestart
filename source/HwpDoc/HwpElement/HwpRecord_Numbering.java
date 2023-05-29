@@ -21,6 +21,7 @@
 package HwpDoc.HwpElement;
 
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -137,8 +138,6 @@ public class HwpRecord_Numbering extends HwpRecord {
 	public HwpRecord_Numbering(HwpDocInfo docInfo, Node node, int version) throws NotImplementedException {
         super(HwpTag.HWPTAG_NUMBERING, 0, 0);
         this.parent = docInfo;
-        
-        dumpNode(node, 1);
         
         NamedNodeMap attributes = node.getAttributes();
 
@@ -275,9 +274,11 @@ public class HwpRecord_Numbering extends HwpRecord {
 	                        numbering[i].numFormat = "^g.";		break;
                     	}
                     	break;
-                    	
                     default:
-                    	throw new NotImplementedException("HwpRecord_Numbering");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("HwpRecord_Numbering");
+                    	}
+                    	break;
                     }
 
                     numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();

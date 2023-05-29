@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -75,7 +76,10 @@ public class Ctrl_NewNumber extends Ctrl {
                 numShape = NumberShape2.valueOf(child.getNodeValue());
                 break;
             default:
-                throw new NotImplementedException("Ctrl_NewNumber");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_NewNumber");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;

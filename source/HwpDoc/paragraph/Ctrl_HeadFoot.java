@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -70,7 +71,7 @@ public class Ctrl_HeadFoot extends Ctrl {
 		this.size = offset-off;
 	}
 	
-    public static int parseListHeaderAppend(Ctrl_HeadFoot obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseListHeaderAppend(Ctrl_HeadFoot obj, int size, byte[] buf, int off, int version) throws HwpParseException {
 		int offset = off;
 		offset += 2;
 		
@@ -156,7 +157,10 @@ public class Ctrl_HeadFoot extends Ctrl {
                     		break;
                         default:
                         	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
-                            throw new NotImplementedException("Ctrl_HeadFoot");
+                        	if (log.isLoggable(Level.FINE)) {
+                        		throw new NotImplementedException("Ctrl_HeadFoot");
+                        	}
+                        	break;
                     	}
                     }
                     
@@ -173,14 +177,20 @@ public class Ctrl_HeadFoot extends Ctrl {
                         	break;
                         default:
                         	log.warning(grandChild.getNodeName() + ":" + grandChild.getNodeValue());
-                            throw new NotImplementedException("Ctrl_HeadFoot");
+                        	if (log.isLoggable(Level.FINE)) {
+                        		throw new NotImplementedException("Ctrl_HeadFoot");
+                        	}
+                        	break;
                         }
                     }
                 }
                 break;
             default:
             	log.warning(child.getNodeName() + ":" + child.getNodeValue());
-                throw new NotImplementedException("Ctrl_HeadFoot");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_HeadFoot");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;

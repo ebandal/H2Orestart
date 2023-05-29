@@ -20,17 +20,14 @@
  */
 package HwpDoc.HwpElement;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.Exception.NotImplementedException;
 import soffice.WriterContext.HanType;
 
 public class HwpRecord_BinData extends HwpRecord {
@@ -108,7 +105,7 @@ public class HwpRecord_BinData extends HwpRecord {
 		}
 	}
 	
-	public HwpRecord_BinData(Node node, int version) throws NotImplementedException {
+	public HwpRecord_BinData(Node node, int version) {
         super(HwpTag.HWPTAG_BIN_DATA, 0, 0);
 
         NamedNodeMap attributes = node.getAttributes();

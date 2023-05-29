@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -123,8 +124,6 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                             numStr = childAttrs.getNamedItem("y").getNodeValue();
                             borderPoints[3].y = Integer.parseInt(numStr);
                             break;
-                        default:
-                            throw new NotImplementedException("Ctrl_ShapePic");
                         }
                     }
                 }
@@ -178,7 +177,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                             }
                             break;
                         default:
-                            throw new NotImplementedException("Ctrl_ShapePic");
+                        	if (log.isLoggable(Level.FINE)) {
+                        		throw new NotImplementedException("Ctrl_ShapePic");
+                        	}
+                        	break;
                         }
                     }
                 }
@@ -209,7 +211,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                     case "BLACK_WHITE":
                         effect = 2;    break;
                     default:
-                        throw new NotImplementedException("Ctrl_ShapePic");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("Ctrl_ShapePic");
+                    	}
+                    	break;
                     }
                     numStr =  childAttrs.getNamedItem("binaryItemIDRef").getNodeValue();// BinDataItem 요소의 아이디 참조값
                     binDataID = numStr;
@@ -265,12 +270,15 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
 	            }
             	break;
             default:
-                throw new NotImplementedException("Ctrl_ShapePic");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_ShapePic");
+            	}
+            	break;
             }
         }
     }
 
-	public static int parseElement(Ctrl_ShapePic obj, int size, byte[] buf, int off, int version, HwpFile hwp) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapePic obj, int size, byte[] buf, int off, int version, HwpFile hwp) throws HwpParseException {
         int offset = off;
         
         obj.borderColor     = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
@@ -371,7 +379,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         return offset-off;
     }
 
-    public static int parseCtrl(Ctrl_ShapePic shape, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapePic shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         int len = Ctrl_ObjElement.parseCtrl((Ctrl_ObjElement)shape, size-82, buf, offset, version);
@@ -456,7 +464,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             this.size = offset-off;
         }
         
-        public Shadow(PicEffectType type, Node node, int version) throws NotImplementedException {
+        public Shadow(PicEffectType type, Node node, int version) {
             super(type);
             
             NamedNodeMap attrs = node.getAttributes();
@@ -476,8 +484,6 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                 rotation = 0;   break;
             case "1":
                 rotation = 1;   break;
-            default:
-                throw new NotImplementedException("Shadow");
             }
             
             NodeList nodeList = node.getChildNodes();
@@ -510,7 +516,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         public  float       radius;             // 네온 반경
         public  PicColor    color;          // 네온 색상
         
-        public Neon(int typeNum, byte[] buf, int off, int size) throws NotImplementedException {
+        public Neon(int typeNum, byte[] buf, int off, int size) {
             super(typeNum);
             
             int offset = off;
@@ -536,7 +542,6 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             NodeList nodeList = node.getChildNodes();
             for (int i=0; i<nodeList.getLength(); i++) {
                 Node child = nodeList.item(i);
-                NamedNodeMap childAttrs = child.getAttributes();
                 switch(child.getNodeName()) {
                 case "hp:effectsColor":  // 네온 색상
                     color = new PicColor(child);
@@ -549,7 +554,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
     public static class SoftEdge extends PicEffect {
         public  float       radius;         // 부드러운 가장자리 반경
 
-        public SoftEdge(int typeNum, byte[] buf, int off, int size) throws NotImplementedException {
+        public SoftEdge(int typeNum, byte[] buf, int off, int size) {
             super(typeNum);
             
             int offset = off;
@@ -584,7 +589,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         public  float   endPos;         // 끝 위치
         public  float   offsetDirection;// 오프셋 방향
 
-        public Reflect(int typeNum, byte[] buf, int off, int size) throws NotImplementedException {
+        public Reflect(int typeNum, byte[] buf, int off, int size) {
             super(typeNum);
             
             int offset = off;
@@ -628,7 +633,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             case "0":
                 break;
             default:
-                throw new NotImplementedException("Reflect");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Reflect");
+            	}
+            	break;
             }
             
             String numStr =  attrs.getNamedItem("radius").getNodeValue(); // 흐릿함 정도
@@ -676,7 +684,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                     endPos = Float.parseFloat(numStr);  // 끝 위치
                     break;
                 default:
-                    throw new NotImplementedException("Reflect");
+                	if (log.isLoggable(Level.FINE)) {
+                		throw new NotImplementedException("Reflect");
+                	}
+                	break;
                 }
             }
         }

@@ -23,6 +23,7 @@ package HwpDoc.paragraph;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -278,7 +279,10 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                             do_subList(grandChild, version);
                             break;
                         default:
-                            throw new NotImplementedException("Ctrl_GeneralShape");
+                        	if (log.isLoggable(Level.FINE)) {
+                        		throw new NotImplementedException("Ctrl_GeneralShape");
+                        	}
+                        	break;
                         }
                     }
                     node.removeChild(child);
@@ -358,7 +362,10 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 break;
             default:
             	log.warning(child.getNodeName() + "=" + child.getNodeValue());
-                // throw new NotImplementedException("Ctrl_GeneralShape");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_GeneralShape");
+            	}
+            	break;
             }
         }
     }
@@ -421,7 +428,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         }
 	}
 	
-	public static Ctrl_GeneralShape parse(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static Ctrl_GeneralShape parse(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         // hwp포맷에는  역순으로 ctrlId를 구성한다. 여기서는 순방향으로 구성한다.
@@ -494,18 +501,17 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
             break;
         default:
             log.severe("Neither known ctrlID=" + ctrlId+" nor implemented.");
-            throw new NotImplementedException(ctrlId);
+        	break;
         }
         
         if (offset-off-size!=0) {
             log.fine("[CtrlID]=" + ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            // throw new HwpParseException();
         }
         
         return shape;
     }
 
-    public static int parseListHeaderAppend(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseListHeaderAppend(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         if (size>=16) {
             offset += 2;
@@ -522,10 +528,14 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
             offset += 8;
         }
         
-        log.fine("                                                  ctrlID="+obj.ctrlId+", 캡션 parsing이지만, 정확한 parsing은 어떻게 해야 하는지 알 수 없음.");
+    	if (log.isLoggable(Level.FINE)) {
+    		log.fine("                                                  ctrlID="+obj.ctrlId+", 캡션 parsing이지만, 정확한 parsing은 어떻게 해야 하는지 알 수 없음.");
+    	}
         
         if (offset-off-size!=0) {
-            log.fine("[CtrlID]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+        	if (log.isLoggable(Level.FINE)) {
+        		log.fine("[CtrlID]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+        	}
             throw new HwpParseException();
         }
         
@@ -561,8 +571,10 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         // 글상자 텍스트 속성.  아래 내용대로 읽히지 않는다.  알 수 없는 22bytes가 온다.
         offset += 22;
         
-        log.finest("[그리기 개체 공통 속성]을 읽었습니다.");
-        log.finest("[그리기 개체 글상자용 텍스트 속성]을 읽었습니다. [문단 리스트 헤더]를 읽어야 합니다.");
+    	if (log.isLoggable(Level.FINEST)) {
+	        log.finest("[그리기 개체 공통 속성]을 읽었습니다.");
+	        log.finest("[그리기 개체 글상자용 텍스트 속성]을 읽었습니다. [문단 리스트 헤더]를 읽어야 합니다.");
+    	}
         
         return offset-off;
     }

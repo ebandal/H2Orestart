@@ -140,7 +140,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
         }
     }
 
-	public static int parseElement(Ctrl_ShapeRect obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeRect obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
 
         // 사각형 개체 속성
@@ -168,7 +168,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
         return offset-off;
     }
     
-    public static int parseListHeaderAppend(Ctrl_ShapeRect obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseListHeaderAppend(Ctrl_ShapeRect obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += 2;
         
@@ -207,7 +207,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
         return offset-off;
     }
 
-    public static int parseCtrl(Ctrl_ShapeRect shape, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapeRect shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size, buf, offset, version);
 

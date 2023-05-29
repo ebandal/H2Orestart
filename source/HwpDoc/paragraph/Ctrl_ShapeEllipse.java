@@ -147,7 +147,7 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
         }
     }
 
-	public static int parseElement(Ctrl_ShapeEllipse obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+	public static int parseElement(Ctrl_ShapeEllipse obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         int attr    = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
@@ -192,14 +192,14 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
         return offset-off;
     }
     
-    public static int parseCtrl(Ctrl_ShapeEllipse shape, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseCtrl(Ctrl_ShapeEllipse shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size, buf, off, version);
         
         return offset-off;
     }
     
-    public static int parseListHeaderAppend(Ctrl_ShapeEllipse obj, int size, byte[] buf, int off, int version) throws HwpParseException, NotImplementedException {
+    public static int parseListHeaderAppend(Ctrl_ShapeEllipse obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += 2;
         

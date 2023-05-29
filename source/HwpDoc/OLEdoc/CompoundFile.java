@@ -23,8 +23,6 @@ package HwpDoc.OLEdoc;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -35,12 +33,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import HwpDoc.ErrCode;
 import HwpDoc.Exception.CompoundDetectException;
-import HwpDoc.Exception.NotImplementedException;
 
 
 public class CompoundFile {
@@ -208,7 +206,7 @@ public class CompoundFile {
 	}
 
 	
-	public void open() throws CompoundDetectException, NotImplementedException, IOException {
+	public void open() throws CompoundDetectException, IOException {
 		
 		byte[] buf = new byte[sectorSize];	// from Signature to Number of DIFAT sectors
 		if (raf.read(buf, 0, sectorSize) != sectorSize) {
@@ -227,7 +225,9 @@ public class CompoundFile {
 			read_MSAT_sector(secID);	// MSAT sector에서  SSAT SecID들을 구한다.
 		}
 		
-		log.finest("[______SAT Sector]={"+ SAT_list.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + "}");
+		if (log.isLoggable(Level.FINEST)) {
+			log.finest("[______SAT Sector]={"+ SAT_list.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + "}");
+		}
 		
 		// Directory
 		secID = first_SecID_Directory;
@@ -248,7 +248,9 @@ public class CompoundFile {
 				read_Directory_sector(secID_Directory);
 			}
 		}
-		log.finest("[Directory Sector]={" + Directory_SecID_list.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + "}");
+		if (log.isLoggable(Level.FINEST)) {
+			log.finest("[Directory Sector]={" + Directory_SecID_list.stream().map(i -> i.toString()).collect(Collectors.joining(",")) + "}");
+		}
 		
 		// collect SSAT SecID 
 		int lastSecID = first_SecID_SSAT;
@@ -260,7 +262,9 @@ public class CompoundFile {
 			secID_list.stream().filter(id -> !SSAT_SecID_list.contains(id)).forEach(id -> SSAT_SecID_list.add(id));
 			lastSecID = secID_list.get(secID_list.size()-1);
 		}
-		log.fine("[Short SAT Sector]={" +SSAT_SecID_list.stream().map(i->i.toString()).collect(Collectors.joining(",")) + "}");
+		if (log.isLoggable(Level.FINEST)) {
+			log.finest("[Short SAT Sector]={" +SSAT_SecID_list.stream().map(i->i.toString()).collect(Collectors.joining(",")) + "}");
+		}
 		
 		int SecID_SStream = 0;
 		
@@ -308,28 +312,30 @@ public class CompoundFile {
 			}
 		}
 
-		log.finest("_I __________Name_______ ___Type LS RS Chd Sec Size__  Chain__________");
-		for (int idx=0; idx<DirectoryEntry_list.size();idx++) {
-			DirectoryEntry e = DirectoryEntry_list.get(idx);
-			log.finest(String.format("%2d %21s %7s %2d %2d %3d %3d %6d %s{%s}",
-											idx, 
-											e.directoryEntryName.trim(),
-											(e.objectType==0x5?"root":e.objectType==0x2?"stream":e.objectType==0x1?"storage":"none"),
-											e.leftSiblingID,
-											e.rightSiblingID,
-											e.childID,
-											e.startingSectorID,
-											e.streamSize,
-											e.streamSize<miniStreamCutoffSize?"s":"N",
-											e.secNums==null?"null":e.secNums.stream().map(i -> i.toString()).collect(Collectors.joining(",")))
-								);
+		if (log.isLoggable(Level.FINEST)) {
+			log.finest("_I __________Name_______ ___Type LS RS Chd Sec Size__  Chain__________");
+			for (int idx=0; idx<DirectoryEntry_list.size();idx++) {
+				DirectoryEntry e = DirectoryEntry_list.get(idx);
+				log.finest(String.format("%2d %21s %7s %2d %2d %3d %3d %6d %s{%s}",
+												idx, 
+												e.directoryEntryName.trim(),
+												(e.objectType==0x5?"root":e.objectType==0x2?"stream":e.objectType==0x1?"storage":"none"),
+												e.leftSiblingID,
+												e.rightSiblingID,
+												e.childID,
+												e.startingSectorID,
+												e.streamSize,
+												e.streamSize<miniStreamCutoffSize?"s":"N",
+												e.secNums==null?"null":e.secNums.stream().map(i -> i.toString()).collect(Collectors.joining(",")))
+									);
+			}
 		}
 		
 		log.fine("open() closing");
 	}
 
 
-	private List<Integer> get_SecIDs_from_SAT(int secID, int satIndex, int secID_SSAT) throws IOException, NotImplementedException {
+	private List<Integer> get_SecIDs_from_SAT(int secID, int satIndex, int secID_SSAT) throws IOException {
 		byte[] buf = new byte[sectorSize];
 		raf.seek((secID+1) * sectorSize);
 		raf.read(buf, 0, sectorSize);
@@ -346,20 +352,15 @@ public class CompoundFile {
 			}
 			secIdList.add(currSecID);
 			iBuf = currSecID%(sectorSize/4) * 4;
-			
-//			if (currSecID >= sectorSize/4) {
-//				throw new NotImplementedException("[get_SecIDs_from_SAT] next SecID(" + currSecID + ") exceeded " + (sectorSize/4) + ".");
-//			}
 		}
 		return secIdList;
 	}
 
 	
-	public void parseSectors(int secID, byte[] buf) throws CompoundDetectException, NotImplementedException, IOException {
+	public void parseSectors(int secID, byte[] buf) throws CompoundDetectException, IOException {
 		int sectorType = buf[3]<<24&0xFF000000 | buf[2]<<16&0xFF0000 | buf[1]<<8&0xFF00 | buf[0]&0xFF;	// for DIFAT, FAT, MiniFAT,
 
 		if (SAT_list.contains(secID)) {
-			// SectorType type = lookupSectorType(buf);
 			parse_SAT_sector(secID, buf);
 		}
 		
@@ -425,7 +426,7 @@ public class CompoundFile {
 		return SectorType.CONTINUE;
 	}
 	
-	private void read_Directory_sector(int secID) throws IOException, NotImplementedException {
+	private void read_Directory_sector(int secID) throws IOException {
 		byte[] buf = new byte[sectorSize];
 		raf.seek((secID+1) * sectorSize);
 		if (raf.read(buf, 0, sectorSize) == sectorSize) {
@@ -433,7 +434,7 @@ public class CompoundFile {
 		}
 	}
 
-	private void parse_Directory_sector(byte[] buf) throws NotImplementedException, UnsupportedEncodingException {
+	private void parse_Directory_sector(byte[] buf) throws UnsupportedEncodingException {
 		for(int i=0, index=0; index <= sectorSize-128; i++,index+=128) {
 			int entryNameLen 				= buf[index+65]<<8&0xFF00 | buf[index+64]&0xFF;
 			String directoryEntryName = new String(buf, index, entryNameLen, StandardCharsets.UTF_16LE);
@@ -465,7 +466,7 @@ public class CompoundFile {
 		}
 	}
 
-	private void read_SSAT_sector(int secID) throws IOException, NotImplementedException {
+	private void read_SSAT_sector(int secID) throws IOException {
 		byte[] buf = new byte[sectorSize];
 		raf.seek((secID+1) * sectorSize);
 		if (raf.read(buf, 0, sectorSize) == sectorSize) {
@@ -473,7 +474,7 @@ public class CompoundFile {
 		}
 	}
 	
-	private void parse_SSAT_sector(byte[] buf) throws NotImplementedException {
+	private void parse_SSAT_sector(byte[] buf) {
 		int offset = 0;
 		while(offset<sectorSize-4) {
 			int nextSectorID = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0xFF0000 | buf[offset+1]<<8&0xFF00 | buf[offset]&0xFF;
@@ -483,7 +484,7 @@ public class CompoundFile {
 		}
 	}
 	
-	private void read_MSAT_sector(int secID) throws IOException, NotImplementedException {
+	private void read_MSAT_sector(int secID) throws IOException {
 		byte[] buf = new byte[sectorSize];
 		raf.seek((secID+1) * sectorSize);
 		if (raf.read(buf, 0, sectorSize) == sectorSize) {
@@ -491,7 +492,7 @@ public class CompoundFile {
 		}
 	}
 
-	private void parse_MSAT_sector(byte[] buf) throws NotImplementedException, IOException {
+	private void parse_MSAT_sector(byte[] buf) throws IOException {
 		int offset = 0;
 		while(offset<sectorSize-4) {
 			int sector = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0xFF0000 | buf[offset+1]<<8&0xFF00 | buf[offset]&0xFF;

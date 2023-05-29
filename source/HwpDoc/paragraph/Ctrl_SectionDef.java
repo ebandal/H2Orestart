@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -137,8 +138,6 @@ public class Ctrl_SectionDef extends Ctrl {
 	public Ctrl_SectionDef(String ctrlId, Node node, int version) throws NotImplementedException {
 	    super(ctrlId);
 	    
-        HwpRecord.dumpNode(node, 1);
-        
         NamedNodeMap attributes = node.getAttributes();
 
         // id값은 처리하지 않는다. List<HwpRecord_CharShape>에 순차적으로 추가한다.
@@ -150,8 +149,11 @@ public class Ctrl_SectionDef extends Ctrl {
         case "VERTICAL":
             textDirection = 1;  break; // 0:가로, 1:세로
         default:
-            throw new NotImplementedException("Ctrl_SectionDef");
-        };
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl_SectionDef");
+        	}
+        	break;
+        }
 
         String numStr = attributes.getNamedItem("spaceColumns").getNodeValue();
         spaceColumns = (short) Integer.parseInt(numStr);
@@ -182,7 +184,10 @@ public class Ctrl_SectionDef extends Ctrl {
                     case "ODD":
                         pageStartOn = 2;   break;
                     default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("Ctrl_SectionDef");
+                    	}
+                    	break;
                     }
                     
                     numStr = childAttrs.getNamedItem("page").getNodeValue();
@@ -203,14 +208,20 @@ public class Ctrl_SectionDef extends Ctrl {
                     case "0":
                         lineGrid = 0;   break;
                     default :
-                        throw new NotImplementedException("lineGrid");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("lineGrid");
+                    	}
+                    	break;
                     }
 
                     switch(childAttrs.getNamedItem("charGrid").getNodeValue()) {
                     case "0":
                         charGrid = 0;   break;
                     default :
-                        throw new NotImplementedException("charGrid");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("charGrid");
+                    	}
+                    	break;
                     }
                 }
                 break;
@@ -222,8 +233,6 @@ public class Ctrl_SectionDef extends Ctrl {
                         hideHeader = false;   break;
                     case "1":
                         hideHeader = true;   break;
-                    default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
                     }
 
                     switch(childAttrs.getNamedItem("hideFirstFooter").getNodeValue()) {
@@ -231,8 +240,6 @@ public class Ctrl_SectionDef extends Ctrl {
                         hideFooter = false;   break;
                     case "1":
                         hideFooter = true;   break;
-                    default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
                     }
 
                     switch(childAttrs.getNamedItem("hideFirstMasterPage").getNodeValue()) {
@@ -240,8 +247,6 @@ public class Ctrl_SectionDef extends Ctrl {
                         hideMasterPage = false;   break;
                     case "1":
                         hideMasterPage = true;   break;
-                    default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
                     }
                     
                     switch(childAttrs.getNamedItem("border").getNodeValue()) {
@@ -252,7 +257,10 @@ public class Ctrl_SectionDef extends Ctrl {
                     case "SHOW_ALL":
                         hideBorder = false; showFirstBorder = false;    break;
                     default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("Ctrl_SectionDef");
+                    	}
+                    	break;
                     }
                     
                     switch(childAttrs.getNamedItem("fill").getNodeValue()) {
@@ -263,7 +271,10 @@ public class Ctrl_SectionDef extends Ctrl {
                     case "SHOW_ALL":
                         hideFill = false;  showFirstFill = true;  break;
                     default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
+                    	if (log.isLoggable(Level.FINE)) {
+                    		throw new NotImplementedException("Ctrl_SectionDef");
+                    	}
+                    	break;
                     }
 
                     //childAttrs.getNamedItem("showLineNumber").getNodeValue()
@@ -273,8 +284,6 @@ public class Ctrl_SectionDef extends Ctrl {
                         hidePageNumPos = false;   break;
                     case "1":
                         hidePageNumPos = true;   break;
-                    default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
                     }
                     
                     switch(childAttrs.getNamedItem("hideFirstEmptyLine").getNodeValue()) {
@@ -282,8 +291,6 @@ public class Ctrl_SectionDef extends Ctrl {
                         hideEmptyLine = false;   break;
                     case "1":
                         hideEmptyLine = true;   break;
-                    default:
-                        throw new NotImplementedException("Ctrl_SectionDef");
                     }
                 }
                 break;
@@ -322,7 +329,10 @@ public class Ctrl_SectionDef extends Ctrl {
                 break;
             default:
             	log.warning("Not implmented:" + child.getNodeName());
-                throw new NotImplementedException("Ctrl_SectionDef");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_SectionDef");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;

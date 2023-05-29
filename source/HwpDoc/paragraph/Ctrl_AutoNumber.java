@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -119,7 +120,10 @@ public class Ctrl_AutoNumber extends Ctrl {
 	            			numShape = NumberShape2.USER_CHAR;	break;
 	        			default:
 	                    	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
-	                        throw new NotImplementedException("Ctrl_AutoNumber");
+	                    	if (log.isLoggable(Level.FINE)) {
+	                    		throw new NotImplementedException("Ctrl_AutoNumber");
+	                    	}
+	                    	break;
 	            		}
 	            	}
 	            	break;
@@ -137,7 +141,10 @@ public class Ctrl_AutoNumber extends Ctrl {
                 break;
             default:
             	log.warning(child.getNodeName() + ":" + child.getNodeValue());
-                throw new NotImplementedException("Ctrl_AutoNumber");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_AutoNumber");
+            	}
+            	break;
             }
         }
         this.fullfilled = true;

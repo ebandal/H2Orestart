@@ -20,6 +20,7 @@
  */
 package HwpDoc.HwpElement;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -29,7 +30,6 @@ import org.w3c.dom.NodeList;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord_IdMapping.Index;
 
 public class HwpRecord_ParaShape extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_ParaShape.class.getName());
@@ -176,8 +176,6 @@ public class HwpRecord_ParaShape extends HwpRecord {
         super(HwpTag.HWPTAG_PARA_SHAPE, 0, 0);
         this.parent = docInfo;
         
-        dumpNode(node, 1);
-        
         NamedNodeMap attributes = node.getAttributes();
         
         // id값은 처리하지 않는다. List<HwpRecord_ParaShape>에 순차적으로 추가한다.
@@ -261,7 +259,10 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 	breakLatinWord = 1; break;
                 default:
                 	log.warning("Not Implemented:" + childAttrs.getNamedItem("breakLatinWord").getNodeValue());
-                    throw new NotImplementedException("HwpRecord_ParaShape");
+                	if (log.isLoggable(Level.FINE)) {
+                		throw new NotImplementedException("HwpRecord_ParaShape");
+                	}
+                	break;
                 }
     
                 switch(childAttrs.getNamedItem("breakNonLatinWord").getNodeValue()) {
@@ -270,19 +271,22 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "BREAK_WORD":
                     breakNonLatinWord = 1; break; 
                 default:
-                    throw new NotImplementedException("HwpRecord_ParaShape");
+                	if (log.isLoggable(Level.FINE)) {
+                		throw new NotImplementedException("HwpRecord_ParaShape");
+                	}
+                	break;
                 }
     
                 switch(childAttrs.getNamedItem("widowOrphan").getNodeValue()) {
                 case "0":
-                    widowOrphan = false;    break;
+                    widowOrphan = false;   break;
                 case "1":
                     widowOrphan = true;    break;
                 }
                 
                 switch(childAttrs.getNamedItem("keepWithNext").getNodeValue()) {
                 case "0":
-                    keepWithNext = false;    break;
+                    keepWithNext = false;   break;
                 case "1":
                     keepWithNext = true;    break;
                 }
@@ -296,18 +300,16 @@ public class HwpRecord_ParaShape extends HwpRecord {
 				*/
                 switch(childAttrs.getNamedItem("pageBreakBefore").getNodeValue()) {
                 case "0":
-                    pageBreakBefore = false;    break;
+                    pageBreakBefore = false;   break;
                 case "1":
                     pageBreakBefore = true;    break;
                 }
     
                 switch(childAttrs.getNamedItem("lineWrap").getNodeValue()) {
                 case "BREAK":
-                    lineWrap = 0;    break;
+                    lineWrap = 0;   break;
                 case "SQUEEZE":
                 	lineWrap = 1;	break;
-                default:
-                    throw new NotImplementedException("HwpRecord_ParaShape");
                 }
             }
             break;
@@ -324,7 +326,10 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "AT_LEAST":
                     lineSpacingType = 4; break;
                 default:
-                    throw new NotImplementedException("HwpRecord_ParaShape");
+                	if (log.isLoggable(Level.FINE)) {
+                		throw new NotImplementedException("HwpRecord_ParaShape");
+                	}
+                	break;
                 }
                 
                 numStr = childAttrs.getNamedItem("value").getNodeValue();
