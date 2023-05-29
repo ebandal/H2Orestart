@@ -183,10 +183,12 @@ public class HwpParagraph {
                     case "hp:fwSpace":
                         p.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE));
                         break;
+                    case "hp:tab":
+                        p.add(new ParaText("____", "\t", 0));
+                        break;
                     case "hp:markpenBegin":    // 134 page
                     case "hp:markpenEnd":
                     case "hp:titleMark":
-                    case "hp:tab":
                     case "hp:insertBegin":
                     case "hp:insertEnd":
                     case "hp:deleteBegin":
