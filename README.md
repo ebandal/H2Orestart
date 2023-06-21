@@ -15,9 +15,18 @@ hwpx파일을 OpenDocumentText (ODT)형식으로 변환 할 수 있습니다.
 * 확장 바이너리의 사용은 무료이며, 자유롭게 사용하시면 됩니다.
 * 오류나 불편사항은 이 github의 issue에 등록해주시면 주기적으로 개선하겠습니다.
 
+## 설치
+### LibreOffice Extension
+https://extensions.libreoffice.org/en/extensions/show/27504
+
+### ArchLinux (AUR)
+https://aur.archlinux.org/packages/libreoffice-extension-h2orestart
+
+### 직접 설치 (Manual installation)
+Release에서 직접 oxt 파일 다운로드 후 LibreOffice 확장 관리자를 통해 설치
 
 ## 버전정보
-Release에 별도 표기합니다.
+[Release](https://github.com/ebandal/H2Orestart/releases)에 별도 표기합니다.
 
 
 ## 라이선스
