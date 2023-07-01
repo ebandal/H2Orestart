@@ -156,7 +156,7 @@ public class Ctrl_HeadFoot extends Ctrl {
                     	case "vertAlign":
                     		break;
                         default:
-                        	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
+                        	log.fine(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
                         	if (log.isLoggable(Level.FINE)) {
                         		throw new NotImplementedException("Ctrl_HeadFoot");
                         	}
@@ -176,7 +176,7 @@ public class Ctrl_HeadFoot extends Ctrl {
                             paras.add(p);
                         	break;
                         default:
-                        	log.warning(grandChild.getNodeName() + ":" + grandChild.getNodeValue());
+                        	log.fine(grandChild.getNodeName() + ":" + grandChild.getNodeValue());
                         	if (log.isLoggable(Level.FINE)) {
                         		throw new NotImplementedException("Ctrl_HeadFoot");
                         	}
@@ -186,7 +186,7 @@ public class Ctrl_HeadFoot extends Ctrl {
                 }
                 break;
             default:
-            	log.warning(child.getNodeName() + ":" + child.getNodeValue());
+            	log.fine(child.getNodeName() + ":" + child.getNodeValue());
             	if (log.isLoggable(Level.FINE)) {
             		throw new NotImplementedException("Ctrl_HeadFoot");
             	}

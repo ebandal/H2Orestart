@@ -20,8 +20,6 @@
  */
 package HwpDoc.HwpElement;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -31,7 +29,6 @@ import org.w3c.dom.NodeList;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType1;
 
 public class HwpRecord_CharShape extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_CharShape.class.getName());
@@ -374,7 +371,7 @@ public class HwpRecord_CharShape extends HwpRecord {
                    	case "3D":
                    		strikeOutShape = LineStyle2.NONE; 	break;
                    	default:
-                   		log.warning("Not Implemented:" + childAttrs.getNamedItem("shape").getNodeValue());
+                   		log.fine("Not Implemented:" + childAttrs.getNamedItem("shape").getNodeValue());
                     }
                     
                     // numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");

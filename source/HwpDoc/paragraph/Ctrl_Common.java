@@ -426,7 +426,7 @@ public class Ctrl_Common extends Ctrl {
                 }
                 break;
             default:
-            	log.warning(child.getNodeName() + " : " + child.getNodeValue());
+            	log.fine(child.getNodeName() + " : " + child.getNodeValue());
             	if (log.isLoggable(Level.FINE)) {
             		throw new NotImplementedException("setCaption");
             	}

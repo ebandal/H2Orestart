@@ -134,7 +134,7 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 
                 break;
             default:
-            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
+            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
                 throw new NotImplementedException("Ctrl_ShapeRect");
             }
         }

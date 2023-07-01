@@ -74,7 +74,7 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
                 node.removeChild(child);
                 break;
             default:
-            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
+            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
             	if (log.isLoggable(Level.FINE)) {
             		throw new NotImplementedException("Ctrl_ShapePolygon");
             	}

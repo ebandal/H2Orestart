@@ -74,7 +74,7 @@ public class Ctrl_AutoNumber extends Ctrl {
             	switch(childNodeAttr.getNodeName()) {
             	case "prefixChar":
             	case "suffixChar":
-                	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
+                	log.fine(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
             		break;
             	case "supscript":
             		superscript = childNodeAttr.getNodeValue().equals("0")?false:true;
@@ -119,7 +119,7 @@ public class Ctrl_AutoNumber extends Ctrl {
 	            		case "USER_CHAR":
 	            			numShape = NumberShape2.USER_CHAR;	break;
 	        			default:
-	                    	log.warning(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
+	                    	log.fine(childNodeAttr.getNodeName() + ":" + childNodeAttr.getNodeValue());
 	                    	if (log.isLoggable(Level.FINE)) {
 	                    		throw new NotImplementedException("Ctrl_AutoNumber");
 	                    	}
@@ -140,7 +140,7 @@ public class Ctrl_AutoNumber extends Ctrl {
             	}
                 break;
             default:
-            	log.warning(child.getNodeName() + ":" + child.getNodeValue());
+            	log.fine(child.getNodeName() + ":" + child.getNodeValue());
             	if (log.isLoggable(Level.FINE)) {
             		throw new NotImplementedException("Ctrl_AutoNumber");
             	}

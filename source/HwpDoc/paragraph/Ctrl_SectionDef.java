@@ -328,7 +328,7 @@ public class Ctrl_SectionDef extends Ctrl {
             case "hp:lineNumberShape":
                 break;
             default:
-            	log.warning("Not implmented:" + child.getNodeName());
+            	log.fine("Not implmented:" + child.getNodeName());
             	if (log.isLoggable(Level.FINE)) {
             		throw new NotImplementedException("Ctrl_SectionDef");
             	}

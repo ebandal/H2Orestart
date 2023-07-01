@@ -251,7 +251,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 
                 break;
             default:
-            	log.warning(child.getNodeName() + "=" + child.getNodeValue());
+            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
                 // throw new NotImplementedException("Ctrl_ObjElement");
             }
         }
