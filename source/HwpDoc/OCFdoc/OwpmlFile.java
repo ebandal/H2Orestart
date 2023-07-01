@@ -91,6 +91,9 @@ public class OwpmlFile {
     public InputStream getInputStream(String entryName) throws IOException, DataFormatException {
         
         Offset offset = offsetMap.get(entryName);
+        if (offset == null) {
+        	throw new DataFormatException();
+        }
         long entrySize = (int)(offset.end - offset.start);
         
         byte[] buf = new byte[(int)entrySize];
