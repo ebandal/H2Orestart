@@ -81,20 +81,6 @@ public class WriterContext {
 
 	public WriterContext()  { }
 
-	public void setFile(String inputFile) {
-	    try {
-            if (inputFile.endsWith(".hwp")) {
-                hType = HanType.HWP;
-                hwp = new HwpFile(inputFile);
-            } else if (inputFile.endsWith(".hwpx")) {
-                hType = HanType.HWPX;
-                hwpx = new HwpxFile(inputFile);
-            }
-	    } catch (FileNotFoundException e) {
-	        hType = HanType.NONE;
-	    }
-	}
-	
 	public List<HwpSection> getSections() throws HwpDetectException {
 	    List<HwpSection> sections = null;
 	    switch(hType) {
@@ -109,7 +95,33 @@ public class WriterContext {
 	    }
 	    return sections;
 	}
-	
+
+	public static String detectHancom(String inputFile) {
+		String detectingType = null;
+		
+		try {
+            HwpxFile hwpxTemp = new HwpxFile(inputFile);
+            hwpxTemp.detect();
+            detectingType = "HWPX";
+            hwpxTemp.close();
+	        log.info("file detected as HWPX");
+		} catch (IOException | HwpDetectException | ParserConfigurationException | SAXException | DataFormatException e1) {
+	        log.info("file detected not HWPX");
+			
+			try {
+		        HwpFile hwpTemp = new HwpFile(inputFile);
+		        hwpTemp.detect();
+		        detectingType = "HWP";
+		        hwpTemp.close();
+		        log.info("file detected as HWP");
+			} catch (IOException | HwpDetectException | CompoundDetectException | NotImplementedException | CompoundParseException e2) {
+		        log.info("file detected neither HWPX nor HWP");
+			}
+		}
+		
+		return detectingType;
+	}
+
 	public void detect() throws HwpDetectException, CompoundDetectException, NotImplementedException, IOException, CompoundParseException, ParserConfigurationException, SAXException, DataFormatException {
         switch(hType) {
         case HWP:
@@ -123,15 +135,19 @@ public class WriterContext {
         }
 	}
 	
-	public void open() throws HwpDetectException, CompoundDetectException, IOException, DataFormatException, HwpParseException, NotImplementedException, CompoundParseException, ParserConfigurationException, SAXException, OwpmlParseException {
-        switch(hType) {
-        case HWP:
+	public void open(String inputFile, String hanTypeStr) throws HwpDetectException, CompoundDetectException, IOException, DataFormatException, HwpParseException, NotImplementedException, CompoundParseException, ParserConfigurationException, SAXException, OwpmlParseException {
+        switch(hanTypeStr) {
+        case "HWP":
+            hType = HanType.HWP;
+            hwp = new HwpFile(inputFile);
             hwp.open();
             break;
-        case HWPX:
+        case "HWPX":
+            hType = HanType.HWPX;
+            hwpx = new HwpxFile(inputFile);
             hwpx.open();
             break;
-        case NONE:
+        default:
             throw new HwpDetectException();
         }
 	}

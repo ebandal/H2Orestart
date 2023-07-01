@@ -63,6 +63,7 @@ import java.util.Properties;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.DataFormatException;
@@ -93,6 +94,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
     public static final String __serviceName = "ebandal.libreoffice.H2Orestart";
     private static final String[] m_serviceNames = { "ebandal.libreoffice.H2Orestart" };
     private static WriterContext writerContext;
+    private static String detectedFileExt;
     Logger rootLogger;
 
     public H2OrestartImpl( XComponentContext context ) {
@@ -162,15 +164,13 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 			}
 		}
 
-		return impl_import(filePath); 
+		return impl_import(filePath);
 	}
 
 	private boolean impl_import(String filePath) {
     	try {
 			String systemPath = ConvUtil.convertToSystemPath(writerContext, filePath);
-			writerContext.setFile(systemPath);
-            writerContext.detect();
-            writerContext.open();
+            writerContext.open(systemPath, detectedFileExt);
 		} catch (HwpDetectException | IOException | CompoundDetectException | NotImplementedException | CompoundParseException | DataFormatException | HwpParseException  e) {
 			log.severe(e.getMessage());
 			e.printStackTrace();
@@ -204,11 +204,6 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             for (int i=0; i<writerContext.getDocInfo().styleList.size();i++) {
                 ConvPara.makeCustomParagraphStyle(writerContext, i, (HwpRecord_Style)writerContext.getDocInfo().styleList.get(i));
             }
-    
-            long totalParas = sections.stream()
-                    .peek(s -> System.out.println("Section Has " + s==null?0:s.paraList.size()==0?0:s.paraList.size() + " paras"))
-                    .mapToLong(s -> s==null?0:s.paraList==null?0:s.paraList.size()).sum();
-            long parasCnt = 0;
     
             int secIndex = 0;
             for (int i=0; i<sections.size(); i++) {
@@ -252,13 +247,13 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 					Files.createDirectories(Paths.get(System.getProperty("user.home"),".H2Orestart"));
 					// "%h" the value of the "user.home" system property
 					FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, false);
-			        // fileHandler.setLevel(Level.WARNING);
+			        fileHandler.setLevel(Level.WARNING);
 			        CustomLogFormatter sformatter = new CustomLogFormatter();
 			        fileHandler.setFormatter(sformatter);
 			        rootLogger.addHandler(fileHandler);
 					ConsoleHandler cHandler = new ConsoleHandler();
 					cHandler.setFormatter(sformatter);
-			        // cHandler.setLevel(Level.WARNING);
+			        cHandler.setLevel(Level.WARNING);
 			        rootLogger.addHandler(cHandler);
 					properties.load(fis);
 				}
@@ -321,14 +316,13 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 				case "URL":
 					{
 						String systemPath = ConvUtil.convertToSystemPath(writerContext, args[i][j].Value.toString());
-				    	try {
-				    		// writerContext.hwp = new HwpFile(systemPath);
-				    		writerContext.setFile(systemPath);
-				    		writerContext.detect();
-						} catch (HwpDetectException | IOException | CompoundDetectException | NotImplementedException | CompoundParseException | ParserConfigurationException | SAXException | DataFormatException  e) {
-							e.printStackTrace();
-							typeName.setLength(0);
-						}
+						detectedFileExt = WriterContext.detectHancom(systemPath);
+						if (detectedFileExt == null) {
+			    			log.info("File is not Hancomm document.");
+			    			typeName.setLength(0);
+			    		} else {
+			    			log.info("File is Hancomm document.");
+			    		}
 					}
 					break;
 				case "TypeName":
@@ -349,25 +343,25 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 	}
 	
 	private void reset() {
-		log.info("Resetting Page info.");
+		log.fine("Resetting Page info.");
     	ConvPage.reset(writerContext);
-		log.info("Resetting Numbering info.");
+		log.fine("Resetting Numbering info.");
 		ConvNumbering.reset(writerContext);
-		log.info("Resetting Paragraph info.");
+		log.fine("Resetting Paragraph info.");
 		ConvPara.reset(writerContext);
-		log.info("Resetting Equasion info.");
+		log.fine("Resetting Equasion info.");
 		ConvEquation.reset(writerContext);
-		log.info("Resetting Graphics info.");
+		log.fine("Resetting Graphics info.");
 		ConvGraphics.reset(writerContext);
-		log.info("Resetting Table info.");
+		log.fine("Resetting Table info.");
 		ConvTable.reset(writerContext);
-		log.info("Resetting Footnote info.");
+		log.fine("Resetting Footnote info.");
 		ConvFootnote.reset(writerContext);
 
 		if (writerContext!=null) {
 			log.fine("HwpFile still exists. Will be closed.");
 			try {
-				log.info("Cleaning temporary folder.");
+				log.fine("Cleaning temporary folder.");
 				WriterContext.cleanTempFolder();
 				writerContext.close();
 			} catch (IOException | HwpDetectException e) {
