@@ -246,14 +246,14 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 				try (FileInputStream fis = new FileInputStream(new File(jarDir, "logger.properties"))) {
 					Files.createDirectories(Paths.get(System.getProperty("user.home"),".H2Orestart"));
 					// "%h" the value of the "user.home" system property
-					FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, false);
-			        fileHandler.setLevel(Level.WARNING);
+					FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, true);
+			        fileHandler.setLevel(Level.ALL);
 			        CustomLogFormatter sformatter = new CustomLogFormatter();
 			        fileHandler.setFormatter(sformatter);
 			        rootLogger.addHandler(fileHandler);
 					ConsoleHandler cHandler = new ConsoleHandler();
 					cHandler.setFormatter(sformatter);
-			        cHandler.setLevel(Level.WARNING);
+			        cHandler.setLevel(Level.ALL);
 			        rootLogger.addHandler(cHandler);
 					properties.load(fis);
 				}
