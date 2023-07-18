@@ -20,7 +20,7 @@
  */
 package soffice;
 
-import HwpDoc.paragraph.HwpParagraph;
+import HwpDoc.paragraph.Ctrl_AutoNumber;
 
 public class HwpCallback {
     TableFrame tableFrame;
@@ -28,7 +28,7 @@ public class HwpCallback {
     public HwpCallback() { this.tableFrame = TableFrame.NONE; }
     public HwpCallback(TableFrame tableFrame) { this.tableFrame = tableFrame; }
 	public void onNewNumber(int paraStyleID, int paraShapeID) {};
-	public void onAutoNumber(int paraStyleID, int paraShapeID) {};
+	public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {};
 	public boolean onTab(String info) { return false; };
 	public boolean onText(String content,  int charShapeId, int charPos, boolean append) { return false; }
 	public boolean onParaBreak() { return false; }

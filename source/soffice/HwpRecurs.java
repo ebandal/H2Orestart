@@ -174,6 +174,9 @@ public class HwpRecurs {
 	            break;
 	        case "onta":    // 자동 번호
 	            Ctrl_AutoNumber autoNumber = (Ctrl_AutoNumber) ctrl;
+	            if (callback!=null) {
+	                callback.onAutoNumber(autoNumber, para.paraStyleID, para.paraShapeID);
+	            }
 	            break;
 	        case "onwn":    // 새 번호 지정
 	            Ctrl_NewNumber newNumber = (Ctrl_NewNumber) ctrl;

@@ -168,7 +168,8 @@ public class Ctrl_AutoNumber extends Ctrl {
 		ENDNOTE		(0x2),	// 미주번호
 		FIGURE		(0x3),	// 그림번호
 		TABLE		(0x4),	// 표번호
-		EQUATION	(0x5);	// 수식번호
+		EQUATION	(0x5),	// 수식번호
+	    TOTAL_PAGE  (0x6);  // 전체쪽번호
 		
 		private int num;
 	    private NumType(int num) { 
