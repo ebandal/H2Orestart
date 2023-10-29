@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import com.sun.star.logging.LogLevel;
-
 import HwpDoc.Exception.HwpParseException;
 
 public class CharShape {

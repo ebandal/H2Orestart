@@ -20,7 +20,6 @@
  */
 package HwpDoc.paragraph;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -29,8 +28,6 @@ import java.util.logging.Logger;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-
-import com.sun.star.text.ControlCharacter;
 
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;

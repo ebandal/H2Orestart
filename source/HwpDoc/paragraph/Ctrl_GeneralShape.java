@@ -38,7 +38,6 @@ import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
-import soffice.WriterContext;
 
 public class Ctrl_GeneralShape extends Ctrl_ObjElement {
 	private static final Logger log = Logger.getLogger(Ctrl_GeneralShape.class.getName());

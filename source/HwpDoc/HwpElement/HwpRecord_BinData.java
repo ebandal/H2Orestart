@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import HwpDoc.HanType;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
-import soffice.WriterContext.HanType;
 
 public class HwpRecord_BinData extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_BinData.class.getName());

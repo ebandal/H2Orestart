@@ -21,10 +21,8 @@
 package HwpDoc;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -50,8 +48,6 @@ import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.HwpElement.HwpRecord_TabDef;
 import HwpDoc.HwpElement.HwpTag;
-import HwpDoc.paragraph.Ctrl_PageNumPos.NumPos;
-import soffice.WriterContext.HanType;
 
 public class HwpDocInfo {
 	private static final Logger log = Logger.getLogger(HwpDocInfo.class.getName());

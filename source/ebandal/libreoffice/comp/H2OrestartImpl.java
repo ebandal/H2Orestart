@@ -38,6 +38,7 @@ import HwpDoc.HwpElement.HwpRecord_Numbering;
 import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.HwpParagraph;
+import compare.Hwp2Swriter;
 import soffice.ConvEquation;
 import soffice.ConvFootnote;
 import soffice.ConvGraphics;
@@ -48,7 +49,6 @@ import soffice.ConvTable;
 import soffice.ConvUtil;
 import soffice.HwpRecurs;
 import soffice.WriterContext;
-import working.Hwp2Swriter;
 
 import com.sun.star.lib.uno.helper.Factory;
 
