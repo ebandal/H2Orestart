@@ -21,7 +21,6 @@
 package soffice;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,6 +42,7 @@ import com.sun.star.text.XTextCursor;
 import com.sun.star.text.XTextDocument;
 import com.sun.star.uno.XComponentContext;
 
+import HwpDoc.HanType;
 import HwpDoc.HwpDetectException;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.HwpFile;
@@ -405,15 +405,5 @@ public class WriterContext {
 		}
 		return path;
 	}
-	
-	public static enum HanType {
-	    NONE   (0x0),
-	    HWP    (0x1),
-	    HWPX   (0x2);
 
-        private int num;
-        private HanType(int num) { 
-            this.num = num;
-        }
-	}
 }
