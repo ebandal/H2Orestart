@@ -473,17 +473,7 @@ public class ConvNumbering {
 			e.printStackTrace();
 		}
 	}
-	
-	public static void makeCustomBulletStyle(int id, HwpRecord_Bullet bullet) {
-        String hwpStyleName = BULLET_STYLE_PREFIX + id;
-        bulletStyleNameMap.put(id, hwpStyleName);
-        Integer[] curNumbers = new Integer[10];
-        for (int i=0; i< curNumbers.length; i++) {
-            curNumbers[i] = 0;
-        }
-        bulletNumbersMap.put(hwpStyleName, curNumbers);
-    }
-	   
+
 	public static String getOutlineStyleName() {
 		Ctrl_SectionDef secd = ConvPage.getCurrentPage();
 		return numberingStyleNameMap.get(secd.outlineNumberingID);
