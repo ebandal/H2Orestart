@@ -26,7 +26,6 @@ import com.sun.star.uno.XComponentContext;
 
 import HwpDoc.CustomLogFormatter;
 import HwpDoc.HwpDetectException;
-import HwpDoc.HwpFile;
 import HwpDoc.HwpSection;
 import HwpDoc.Exception.CompoundDetectException;
 import HwpDoc.Exception.CompoundParseException;
@@ -38,7 +37,6 @@ import HwpDoc.HwpElement.HwpRecord_Numbering;
 import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.HwpParagraph;
-import compare.Hwp2Swriter;
 import soffice.ConvEquation;
 import soffice.ConvFootnote;
 import soffice.ConvGraphics;
@@ -65,7 +63,6 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.DataFormatException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -87,7 +84,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 															com.sun.star.document.XImporter,
 															com.sun.star.document.XFilter,
 															com.sun.star.document.XExtendedFilterDetection {
-	private static final Logger log = Logger.getLogger(Hwp2Swriter.class.getName());
+	private static final Logger log = Logger.getLogger(H2OrestartImpl.class.getName());
 
     private static final String m_implementationName = H2OrestartImpl.class.getName();
     /** Service name for the component */
