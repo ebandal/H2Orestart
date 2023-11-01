@@ -52,7 +52,6 @@ import HwpDoc.OLEdoc.DirectoryEntry;
 public class OwpmlFile {
 
     private HashMap<String, Offset> offsetMap = new HashMap<>();
-    private RandomAccessFile raf;
     private File file;
 
     public OwpmlFile(String filename) throws FileNotFoundException {
@@ -61,7 +60,6 @@ public class OwpmlFile {
     
     public OwpmlFile(File file) throws FileNotFoundException {
         this.file = file;
-        raf = new RandomAccessFile(file, "r");
     }
     
     public void open() {
@@ -89,26 +87,25 @@ public class OwpmlFile {
     }
 
     public InputStream getInputStream(String entryName) throws IOException, DataFormatException {
-        
         Offset offset = offsetMap.get(entryName);
         if (offset == null) {
-        	throw new DataFormatException();
+            throw new DataFormatException();
         }
         long entrySize = (int)(offset.end - offset.start);
-        
+
         byte[] buf = new byte[(int)entrySize];
-        raf.seek(offset.start);
-        int readLen = raf.read(buf, 0, (int)entrySize);
-        
-        if (offset.zipMethod == ZipEntry.DEFLATED) {
-            buf = unzip(buf, readLen);
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            raf.seek(offset.start);
+            int readLen = raf.read(buf, 0, (int)entrySize);
+            
+            if (offset.zipMethod == ZipEntry.DEFLATED) {
+                buf = unzip(buf, readLen);
+            }
         }
-        
         return new ByteArrayInputStream(buf);
     }
     
     public String findBinData(String shortName) {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -117,11 +114,13 @@ public class OwpmlFile {
         long entrySize = (int)(offset.end - offset.start);
         
         byte[] buf = new byte[(int)entrySize];
-        raf.seek(offset.start);
-        int readLen = raf.read(buf, 0, (int)entrySize);
-
-        if (offset.zipMethod == ZipEntry.DEFLATED) {
-            buf = unzip(buf, readLen);
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            raf.seek(offset.start);
+            int readLen = raf.read(buf, 0, (int)entrySize);
+    
+            if (offset.zipMethod == ZipEntry.DEFLATED) {
+                buf = unzip(buf, readLen);
+            }
         }
 
         return buf;
@@ -139,57 +138,6 @@ public class OwpmlFile {
         return binData.orElse("");
     }
     
-    public void inflate2() throws DataFormatException {
-        
-        try {
-            // 압축해제할 폴더 생성
-            File targetFolder = Paths.get("RAF").toFile();
-            if (targetFolder.exists()==false) {
-                Files.createDirectories(targetFolder.toPath());
-            }
-            
-            Set<String> entries = offsetMap.keySet();
-            for (String entryName: entries) {
-    
-                List<String> entryList = Arrays.asList(entryName.split("\\" + File.separator));
-                
-                Path curPath = Paths.get("RAF");
-                for (String entry: entryList) {
-                    curPath = Paths.get(curPath.toFile().getPath(), entry);
-                }
-                File subFolder = curPath.getParent().toFile();
-                if (subFolder.exists()==false) {
-                    Files.createDirectories(subFolder.toPath());
-                }
-                
-                try (FileOutputStream fileOutputStream = new FileOutputStream(curPath.toFile().getAbsoluteFile())) {
-
-                    Offset offset = offsetMap.get(entryName);
-                    long entrySize = (int)(offset.end - offset.start);
-                    long totalLen = 0;
-                    
-                    byte[] buf = new byte[(int)entrySize];
-                    raf.seek(offset.start);
-                    int readLen = raf.read(buf, 0, (int)entrySize);
-                    
-                    switch(offset.zipMethod) {
-                    case ZipEntry.STORED:
-                        break;
-                    case ZipEntry.DEFLATED:
-                        buf = unzip(buf, readLen);
-                        readLen = buf.length;
-                        break;
-                    default:
-                    }
-                    fileOutputStream.write(buf, 0, readLen);
-                    fileOutputStream.flush();
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     private byte[] unzip(byte[] input, int inLen) throws IOException, DataFormatException {
         Inflater decompressor = new Inflater(true);
         decompressor.setInput(input, 0, input.length);
@@ -210,7 +158,6 @@ public class OwpmlFile {
     }
     
     public void close() throws IOException {
-        raf.close();
     }
     
     public static class Offset {
