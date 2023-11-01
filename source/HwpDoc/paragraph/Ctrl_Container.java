@@ -34,24 +34,24 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_Container extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_Container.class.getName());
-	private int size;
-
-	public short					nElement;	// 개체의 개수
-	public List<String>				ctrlIdList;	// 개체의 컨트롤 ID array
-	public List<Ctrl_GeneralShape>	list;		// 개체 속성 x 묶음 개체의 갯수
-	
-	public Ctrl_Container(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-	}
-	
-	public Ctrl_Container(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
+    private static final Logger log = Logger.getLogger(Ctrl_Container.class.getName());
+    private int size;
+    
+    public short					nElement;	// 개체의 개수
+    public List<String>				ctrlIdList;	// 개체의 컨트롤 ID array
+    public List<Ctrl_GeneralShape>	list;		// 개체 속성 x 묶음 개체의 갯수
+    
+    public Ctrl_Container(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+    }
+    
+    public Ctrl_Container(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
     public Ctrl_Container(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
@@ -108,10 +108,10 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
                 list.add(ctrl);
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_Container");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_Container");
+                }
+                break;
             }
         }
     }
@@ -196,9 +196,9 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
                 break;
             default:
                 log.severe("Neither known ctrlID=" + ctrlId+" nor implemented.");
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException(ctrlId);
-            	}
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException(ctrlId);
+                }
             }
             obj.list.add(chldObj);
         }

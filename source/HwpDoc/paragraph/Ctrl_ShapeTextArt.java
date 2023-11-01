@@ -31,39 +31,39 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeTextArt.class.getName());
-	private int size;
-	
-	public String  text;       // 글맵시 내용
-	public Point   pt0;        // 첫번째 좌표
-	public Point   pt1;        // 두번째 좌표
-	public Point   pt2;        // 세번째 좌표
-	public Point   pt3;        // 네번째 좌표
-	                           // 글맵시 모양 정보
-	public String  fontName;       // 글꼴이름
-	public String  fontStyle;      // 글꼴 스타일
-	public String  fontType;       // 글꼴 형식
-	public String  textShape;      // 글맵시 모양
-	public short   lineSpacing;    // 줄 간격
-	public short   spacing;        // 글자 간격
-	public String  align;          // 정렬 방식
-	
-	public Point[] outline;    // 외곽선 정보
-	
-	public Ctrl_ShapeTextArt(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_ShapeTextArt(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_ShapeTextArt(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeTextArt.class.getName());
+    private int size;
+    
+    public String  text;        // 글맵시 내용
+    public Point   pt0;         // 첫번째 좌표
+    public Point   pt1;         // 두번째 좌표
+    public Point   pt2;         // 세번째 좌표
+    public Point   pt3;         // 네번째 좌표
+                                // 글맵시 모양 정보
+    public String  fontName;    // 글꼴이름
+    public String  fontStyle;   // 글꼴 스타일
+    public String  fontType;    // 글꼴 형식
+    public String  textShape;   // 글맵시 모양
+    public short   lineSpacing; // 줄 간격
+    public short   spacing;     // 글자 간격
+    public String  align;       // 정렬 방식
+    
+    public Point[] outline;     // 외곽선 정보
+    
+    public Ctrl_ShapeTextArt(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeTextArt(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapeTextArt(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -133,30 +133,30 @@ public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
                         outline[j].y = Integer.parseInt(numStr);
                         break;
                     default:
-                    	if (log.isLoggable(Level.FINE)) {
-                    		throw new NotImplementedException("Ctrl_ShapeRect");
-                    	}
-                    	break;
+                        if (log.isLoggable(Level.FINE)) {
+                            throw new NotImplementedException("Ctrl_ShapeRect");
+                        }
+                        break;
                     }
                 }
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ShapeRect");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapeRect");
+                }
+                break;
             }
         }
     }
 	
 	public static int parseElement(Ctrl_ShapeTextArt obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
-
+        
         // [HWP ambiguous] following 120bytes are unknown.
         // Document doesn't mention about this at all.
-
+        
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
         }
         
         return size;
@@ -169,16 +169,16 @@ public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }
