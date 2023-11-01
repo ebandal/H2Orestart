@@ -345,10 +345,10 @@ public class HwpDocInfo {
         return true;
     }
 
-	public HwpFile getParentHwp() {
-		return parentHwp;
-	}
-    
+    public HwpFile getParentHwp() {
+        return parentHwp;
+    }
+
 	public static enum CompatDoc {
 	    HWP         (0x0),  // 한글문서(현재버전)
         OLD_HWP     (0x1),  // 한글2007호환
