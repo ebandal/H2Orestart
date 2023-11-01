@@ -123,11 +123,11 @@ public class Ctrl_ShapeArc extends Ctrl_GeneralShape {
                 );
     
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
 
     public static int parseCtrl(Ctrl_ShapeArc shape, int size, byte[] buf, int off, int version) throws HwpParseException {

@@ -30,31 +30,30 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.paragraph.Ctrl_ShapeEllipse.ArcType;
 
 public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapePolygon.class.getName());
-	private int size;
-	
-	// 타원 개체 속성
-	public int		nPoints;	// count of points
-	public Point[]	points;		// x,y 좌표 * n
-	
-	
-	public Ctrl_ShapePolygon(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-
-	public Ctrl_ShapePolygon(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_ShapePolygon(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapePolygon.class.getName());
+    private int size;
+    
+    // 타원 개체 속성
+    public int      nPoints;    // count of points
+    public Point[]  points;     // x,y 좌표 * n
+    
+    
+    public Ctrl_ShapePolygon(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapePolygon(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapePolygon(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         String numStr;
@@ -74,11 +73,11 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
                 node.removeChild(child);
                 break;
             default:
-            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ShapePolygon");
-            	}
-            	break;
+                log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapePolygon");
+                }
+                break;
             }
         }
     }
@@ -107,17 +106,17 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
         }
         
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
     
     public static int parseCtrl(Ctrl_ShapePolygon shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size,  buf,  off,  version);
-
+        
         return offset-off;
     }
     
@@ -154,16 +153,16 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-	    
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

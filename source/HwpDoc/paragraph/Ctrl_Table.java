@@ -35,38 +35,38 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_Table extends Ctrl_Common {
-	private static final Logger log = Logger.getLogger(Ctrl_Table.class.getName());
-	private int size;
-	
-	public int   attr;			       // 표개체 속성의 속성
-	public short nRows;                // RowCount
-	public short nCols;                // nCols
-	public short cellSpacing;          // CellSpacing
-	public short inLSpace;             // 안쪽 왼쪽 여백
-	public short inRSpace;             // 안쪽 오른쪽 여백
-	public short inUSpace;             // 안쪽 위쪽 여백
-	public short inDSpace;             // 안쪽 아래쪽 여백
-	public short[] rowSize;            // Row size
-	public short borderFillID;         // Border Fill ID
-	public short validZoneSize;        // Valid Zone Info Size(5.0.1.0 이상)
-	public List<CellZone> cellzoneList;	// 영역속성 (표 78 참조) (5.0.1.0 이상)
-	public List<TblCell> cells;
-
-	   
-	public Ctrl_Table(String ctrlId) {
+    private static final Logger log = Logger.getLogger(Ctrl_Table.class.getName());
+    private int size;
+    
+    public int   attr;			       // 표개체 속성의 속성
+    public short nRows;                // RowCount
+    public short nCols;                // nCols
+    public short cellSpacing;          // CellSpacing
+    public short inLSpace;             // 안쪽 왼쪽 여백
+    public short inRSpace;             // 안쪽 오른쪽 여백
+    public short inUSpace;             // 안쪽 위쪽 여백
+    public short inDSpace;             // 안쪽 아래쪽 여백
+    public short[] rowSize;            // Row size
+    public short borderFillID;         // Border Fill ID
+    public short validZoneSize;        // Valid Zone Info Size(5.0.1.0 이상)
+    public List<CellZone> cellzoneList;	// 영역속성 (표 78 참조) (5.0.1.0 이상)
+    public List<TblCell> cells;
+    
+    
+    public Ctrl_Table(String ctrlId) {
        super(ctrlId);
     }
-	
-	public Ctrl_Table(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_Table(String ctrlId, Node node, int version) throws NotImplementedException {
-	    super(ctrlId, node, version);
-	    
+    
+    public Ctrl_Table(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_Table(String ctrlId, Node node, int version) throws NotImplementedException {
+        super(ctrlId, node, version);
+        
         NamedNodeMap attributes = node.getAttributes();
         
         // attributes 중 처리 안된 것들을 알아보기 위해.. 임시로 코드 넣음
@@ -82,12 +82,12 @@ public class Ctrl_Table extends Ctrl_Common {
             break;
         }
         nodeNames.remove("repeatHeader");
-
+        
         //rowCnt="12"
         String numStr = attributes.getNamedItem("rowCnt").getNodeValue();
         nRows = (short) Integer.parseInt(numStr);
         nodeNames.remove("rowCnt");
-
+        
         //noAdjust="1"
         switch(attributes.getNamedItem("noAdjust").getNodeValue()) {
         case "0":
@@ -95,12 +95,12 @@ public class Ctrl_Table extends Ctrl_Common {
             break;
         }
         nodeNames.remove("noAdjust");
-
+        
         //colCnt="31"
         numStr = attributes.getNamedItem("colCnt").getNodeValue();
         nCols = (short) Integer.parseInt(numStr);
         nodeNames.remove("colCnt");
-
+        
         //cellSpacing="0"
         numStr = attributes.getNamedItem("cellSpacing").getNodeValue();
         cellSpacing = (short) Integer.parseInt(numStr);
@@ -110,7 +110,7 @@ public class Ctrl_Table extends Ctrl_Common {
         numStr = attributes.getNamedItem("borderFillIDRef").getNodeValue();
         borderFillID = (short) Integer.parseInt(numStr);
         nodeNames.remove("borderFillIDRef");
-
+        
         //dropcapstyle="None"
         
         NodeList nodeList = node.getChildNodes();
@@ -178,10 +178,10 @@ public class Ctrl_Table extends Ctrl_Common {
             case "hp:label":
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_Table");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_Table");
+                }
+                break;
             }
         }
         this.fullfilled = true;
@@ -248,7 +248,7 @@ public class Ctrl_Table extends Ctrl_Common {
         }
         table.fullfilled = true;
         
-        return offset-off;
+        return size;
     }
     
     public static int parseListHeaderAppend(Ctrl_Table obj, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -270,22 +270,22 @@ public class Ctrl_Table extends Ctrl_Common {
     }
     
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return this.size;
-	}
-
-	public static class CellZone {
-	    short startRowAddr;
-	    short startColAddr;
-	    short endRowAddr;
-	    short endColAddr;
-	    short borderFillIDRef;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return this.size;
+    }
+    
+    public static class CellZone {
+        short startRowAddr;
+        short startColAddr;
+        short endRowAddr;
+        short endColAddr;
+        short borderFillIDRef;
+    }
 }

@@ -33,27 +33,27 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeRect.class.getName());
-	private int size;	
-	
-	// 사각형 개체 속성
-	public byte		curv;	// 사각형 모서리 곡률(%)  직각은 0, 둥근모양 20, 반원 50, 그외 % 단위
-	public Point[]	points;	// 사각형의 좌표 x, 사각형의 좌표 y
-	
-	public Ctrl_ShapeRect(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_ShapeRect(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-	
-	public Ctrl_ShapeRect(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeRect.class.getName());
+    private int size;	
+    
+    // 사각형 개체 속성
+    public byte     curv;   // 사각형 모서리 곡률(%)  직각은 0, 둥근모양 20, 반원 50, 그외 % 단위
+    public Point[]  points; // 사각형의 좌표 x, 사각형의 좌표 y
+    
+    public Ctrl_ShapeRect(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeRect(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+        public Ctrl_ShapeRect(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -139,10 +139,10 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
             }
         }
     }
-
+        
 	public static int parseElement(Ctrl_ShapeRect obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
-
+        
         // 사각형 개체 속성
         obj.curv        = buf[offset++];
         obj.points = new Point[4];
@@ -153,19 +153,19 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
             obj.points[i].y = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
             offset += 4;
         }
-
+        
         log.fine("                                                  "
                 +"(X,Y)=("+obj.xGrpOffset+","+obj.yGrpOffset+")"
                 +",Width="+obj.curWidth+",Height="+obj.curHeight
                 +",Points=["+Arrays.stream(obj.points).map(p -> "{"+String.valueOf(p.x)+","+String.valueOf(p.y)+"}").collect(Collectors.joining(","))+"]"
                 );
-
+        
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
     
     public static int parseListHeaderAppend(Ctrl_ShapeRect obj, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -206,24 +206,23 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-
+    
     public static int parseCtrl(Ctrl_ShapeRect shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size, buf, offset, version);
-
+        
         return offset-off;
     }
-
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
-
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

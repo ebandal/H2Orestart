@@ -31,28 +31,28 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeCurve.class.getName());
-	private int size;
-	
-	// 타원 개체 속성
-	public int		nPoints;		// count of points
-	public Point[]	points;			// x,y 좌표 * n
-	public byte[]	segmentType;	// segment type (0:line, 1:curve)
-	
-	public Ctrl_ShapeCurve(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_ShapeCurve(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_ShapeCurve(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeCurve.class.getName());
+    private int size;
+    
+    // 타원 개체 속성
+    public int		nPoints;		// count of points
+    public Point[]	points;			// x,y 좌표 * n
+    public byte[]	segmentType;	// segment type (0:line, 1:curve)
+    
+    public Ctrl_ShapeCurve(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeCurve(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapeCurve(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         String numStr;
@@ -72,10 +72,10 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
                 case "LINE":
                     segmentType[i] = 0;     break;
                 default:
-                	if (log.isLoggable(Level.FINE)) {
-                		throw new NotImplementedException("Ctrl_ShapeCurve");
-                	}
-                	break;
+                    if (log.isLoggable(Level.FINE)) {
+                        throw new NotImplementedException("Ctrl_ShapeCurve");
+                    }
+                    break;
                 }
                 points[i] = new Point();
                 numStr = childAttrs.getNamedItem("x1").getNodeValue();
@@ -86,10 +86,10 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
                 // childAttrs.getNamedItem("y2").getNodeValue();
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ShapeCurve");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapeCurve");
+                }
+                break;
             }
         }
     }
@@ -120,13 +120,13 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
         // [HWP ambiguous] following 4bytes are unknown.
         // 4byte를 알 수 없음. 점이 4개여서 4byte인지, 4byte 필드가 존재하는지 알 수 없음.
         offset += 4;
-
+        
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
     
     public static int parseCtrl(Ctrl_ShapeCurve shape,  int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -138,14 +138,14 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
     }
 	    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

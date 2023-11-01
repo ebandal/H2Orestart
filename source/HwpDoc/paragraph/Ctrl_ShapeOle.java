@@ -31,44 +31,44 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeOle.class.getName());
-	private int size;
-	
-	public int			attr;			// 속성
-	public int			extentX;		// 오브젝트 자체의 extent x크기
-	public int			extentY;		// 오브젝트 자체의 extent y크기
-	public String		binDataID;		// 오브젝트가 사용하는 스토리지의 BinData ID
-	public int			borderColor;	// 테두리 색
-	public int			borderThick;	// 테두리 두께
-	public int			borderAttr;		// 테두리 속성 (표 87참조)
-
-	public Ctrl_ShapeOle(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-
-	public Ctrl_ShapeOle(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeOle.class.getName());
+    private int size;
+    
+    public int			attr;			// 속성
+    public int			extentX;		// 오브젝트 자체의 extent x크기
+    public int			extentY;		// 오브젝트 자체의 extent y크기
+    public String		binDataID;		// 오브젝트가 사용하는 스토리지의 BinData ID
+    public int			borderColor;	// 테두리 색
+    public int			borderThick;	// 테두리 두께
+    public int			borderAttr;		// 테두리 속성 (표 87참조)
+    
+    public Ctrl_ShapeOle(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeOle(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
 	public Ctrl_ShapeOle(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         switch(attributes.getNamedItem("objectType").getNodeValue()) {  // OLE 객체 종류
         case "STATIC":
-        	break;
+            break;
         default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("ShpaeOLE");
-        	}
-        	break;
+            if (log.isLoggable(Level.FINE)) {
+                throw new NotImplementedException("ShpaeOLE");
+            }
+            break;
         }
-
+        
         String numStr = attributes.getNamedItem("binaryItemIDRef").getNodeValue();   // OLE 객체 바이너리 데이터에 대한 아이디 참조값
         binDataID = numStr;
         /*
@@ -95,14 +95,14 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
                 }
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("ShpaeOLE");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("ShpaeOLE");
+                }
+                break;
             }
         }
     }
-
+	
 	public static int parseElement(Ctrl_ShapeOle obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
@@ -122,12 +122,11 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
         offset += 4;
         // 8 bytes가 남지만,  OLE 미지원으로 할 것으므로 무시한다. 
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            // size 계산 무시
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
             // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
     
     public static int parseCtrl(Ctrl_ShapeOle shape, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -137,16 +136,16 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

@@ -40,74 +40,74 @@ import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
 
 public class Ctrl_GeneralShape extends Ctrl_ObjElement {
-	private static final Logger log = Logger.getLogger(Ctrl_GeneralShape.class.getName());
-	private HwpParagraph	parent;
-	private int	size;
-
-	// 테두리선 정보
-	public int				lineColor;	// 선색상
-	public int				lineThick;	// 선굵기
-	// public int			lineAttr;	// 테두리선 정보 속성
-	public LineArrowStyle	lineHead;
-	public LineArrowStyle	lineTail;
-	public LineArrowSize	lineHeadSz;
-	public LineArrowSize	lineTailSz;
-	public LineStyle2		lineStyle;
-	public byte				outline;	// Outline style
-	
-	// 채우기 정보
-	public int				fillType;	// 채우기 종류 (0:없음, 1:단색, 2:이미지, 4:그라데이션)
-	public Fill				fill;		// 채우기
-	
-	// 글상자 텍스트 속성
-	public short			leftSpace;	// 글상자 텍스트 왼쪽 여백
-	public short			rightSpace;	// 글상자 텍스트 오른쪽 여백
-	public short			upSpace;	// 글상자 텍스트 위쪽 여백
-	public short 			downSpace;	// 글상자 텍스트 아래쪽 여백
-	public int				maxTxtWidth;// 텍스트 문자열 최대 폭
-
-	public Ctrl_GeneralShape() {
-		super();
-	}
-
-	public Ctrl_GeneralShape(String ctrlId) {
+    private static final Logger log = Logger.getLogger(Ctrl_GeneralShape.class.getName());
+    private HwpParagraph    parent;
+    private int size;
+    
+    // 테두리선 정보
+    public int              lineColor;  // 선색상
+    public int              lineThick;  // 선굵기
+    // public int           lineAttr;   // 테두리선 정보 속성
+    public LineArrowStyle   lineHead;
+    public LineArrowStyle   lineTail;
+    public LineArrowSize    lineHeadSz;
+    public LineArrowSize    lineTailSz;
+    public LineStyle2       lineStyle;
+    public byte             outline;    // Outline style
+    
+    // 채우기 정보
+    public int              fillType;   // 채우기 종류 (0:없음, 1:단색, 2:이미지, 4:그라데이션)
+    public Fill             fill;       // 채우기
+    
+    // 글상자 텍스트 속성
+    public short            leftSpace;  // 글상자 텍스트 왼쪽 여백
+    public short            rightSpace; // 글상자 텍스트 오른쪽 여백
+    public short            upSpace;    // 글상자 텍스트 위쪽 여백
+    public short            downSpace;  // 글상자 텍스트 아래쪽 여백
+    public int              maxTxtWidth;// 텍스트 문자열 최대 폭
+    
+    public Ctrl_GeneralShape() {
+        super();
+    }
+    
+    public Ctrl_GeneralShape(String ctrlId) {
         super(ctrlId);
     }
-
-	public Ctrl_GeneralShape(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_GeneralShape(Ctrl_GeneralShape shape) {
-		super((Ctrl_ObjElement)shape);
-		this.parent			= shape.parent;
-		
-		this.lineColor 		= shape.lineColor;
-		this.lineThick 		= shape.lineThick;
-		// this.lineAttr 		= shape.lineAttr;
-		this.lineHead		= shape.lineHead;
-		this.lineTail		= shape.lineTail;	
-		this.lineHeadSz		= shape.lineHeadSz;
-		this.lineTailSz		= shape.lineTailSz;
-		this.lineStyle		= shape.lineStyle;
-		this.outline 		= shape.outline;
-		this.fillType 		= shape.fillType;
-		this.fill 			= shape.fill;
-		this.leftSpace 		= shape.leftSpace;
-		this.rightSpace 	= shape.rightSpace;
-		this.upSpace 		= shape.upSpace;
-		this.downSpace 		= shape.downSpace;
-		this.maxTxtWidth 	= shape.maxTxtWidth;
-	}
-	
-	public Ctrl_GeneralShape(String ctrlId, Node node, int version) throws NotImplementedException {
-	    super(ctrlId, node, version);
-	    
-	    String numStr;
-	    
+    
+    public Ctrl_GeneralShape(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_GeneralShape(Ctrl_GeneralShape shape) {
+        super((Ctrl_ObjElement)shape);
+        this.parent         = shape.parent;
+        
+        this.lineColor      = shape.lineColor;
+        this.lineThick      = shape.lineThick;
+        // this.lineAttr    = shape.lineAttr;
+        this.lineHead       = shape.lineHead;
+        this.lineTail       = shape.lineTail;	
+        this.lineHeadSz     = shape.lineHeadSz;
+        this.lineTailSz     = shape.lineTailSz;
+        this.lineStyle      = shape.lineStyle;
+        this.outline        = shape.outline;
+        this.fillType       = shape.fillType;
+        this.fill           = shape.fill;
+        this.leftSpace      = shape.leftSpace;
+        this.rightSpace     = shape.rightSpace;
+        this.upSpace        = shape.upSpace;
+        this.downSpace      = shape.downSpace;
+        this.maxTxtWidth    = shape.maxTxtWidth;
+    }
+    
+    public Ctrl_GeneralShape(String ctrlId, Node node, int version) throws NotImplementedException {
+        super(ctrlId, node, version);
+        
+        String numStr;
+        
         NodeList nodeList = node.getChildNodes();
         for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
@@ -527,31 +527,31 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
             offset += 8;
         }
         
-    	if (log.isLoggable(Level.FINE)) {
-    		log.fine("                                                  ctrlID="+obj.ctrlId+", 캡션 parsing이지만, 정확한 parsing은 어떻게 해야 하는지 알 수 없음.");
-    	}
-        
-        if (offset-off-size!=0) {
-        	if (log.isLoggable(Level.FINE)) {
-        		log.fine("[CtrlID]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-        	}
-            throw new HwpParseException();
+        if (log.isLoggable(Level.FINE)) {
+            log.fine("                                                  ctrlID="+obj.ctrlId+", 캡션 parsing이지만, 정확한 parsing은 어떻게 해야 하는지 알 수 없음.");
         }
         
-        return offset-off;
+        if (offset-off-size!=0) {
+            if (log.isLoggable(Level.SEVERE)) {
+                log.severe("[CtrlID]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            }
+            // throw new HwpParseException();
+        }
+        
+        return size;
     }
-
+    
     public static int parseCtrl(Ctrl_GeneralShape obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         int len = Ctrl_ObjElement.parseCtrl((Ctrl_ObjElement)obj, size, buf, offset, version);
         offset += len;
-
+        
         obj.lineColor   = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
         offset += 4;
         obj.lineThick   = (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
-
+        
         // 문서와 다르게  선 굵기에서 4byte 후에 선 속성이 온다.
         offset += 2;
         
@@ -570,30 +570,30 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         // 글상자 텍스트 속성.  아래 내용대로 읽히지 않는다.  알 수 없는 22bytes가 온다.
         offset += 22;
         
-    	if (log.isLoggable(Level.FINEST)) {
-	        log.finest("[그리기 개체 공통 속성]을 읽었습니다.");
-	        log.finest("[그리기 개체 글상자용 텍스트 속성]을 읽었습니다. [문단 리스트 헤더]를 읽어야 합니다.");
-    	}
+        if (log.isLoggable(Level.FINEST)) {
+            log.finest("[그리기 개체 공통 속성]을 읽었습니다.");
+            log.finest("[그리기 개체 글상자용 텍스트 속성]을 읽었습니다. [문단 리스트 헤더]를 읽어야 합니다.");
+        }
         
         return offset-off;
     }
     
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	public void setParent(HwpParagraph para) {
-		this.parent = para;
-	}
-	public HwpParagraph getParent() {
-		return parent;
-	}
-	
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    public void setParent(HwpParagraph para) {
+        this.parent = para;
+    }
+    public HwpParagraph getParent() {
+        return parent;
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

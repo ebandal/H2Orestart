@@ -37,47 +37,47 @@ import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
 
 public class Ctrl_ShapePic extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapePic.class.getName());
-	private int size;
-
-	public int 			borderColor;	// 테두리 색
-	public int			borderThick;	// 테두리 두께
-	public int			borderAttr;		// 테두리 속성
-	public Point[]		borderPoints;	// 이미지의 테두리 사각형의 x,y 좌표(최초 그림 삽입 시 크기)
-	public int			cropLeft;		// 자르기 한 후 사각형의 left
-	public int			cropTop;		// 자르기 한 후 사각형의 top
-	public int			cropRight;		// 자르기 한 후 사각형의 right
-	public int			cropBottom;		// 자르기 한 후 사각형의 bottom
-	public short[]		innerSpaces;	// 안쪽여백(왼쪽여백,오른쪽여백,위쪽여백,아래쪽여백) default:141(표) or 0(그림)
-	public byte			bright;			// 그림 밝기
-	public byte			contrast;		// 그림 명암
-	public byte			effect;			// 그림 효과 (0:REAL_PIC,1:GRAY_SCALE,2:BLACK_WHTE,4:PATTERN8x8
-	public String		binDataID;		// BinItem의 아이디 참조값
-	// public ImagePath    imagePath;      // BinItemID값 대신 문자열을 사용하도록 함 (hwpx); Fill에서 Image 사용할 수 있도록 bindDataID 사용        
-	
-	public byte			borderAlpha;	// 테두리 투명도
-	public int			instanceID;		// 문서 내 각 개체에 대한 고유 아이디(instance ID)
-	public int			picEffectInfo;	// 그림효과정보(그림자,네온,부드러운,가장자리,반사)
-	public List<PicEffect>	picEffect;		// 각 효과 정보
-	
-	public int			iniPicWidth;	// 그림 최초 생성시 기준 이미지 크기
-	public int			iniPicHeight;	// 그림 최초 생성시 기준 이미지 크기
-	public byte			picAlpha;		// 이미지 투명도
-	
-	public Ctrl_ShapePic(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-
-	public Ctrl_ShapePic(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_ShapePic(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapePic.class.getName());
+    private int size;
+    
+    public int 			borderColor;	// 테두리 색
+    public int			borderThick;	// 테두리 두께
+    public int			borderAttr;		// 테두리 속성
+    public Point[]		borderPoints;	// 이미지의 테두리 사각형의 x,y 좌표(최초 그림 삽입 시 크기)
+    public int			cropLeft;		// 자르기 한 후 사각형의 left
+    public int			cropTop;		// 자르기 한 후 사각형의 top
+    public int			cropRight;		// 자르기 한 후 사각형의 right
+    public int			cropBottom;		// 자르기 한 후 사각형의 bottom
+    public short[]		innerSpaces;	// 안쪽여백(왼쪽여백,오른쪽여백,위쪽여백,아래쪽여백) default:141(표) or 0(그림)
+    public byte			bright;			// 그림 밝기
+    public byte			contrast;		// 그림 명암
+    public byte			effect;			// 그림 효과 (0:REAL_PIC,1:GRAY_SCALE,2:BLACK_WHTE,4:PATTERN8x8
+    public String		binDataID;		// BinItem의 아이디 참조값
+    // public ImagePath    imagePath;      // BinItemID값 대신 문자열을 사용하도록 함 (hwpx); Fill에서 Image 사용할 수 있도록 bindDataID 사용        
+    
+    public byte			borderAlpha;	// 테두리 투명도
+    public int			instanceID;		// 문서 내 각 개체에 대한 고유 아이디(instance ID)
+    public int			picEffectInfo;	// 그림효과정보(그림자,네온,부드러운,가장자리,반사)
+    public List<PicEffect>	picEffect;		// 각 효과 정보
+    
+    public int			iniPicWidth;	// 그림 최초 생성시 기준 이미지 크기
+    public int			iniPicHeight;	// 그림 최초 생성시 기준 이미지 크기
+    public byte			picAlpha;		// 이미지 투명도
+    
+    public Ctrl_ShapePic(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapePic(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapePic(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -177,10 +177,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                             }
                             break;
                         default:
-                        	if (log.isLoggable(Level.FINE)) {
-                        		throw new NotImplementedException("Ctrl_ShapePic");
-                        	}
-                        	break;
+                            if (log.isLoggable(Level.FINE)) {
+                                throw new NotImplementedException("Ctrl_ShapePic");
+                            }
+                            break;
                         }
                     }
                 }
@@ -211,47 +211,36 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                     case "BLACK_WHITE":
                         effect = 2;    break;
                     default:
-                    	if (log.isLoggable(Level.FINE)) {
-                    		throw new NotImplementedException("Ctrl_ShapePic");
-                    	}
-                    	break;
+                        if (log.isLoggable(Level.FINE)) {
+                            throw new NotImplementedException("Ctrl_ShapePic");
+                        }
+                        break;
                     }
                     numStr =  childAttrs.getNamedItem("binaryItemIDRef").getNodeValue();// BinDataItem 요소의 아이디 참조값
                     binDataID = numStr;
                 }
                 break;
             case "hp:offset":
-                
                 break;
             case "hp:orgSz":
-                
                 break;
             case "hp:curSz":
-                
                 break;
             case "hp:flip":
-                
                 break;
             case "hp:rotationInfo":
-                
                 break;
             case "hp:renderingInfo":
-                
                 break;
             case "hp:imgDim":
-                
                 break;
             case "hp:sz":
-                
                 break;
             case "hp:pos":
-                
                 break;
             case "hp:outMargin":
-                
                 break;
             case "hp:shapeComment":
-                
                 break;
             case "hp:parameterset":
 	            {
@@ -268,12 +257,12 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                         }
                     }
 	            }
-            	break;
+	            break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ShapePic");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapePic");
+                }
+                break;
             }
         }
     }
@@ -364,21 +353,21 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                 obj.picAlpha        = buf[offset++];
             }
         }
-
+        
         log.fine("                                                  "
                 +"(X,Y)=("+obj.xGrpOffset+","+obj.yGrpOffset+")"
                 +",Width="+obj.curWidth+",Height="+obj.curHeight
                 );
-
+        
         if (offset-off-size!=0) {
-            log.finer("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
             // 그림 효과를 제대로 읽을 수 없으니  size 맞지 않으니 Exception이 계속 발생할 수 밖에 없다. Exception 발생하지 않도록 처리한다.
             // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
-
+	
     public static int parseCtrl(Ctrl_ShapePic shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
@@ -394,7 +383,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             .append("=공통속성:"+super.toString());
         return strb.toString();
     }
-
+    
     @Override
     public int getSize() {
         return size;
@@ -553,7 +542,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
     
     public static class SoftEdge extends PicEffect {
         public  float       radius;         // 부드러운 가장자리 반경
-
+        
         public SoftEdge(int typeNum, byte[] buf, int off, int size) {
             super(typeNum);
             
@@ -563,7 +552,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             
             this.size = offset-off;
         }
-
+        
         public SoftEdge(PicEffectType type, Node node, int version) {
             super(type);
             
@@ -572,7 +561,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             radius = Float.parseFloat(numStr);
         }
     }
-
+    
     public static class Reflect extends PicEffect {
         public  int     style;          // 반사 스타일
         public  float   radius;         // 반경
@@ -588,7 +577,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         public  float   endTrans;       // 끝 투명도
         public  float   endPos;         // 끝 위치
         public  float   offsetDirection;// 오프셋 방향
-
+        
         public Reflect(int typeNum, byte[] buf, int off, int size) {
             super(typeNum);
             
@@ -624,7 +613,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             
             this.size = offset-off;
         }
-
+        
         public Reflect(PicEffectType type, Node node, int version) throws NotImplementedException {
             super(type);
             
@@ -692,7 +681,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             }
         }
     }
-
+    
     /* 
      * 상용SW품질이 목표가 아니므로, 상세 내용을 LibreOffice에서 표현하고자 하지 않으므로 간략화 한다.
      */
@@ -760,7 +749,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             default:
                 type = 0;
             }
-
+            
             /*
             attrs.getNamedItem("schemaIndex").getNodeValue();     // Scheme Index
             attrs.getNamedItem("systemIndex").getNodeValue();     // System Index
@@ -778,12 +767,12 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             }
             */
         }
-
+        
         public int getSize() {
             return size;
         }
     }
-
+    
     public static enum PicEffectType {
         // 한글문서파일구조 5.0 에서  정의하지 않고 있다. 다만 임시 구현을 위해 임의의 값으로 정의했다.
         NONE        (0x0),
@@ -791,13 +780,13 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         GLOW        (0x2),
         SOFT_EDGE   (0x4),
         REFLECT     (0x8);
-
+        
         private int effect;
         
         private PicEffectType(int effect) { 
             this.effect = effect;
         }
-
+        
         public static PicEffectType from(int effect) {
             for (PicEffectType typeNum: values()) {
                 if (typeNum.effect == effect)
@@ -806,18 +795,18 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             return null;
         }
     }
-
+    
     public static enum ImagePathType {
         COMPOUND    (0x0),
         OWPML       (0x1),
         LINK        (0x2);
-
+        
         private int type;
         
         private ImagePathType(int type) { 
             this.type = type;
         }
-
+        
         public static ImagePathType from(int type) {
             for (ImagePathType typeNum: values()) {
                 if (typeNum.type == type)
@@ -826,7 +815,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             return null;
         }
     }
-
+    
     public static class ImagePath {
         public ImagePathType type;
         public Compressed compressed;

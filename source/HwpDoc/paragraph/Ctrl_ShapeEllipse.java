@@ -31,42 +31,42 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeEllipse.class.getName());
-	private int size;
-	
-	// 타원 개체 속성
-	public boolean  intervalDirty;     // 속성 (표 97참조)
-	public boolean  hasArcProperty;
-	public ArcType  arcType;
-	public int		centerX;	// 중심 좌표의 X값
-	public int		centerY;	// 중심 좌표의 Y값
-	public int		axixX1;		// 제1축 X 좌표의 값
-	public int		axixY1;		// 제1축 Y 좌표의 값
-	public int		axixX2;		// 제2축 X 좌표의 값
-	public int		axixY2;		// 제2축 Y 좌표의 값
-	public int 		startX1;
-	public int 		startY1;
-	public int		endX1;
-	public int		endY1;
-	public int 		startX2;
-	public int 		startY2;
-	public int		endX2;
-	public int		endY2;
-	
-	public Ctrl_ShapeEllipse(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_ShapeEllipse(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_ShapeEllipse(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeEllipse.class.getName());
+    private int size;
+    
+    // 타원 개체 속성
+    public boolean  intervalDirty;  // 속성 (표 97참조)
+    public boolean  hasArcProperty;
+    public ArcType  arcType;
+    public int      centerX;        // 중심 좌표의 X값
+    public int      centerY;        // 중심 좌표의 Y값
+    public int      axixX1;         // 제1축 X 좌표의 값
+    public int      axixY1;         // 제1축 Y 좌표의 값
+    public int      axixX2;         // 제2축 X 좌표의 값
+    public int      axixY2;         // 제2축 Y 좌표의 값
+    public int      startX1;
+    public int      startY1;
+    public int      endX1;
+    public int      endY1;
+    public int      startX2;
+    public int      startY2;
+    public int      endX2;
+    public int      endY2;
+    
+    public Ctrl_ShapeEllipse(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeEllipse(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapeEllipse(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -185,11 +185,11 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
         offset += 4;
 
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
-
-        return offset-off;
+        
+        return size;
     }
     
     public static int parseCtrl(Ctrl_ShapeEllipse shape, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -233,19 +233,19 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
-	
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
+    
    public static enum ArcType {
         NORMAL      (0x0),
         PIE         (0x1),

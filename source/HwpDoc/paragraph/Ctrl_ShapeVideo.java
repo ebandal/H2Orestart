@@ -26,34 +26,33 @@ import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeVideo.class.getName());
-	private int size;
-	
-	public int			videoType;		// 동영상타입 (0:로컬동영상, 1:웹동영상)
-	public short		vidoeBinID;
-	public String 		webURL;			
-	public String		thumnailBinID;
-
-	public Ctrl_ShapeVideo(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-
-	public Ctrl_ShapeVideo(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_ShapeVideo(String ctrlId, Node node, int version) throws NotImplementedException {
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeVideo.class.getName());
+    private int size;
+    
+    public int			videoType;		// 동영상타입 (0:로컬동영상, 1:웹동영상)
+    public short		vidoeBinID;
+    public String 		webURL;			
+    public String		thumnailBinID;
+    
+    public Ctrl_ShapeVideo(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeVideo(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapeVideo(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -64,10 +63,10 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         case "VT_WEB":
             videoType = 1;   break;
         default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("Ctrl_ShapeVideo");
-        	}
-        	break;
+            if (log.isLoggable(Level.FINE)) {
+                throw new NotImplementedException("Ctrl_ShapeVideo");
+            }
+            break;
         }
         
         String numStr = attributes.getNamedItem("fileIDRef").getNodeValue();
@@ -105,7 +104,7 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
             // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
     
     public static int parseCtrl(Ctrl_ShapeVideo shape, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -115,17 +114,17 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-
+    
     
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

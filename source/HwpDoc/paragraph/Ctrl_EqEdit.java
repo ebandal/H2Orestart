@@ -32,36 +32,36 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_EqEdit extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_EqEdit.class.getName());
-	private int size;
-	
-	public int 			attr;			// 속성. 스크립트가 차지하는 범위. 첫 비트가 켜져있으면 줄단위, 꺼져있으면 글자 단위
-	// public short		len;			// 스크립트 길이
-	public String		eqn;			// 한글 수식 스크립트
-	public int			charSize;		// 수식 글자 크기
-	public int			color;			// 글자 색상
-	public int			baseline;		// baseline
-	public String		version;		// 수식 버전 정보
-	public String		font;			// 수식 폰트 이름
-	
-	public Ctrl_EqEdit(String ctrlId) {
+    private static final Logger log = Logger.getLogger(Ctrl_EqEdit.class.getName());
+    private int size;
+    
+    public int          attr;           // 속성. 스크립트가 차지하는 범위. 첫 비트가 켜져있으면 줄단위, 꺼져있으면 글자 단위
+    // public short     len;            // 스크립트 길이
+    public String       eqn;            // 한글 수식 스크립트
+    public int          charSize;       // 수식 글자 크기
+    public int          color;          // 글자 색상
+    public int          baseline;       // baseline
+    public String       version;        // 수식 버전 정보
+    public String       font;           // 수식 폰트 이름
+    
+    public Ctrl_EqEdit(String ctrlId) {
         super(ctrlId);
     }
-
-	public Ctrl_EqEdit(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_EqEdit(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-
-	public Ctrl_EqEdit(String ctrlId, Node node, int ver) throws NotImplementedException {
+    
+    public Ctrl_EqEdit(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_EqEdit(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_EqEdit(String ctrlId, Node node, int ver) throws NotImplementedException {
         super(ctrlId, node, ver);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -101,10 +101,10 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
                 eqn = child.getNodeValue();
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("EqEdit");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("EqEdit");
+                }
+                break;
             }
         }
         this.fullfilled = true;
@@ -143,12 +143,12 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         }
         
         if (offset-off-size!=0) {
-            log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         obj.fullfilled = true;
-
-        return offset-off;
+        
+        return size;
     }
     
     public static int parseCtrl(Ctrl_EqEdit shape, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -178,22 +178,22 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         log.fine("                                                  ctrlID="+obj.ctrlId+", 캡션 parsing이지만, 정확한 parsing은 어떻게 해야 하는지 알 수 없음.");
         
         if (offset-off-size!=0) {
-            log.fine("[CtrlID]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[CtrlID]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         
-        return offset-off;
+        return size;
     }
-
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }

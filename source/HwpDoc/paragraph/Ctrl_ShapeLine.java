@@ -20,7 +20,6 @@
  */
 package HwpDoc.paragraph;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -31,32 +30,32 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeLine.class.getName());
-	private int size;
-	
-	// 선 개체 속성
-	public int		startX;	// 시작점 X 좌표
-	public int		startY;	// 시작점 Y 좌표
-	public int		endX;	// 끝점 X 좌표
-	public int		endY;	// 끝점 Y 좌표
-	public short	attr;	// 속성
-	
-	public Ctrl_ShapeLine(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
-
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_ShapeLine(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-	
-	public Ctrl_ShapeLine(String ctrlId, Node node, int version) throws NotImplementedException {
-	    super(ctrlId, node, version);
-	    
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeLine.class.getName());
+    private int size;
+    
+    // 선 개체 속성
+    public int      startX; // 시작점 X 좌표
+    public int      startY; // 시작점 Y 좌표
+    public int      endX;   // 끝점 X 좌표
+    public int      endY;   // 끝점 Y 좌표
+    public short    attr;   // 속성
+    
+    public Ctrl_ShapeLine(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+        
+        log.fine("                                                  " + toString());
+    }
+    
+    public Ctrl_ShapeLine(Ctrl_GeneralShape shape) {
+        super(shape);
+        
+        this.size = shape.getSize();
+    }
+    
+    public Ctrl_ShapeLine(String ctrlId, Node node, int version) throws NotImplementedException {
+        super(ctrlId, node, version);
+        
         NamedNodeMap attributes = node.getAttributes();
         // 처음 생성 시 수직선 또는 수평선일때, 선의 방향이 언제나 오른쪽(위쪽)으로 잡힘으로 인한 현상때문에 방향을 바로 잡아주기 위한 속성
         if (attributes.getNamedItem("isReverseHV")!=null) {
@@ -122,29 +121,29 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
             offset += 2;
             
             if (offset-off-size!=0) {
-                log.fine("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
-                throw new HwpParseException();
+                log.severe("[CtrlId]=" + obj.ctrlId + ", size=" + size + ", but currentSize=" + (offset-off));
+                // throw new HwpParseException();
             }
-            return offset-off;
+            return size;
         }
     }
 
     public static int parseCtrl(Ctrl_ShapeLine shape, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         offset += Ctrl_GeneralShape.parseCtrl(shape, size, buf, offset, version);
-
+        
         return offset-off;
     }
-
+    
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
-
-	@Override
-	public int getSize() {
-		return size;
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
+    
+    @Override
+    public int getSize() {
+        return size;
+    }
 }
