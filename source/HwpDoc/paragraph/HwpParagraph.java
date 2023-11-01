@@ -35,41 +35,41 @@ import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
 
 public class HwpParagraph {
     private static final Logger log = Logger.getLogger(HwpParagraph.class.getName());
-
-	public short			paraShapeID;	// HWPTAG_PARA_HEADER
-	public short			paraStyleID;	// HWPTAG_PARA_HEADER
-	public byte 			breakType;		// HWPTAG_PARA_HEADER
-	// public List<CharShape>	charShapes;		// HWPTAG_PARA_CHAR_SHAPE
-	public LineSeg			lineSegs;		// HWPTAG_PARA_LINE_SEG
-	public List<RangeTag>	rangeTags;		// HWPTAG_PARA_RANGE_TAG
-
-	public LinkedList<Ctrl> p;              // HWPTAG_PARA_TEXT + List<Ctrl>  V2
-	
-	public HwpParagraph() { }
-
-	public HwpParagraph(Node node, int version) throws NotImplementedException {
-
+    
+    public short			paraShapeID;	// HWPTAG_PARA_HEADER
+    public short			paraStyleID;	// HWPTAG_PARA_HEADER
+    public byte 			breakType;		// HWPTAG_PARA_HEADER
+    // public List<CharShape>	charShapes;		// HWPTAG_PARA_CHAR_SHAPE
+    public LineSeg			lineSegs;		// HWPTAG_PARA_LINE_SEG
+    public List<RangeTag>	rangeTags;		// HWPTAG_PARA_RANGE_TAG
+    
+    public LinkedList<Ctrl> p;              // HWPTAG_PARA_TEXT + List<Ctrl>  V2
+    
+    public HwpParagraph() { }
+    
+    public HwpParagraph(Node node, int version) throws NotImplementedException {
+        
         NamedNodeMap attributes = node.getAttributes();
         
         // id값은 처리하지 않는다. List<HwpRecord_Style>에 순차적으로 추가한다.
         // String id = attributes.getNamedItem("id").getNodeValue();
-
+        
         String numStr = attributes.getNamedItem("paraPrIDRef").getNodeValue();
         paraShapeID = (short) Integer.parseInt(numStr);
-
+        
         numStr = attributes.getNamedItem("styleIDRef").getNodeValue();
         paraStyleID = (short) Integer.parseInt(numStr);
-
+        
         switch(attributes.getNamedItem("pageBreak").getNodeValue()) {
         case "0":
             breakType &= 0b11111011;   break;      // 0:구역나누기, 2:다단나누기, 4:쪽 나누기, 8:단 나누기
         case "1":
             breakType |= 0b00000100;   break;
         default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("HwpParagraph");
-        	}
-        	break;
+            if (log.isLoggable(Level.FINE)) {
+                throw new NotImplementedException("HwpParagraph");
+            }
+            break;
         }
 
         switch(attributes.getNamedItem("columnBreak").getNodeValue()) {
@@ -78,15 +78,15 @@ public class HwpParagraph {
         case "1":
             breakType |= 0b00001000;   break;
         default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("HwpParagraph");
-        	}
-        	break;
+            if (log.isLoggable(Level.FINE)) {
+                throw new NotImplementedException("HwpParagraph");
+            }
+            break;
         }
-
+        
         // attributes.getNamedItem("merged").getNodeValue();
         // attributes.getNamedItem("paraTcId").getNodeValue();
-
+        
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
@@ -124,10 +124,10 @@ public class HwpParagraph {
 	            }
                 break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("HwpParagraph");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("HwpParagraph");
+                }
+                break;
             }
         }
         
@@ -138,35 +138,35 @@ public class HwpParagraph {
 	}
 	
 	private void parseHwpParagraph(Node node, int charShapeId, int version) throws NotImplementedException {
-
+	    
         if (p == null) {
             p = new LinkedList<Ctrl>();
         }
-
+        
         String numStr;
-	    Ctrl ctrl;
-	    
-	    switch(node.getNodeName()) {
-	    case "hp:secPr":
-    	    {
-    	        ctrl = new Ctrl_SectionDef("dces", node, version);
-    	        p.add(ctrl);
-    	    }
-    	    break;
-	    case "hp:ctrl":
-    	    {
+        Ctrl ctrl;
+        
+        switch(node.getNodeName()) {
+        case "hp:secPr":
+            {
+                ctrl = new Ctrl_SectionDef("dces", node, version);
+                p.add(ctrl);
+            }
+            break;
+        case "hp:ctrl":
+            {
                 NodeList nodeList = node.getChildNodes();
                 for (int j=0; j<nodeList.getLength(); j++) {
                     Node child = nodeList.item(j);
                     ctrl = Ctrl.getCtrl(child, version);
                     p.add(ctrl);
                 }
-    	    }
-    	    break;
-	    case "hp:t":
+            }
+            break;
+        case "hp:t":
             {
                 NamedNodeMap attrs = node.getAttributes();
-
+                
                 if (attrs.getNamedItem("charPrIDRef")!=null) {
                     CharShape charShape = new CharShape();
                     numStr = attrs.getNamedItem("charPrIDRef").getNodeValue();
@@ -200,88 +200,88 @@ public class HwpParagraph {
                     case "hp:insertEnd":
                     case "hp:deleteBegin":
                     case "hp:deleteEnd":
-                    	if (log.isLoggable(Level.FINE)) {
-                    		throw new NotImplementedException("hp:t");
-                    	}
-                    	break;
+                        if (log.isLoggable(Level.FINE)) {
+                            throw new NotImplementedException("hp:t");
+                        }
+                        break;
                     }
                 }
             }
             break;
-	    case "hp:tbl":
-	        ctrl = new Ctrl_Table(" lbt" , node, version);
+        case "hp:tbl":
+            ctrl = new Ctrl_Table(" lbt" , node, version);
             p.add(ctrl);
             break;
-	    case "hp:pic":
-	        ctrl = new Ctrl_ShapePic("cip$", node, version);
+        case "hp:pic":
+            ctrl = new Ctrl_ShapePic("cip$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:container":
-	        ctrl = new Ctrl_Container("noc$", node, version);
+            break;
+        case "hp:container":
+            ctrl = new Ctrl_Container("noc$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:ole":
-	        ctrl = new Ctrl_ShapeOle("elo$", node, version);
+            break;
+        case "hp:ole":
+            ctrl = new Ctrl_ShapeOle("elo$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:equation":
-	        ctrl = new Ctrl_EqEdit("deqe", node, version);
+            break;
+        case "hp:equation":
+            ctrl = new Ctrl_EqEdit("deqe", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:line":
-	        ctrl = new Ctrl_ShapeLine("nil$", node, version);
+            break;
+        case "hp:line":
+            ctrl = new Ctrl_ShapeLine("nil$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:rect":
-	        ctrl = new Ctrl_ShapeRect("cer$", node, version);
+            break;
+        case "hp:rect":
+            ctrl = new Ctrl_ShapeRect("cer$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:ellipse":
-	        ctrl = new Ctrl_ShapeEllipse("lle$", node, version);
+            break;
+        case "hp:ellipse":
+            ctrl = new Ctrl_ShapeEllipse("lle$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:arc":
-	        ctrl = new Ctrl_ShapeArc("cra$", node, version);
+            break;
+        case "hp:arc":
+            ctrl = new Ctrl_ShapeArc("cra$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:polygon":
-	        ctrl = new Ctrl_ShapePolygon("lop$", node, version);
+            break;
+        case "hp:polygon":
+            ctrl = new Ctrl_ShapePolygon("lop$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:curve":
-	        ctrl = new Ctrl_ShapeCurve("ruc$", node, version);
+            break;
+        case "hp:curve":
+            ctrl = new Ctrl_ShapeCurve("ruc$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:connectLine":
-	        ctrl = new Ctrl_ShapeConnectLine("loc$", node, version);
+            break;
+        case "hp:connectLine":
+            ctrl = new Ctrl_ShapeConnectLine("loc$", node, version);
             p.add(ctrl);
-	        break;
-	    case "hp:textart":
-	        ctrl = new Ctrl_ShapeTextArt("tat$", node, version);
+            break;
+        case "hp:textart":
+            ctrl = new Ctrl_ShapeTextArt("tat$", node, version);
             p.add(ctrl);
-	        break;
+            break;
         case "hp:video":
             ctrl = new Ctrl_ShapeVideo("div$", node, version);
             p.add(ctrl);
             break;
-	    case "hp:compose":
-	    case "hp:dutmal":
-	    case "hp:btn":
-	    case "hp:radioBtn":
-	    case "hp:checkBtn":
-	    case "hp:comboBox":
-	    case "hp:edit":
-	    case "hp:listBox":
-	    case "hp:scrollBar":
-	        break;
+        case "hp:compose":
+        case "hp:dutmal":
+        case "hp:btn":
+        case "hp:radioBtn":
+        case "hp:checkBtn":
+        case "hp:comboBox":
+        case "hp:edit":
+        case "hp:listBox":
+        case "hp:scrollBar":
+            break;
         default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("parseHwpPargraph");
-        	}
-        	break;
-	    }
+            if (log.isLoggable(Level.FINE)) {
+                throw new NotImplementedException("parseHwpPargraph");
+            }
+            break;
+        }
 	}
-
+	
 	public static HwpParagraph parse(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
@@ -322,15 +322,15 @@ public class HwpParagraph {
                 +",nRangeTags="+nRangeTags
                 +",paraInstanceID="+paraInstanceID
                 );
-
+        
         if (offset-off-size != 0 && offset-off!=24) {
-            log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
         
         return para;
     }
-
+	
     public static int parse(HwpParagraph para, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
@@ -369,12 +369,12 @@ public class HwpParagraph {
                 +",nRangeTags="+nRangeTags
                 +",paraInstanceID="+paraInstanceID
                 );
-
+        
         if (offset-off-size != 0 && offset-off!=24) {
-            log.fine("[PARA] size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            log.severe("[PARA] size=" + size + ", but currentSize=" + (offset-off));
+            // throw new HwpParseException();
         }
-
-        return offset-off;
+        
+        return size;
     }
 }
