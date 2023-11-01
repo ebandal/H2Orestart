@@ -28,33 +28,33 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.paragraph.Ctrl_Form;
 
 public class HwpRecord_FormObject extends HwpRecord {
-	private static final Logger log = Logger.getLogger(HwpRecord_FormObject.class.getName());
-	public static String formStr;
-	
-	HwpRecord_FormObject(int tagNum, int level, int size) {
-		super(tagNum, level, size);
-	}
-	
-	public static int parseCtrl(Ctrl_Form form,  int size, byte[] buf, int off, int version) throws HwpParseException {
-		int offset = off;
-		
-		offset += 4;	// tbp+
-		offset += 4;	// tbp+
-		offset += 4;	// 문자열 길이?
-		
-		short strLen	 = (short) ((buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2);
-		offset += 2;
-		if (strLen > 0) {
-			formStr = new String(buf, offset, strLen, StandardCharsets.UTF_16LE);
-			offset += strLen;
-		}
-		
-    	if (log.isLoggable(Level.FINE)) {
-			log.fine("                                                  "
-					+"ctrlID="+form.ctrlId
-					+",문자열="+(formStr==null?"":formStr));
-    	}
-    	
-		return offset-off;
-	}
+    private static final Logger log = Logger.getLogger(HwpRecord_FormObject.class.getName());
+    public static String formStr;
+    
+    HwpRecord_FormObject(int tagNum, int level, int size) {
+        super(tagNum, level, size);
+    }
+    
+    public static int parseCtrl(Ctrl_Form form,  int size, byte[] buf, int off, int version) throws HwpParseException {
+        int offset = off;
+        
+        offset += 4;	// tbp+
+        offset += 4;	// tbp+
+        offset += 4;	// 문자열 길이?
+        
+        short strLen	 = (short) ((buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2);
+        offset += 2;
+        if (strLen > 0) {
+            formStr = new String(buf, offset, strLen, StandardCharsets.UTF_16LE);
+            offset += strLen;
+        }
+        
+        if (log.isLoggable(Level.FINE)) {
+            log.fine("                                                  "
+                    +"ctrlID="+form.ctrlId
+                    +",문자열="+(formStr==null?"":formStr));
+        }
+        
+        return offset-off;
+    }
 }

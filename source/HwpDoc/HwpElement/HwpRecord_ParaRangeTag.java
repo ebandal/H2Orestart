@@ -28,37 +28,36 @@ import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.RangeTag;
 
 public class HwpRecord_ParaRangeTag extends HwpRecord {
-	private static final Logger log = Logger.getLogger(HwpRecord_ParaRangeTag.class.getName());
-
-	HwpRecord_ParaRangeTag(int tagNum, int level, int size) {
-		super(tagNum, level, size);
-	}
-	
-	public static int parse(HwpParagraph para, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
-		int offset = off;
-		
-		if (para.rangeTags==null) {
-			para.rangeTags = new ArrayList<RangeTag>();
-		}
-		
-		while(size-(offset-off) >= 12) {
-			RangeTag rangeTag = new RangeTag();
-			rangeTag.startPos 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-			offset += 4;
-			rangeTag.endPos 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-			offset += 4;
-			rangeTag.tag 		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-			offset += 4;
-			para.rangeTags.add(rangeTag);
-		}
-		
-		if (offset-off-size != 0) {
-			log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
-			dump(buf, off, size);
-			throw new HwpParseException();
-		}
-		
-		return offset-off;
-	}
-
+    private static final Logger log = Logger.getLogger(HwpRecord_ParaRangeTag.class.getName());
+    
+    HwpRecord_ParaRangeTag(int tagNum, int level, int size) {
+        super(tagNum, level, size);
+    }
+    
+    public static int parse(HwpParagraph para, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
+        int offset = off;
+        
+        if (para.rangeTags==null) {
+            para.rangeTags = new ArrayList<RangeTag>();
+        }
+        
+        while(size-(offset-off) >= 12) {
+            RangeTag rangeTag = new RangeTag();
+            rangeTag.startPos 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            offset += 4;
+            rangeTag.endPos 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            offset += 4;
+            rangeTag.tag 		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            offset += 4;
+            para.rangeTags.add(rangeTag);
+        }
+        
+        if (offset-off-size != 0) {
+            log.severe("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
+            dump(buf, off, size);
+            // throw new HwpParseException();
+        }
+        
+        return size;
+    }
 }
