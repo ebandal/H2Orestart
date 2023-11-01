@@ -216,7 +216,7 @@ public class HwpRecord_ParaText extends HwpRecord {
 		StringBuffer sb = new StringBuffer();
 		char extendChar = 0;
 		char inlineChar = 0;
-		ByteBuffer bb = ByteBuffer.allocate(12).order(ByteOrder.LITTLE_ENDIAN);
+		ByteBuffer bb = ByteBuffer.allocate(text.length()*2).order(ByteOrder.LITTLE_ENDIAN);
 		
 		for(int i=0;i<text.length();i++) {
 			char c = text.charAt(i);

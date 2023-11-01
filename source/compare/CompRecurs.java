@@ -109,6 +109,7 @@ public class CompRecurs {
                         // 그림 개체의 경우  글상자, 캡션만 출력
                         if (((Ctrl_GeneralShape) ctrl).paras != null) {
                             String content = ((Ctrl_GeneralShape) ctrl).paras.stream()
+                                                        .filter(p -> p.p!=null)
                                                         .flatMap(p -> p.p.stream())
                                                         .filter(c -> c instanceof ParaText)
                                                         .map(c -> (ParaText)c)
@@ -116,9 +117,10 @@ public class CompRecurs {
                                                         .collect(Collectors.joining(""));
                             sb.append("["+content+"]");
                         }
-        
+                        
                         if (((Ctrl_GeneralShape) ctrl).caption != null) {
                             String caption = ((Ctrl_GeneralShape) ctrl).caption.stream()
+                                                        .filter(p -> p.p!=null)
                                                         .flatMap(p -> p.p.stream())
                                                         .filter(c -> c instanceof ParaText)
                                                         .map(c -> (ParaText)c)
