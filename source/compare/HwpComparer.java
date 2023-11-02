@@ -104,10 +104,7 @@ public class HwpComparer {
                 case OUTLINE:
                     numberingStyleName = CompNumbering.getOutlineStyleName();
                     Ctrl_SectionDef secd = CompPage.getCurrentPage();
-                    if (secd.outlineNumberingID!=0) {
-                        if (docInfo.numberingList.size() < secd.outlineNumberingID) {
-                            throw new HwpParseException();
-                        }
+                    if (secd.outlineNumberingID!=0 && docInfo.numberingList.size() > secd.outlineNumberingID-1) {
                         numberingStyle = (HwpRecord_Numbering)docInfo.numberingList.get(secd.outlineNumberingID-1);
                         numberingPrefix = CompNumbering.getNumberingHead(numberingStyleName, numberingStyle, paraShape.headingLevel);
                         showNumberingPrefix = true;
@@ -117,20 +114,16 @@ public class HwpComparer {
                     log.finest("번호문단ID="+paraShape.headingIdRef + ",문단수준="+paraShape.headingLevel);
                     if (paraShape.headingIdRef!=0) {
                         numberingStyleName = CompNumbering.numberingStyleNameMap.get((int)paraShape.headingIdRef);
-                        if (numberingStyleName==null) {
-                            throw new HwpParseException();
+                        if (numberingStyleName!=null) {
+                            numberingStyle = (HwpRecord_Numbering)docInfo.numberingList.get((int)paraShape.headingIdRef-1);
+                            numberingPrefix = CompNumbering.getNumberingHead(numberingStyleName, numberingStyle, paraShape.headingLevel);
+                            showNumberingPrefix = true;
                         }
-                        numberingStyle = (HwpRecord_Numbering)docInfo.numberingList.get((int)paraShape.headingIdRef-1);
-                        numberingPrefix = CompNumbering.getNumberingHead(numberingStyleName, numberingStyle, paraShape.headingLevel);
-                        showNumberingPrefix = true;
                     }
                     break;
                 case BULLET:
                     log.finest("글머리표문단ID="+paraShape.headingIdRef + ",문단수준="+paraShape.headingLevel);
-                    if (paraShape.headingIdRef!=0) {
-                        if (docInfo.bulletList.size() < paraShape.headingIdRef) {
-                            throw new HwpParseException();
-                        }
+                    if (paraShape.headingIdRef!=0 && docInfo.bulletList.size() > paraShape.headingIdRef-1) {
                         numberingStyleName = CompNumbering.bulletStyleNameMap.get((int)paraShape.headingIdRef);
                         HwpRecord_Bullet bulletStyle = (HwpRecord_Bullet)docInfo.bulletList.get((int)paraShape.headingIdRef-1);
                         numberingPrefix = Character.toString((char)bulletStyle.bulletChar);
@@ -167,7 +160,7 @@ public class HwpComparer {
             hwpxTemp.detect();
             detectingType = "HWPX";
             hwpxTemp.close();
-        } catch (IOException | HwpDetectException | ParserConfigurationException | SAXException | DataFormatException e1) {
+        } catch (IOException | HwpDetectException e1) {
             try {
                 hwpxTemp.close();
             } catch (IOException e) {
@@ -180,7 +173,7 @@ public class HwpComparer {
                 hwpTemp.detect();
                 detectingType = "HWP";
                 hwpTemp.close();
-            } catch (IOException | HwpDetectException | CompoundDetectException | NotImplementedException | CompoundParseException e2) {
+            } catch (IOException | HwpDetectException e2) {
                 log.info("file detected neither HWPX nor HWP");
                 try {
                     hwpTemp.close();
