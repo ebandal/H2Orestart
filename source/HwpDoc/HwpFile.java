@@ -91,14 +91,17 @@ public class HwpFile {
         return oleFile;
     }
     
-    public boolean detect() throws HwpDetectException, CompoundDetectException, NotImplementedException, IOException, CompoundParseException {
+    public boolean detect() throws HwpDetectException, IOException {
         // read CompoundFile structure
-        oleFile.open();
         try {
+            oleFile.open();
             if (getFileHeader() == false) {
                 oleFile.close();
-                throw new CompoundParseException();
+                throw new HwpDetectException(ErrCode.FILE_READ_ERROR);
             }
+        } catch (CompoundDetectException e) {
+            oleFile.close();
+            throw new HwpDetectException(e.getReason());
         } catch (HwpDetectException e) {
             oleFile.close();
             throw new HwpDetectException(e.getReason());

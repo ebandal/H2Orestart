@@ -23,16 +23,19 @@ package HwpDoc.Exception;
 import HwpDoc.ErrCode;
 
 public class CompoundDetectException extends Exception {
-	private static final long serialVersionUID = -583571405184537607L;
-	private ErrCode errCode;
-	
-	public CompoundDetectException() {
-		this(ErrCode.UNDEFINED);
-	}
-	
-	public CompoundDetectException(ErrCode errCode) {
-		super();
-		this.errCode = errCode;
-	}
-	
+    private static final long serialVersionUID = -583571405184537607L;
+    private ErrCode errCode;
+    
+    public CompoundDetectException() {
+        this(ErrCode.UNDEFINED);
+    }
+    
+    public CompoundDetectException(ErrCode errCode) {
+        super();
+        this.errCode = errCode;
+    }
+    
+    public ErrCode getReason() {
+        return errCode==null?ErrCode.UNDEFINED:errCode;
+    }
 }
