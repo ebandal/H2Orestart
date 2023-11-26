@@ -28,7 +28,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord_ParaShape.VerticalAlign;
 
 public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
 	private static final Logger log = Logger.getLogger(Ctrl_ShapeConnectLine.class.getName());

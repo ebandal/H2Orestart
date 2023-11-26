@@ -29,7 +29,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.paragraph.Ctrl_HeadFoot.PageRange;
 
 public class Ctrl_Note extends Ctrl {
 	private static final Logger log = Logger.getLogger(Ctrl_Note.class.getName());

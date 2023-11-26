@@ -30,10 +30,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
 import HwpDoc.paragraph.Ctrl_Common.VertAlign;
-import HwpDoc.paragraph.Ctrl_Table.CellZone;
 
 public class TblCell {
 	private static final Logger log = Logger.getLogger(TblCell.class.getName());

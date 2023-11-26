@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
 import HwpDoc.paragraph.Ctrl_Click;
@@ -37,7 +36,6 @@ import HwpDoc.paragraph.Ctrl_NewNumber;
 import HwpDoc.paragraph.Ctrl_Note;
 import HwpDoc.paragraph.Ctrl_PageNumPos;
 import HwpDoc.paragraph.Ctrl_SectionDef;
-import HwpDoc.paragraph.Ctrl_ShapeTextArt;
 import HwpDoc.paragraph.Ctrl_Table;
 
 public class HwpRecord_CtrlHeader extends HwpRecord {

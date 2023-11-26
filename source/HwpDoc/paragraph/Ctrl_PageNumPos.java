@@ -25,10 +25,8 @@ import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
-import HwpDoc.paragraph.Ctrl_AutoNumber.NumType;
 
 
 public class Ctrl_PageNumPos extends Ctrl {

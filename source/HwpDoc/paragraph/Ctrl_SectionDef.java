@@ -30,7 +30,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.Exception.NotImplementedException;
-import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.section.NoteShape;
 import HwpDoc.section.Page;
 import HwpDoc.section.PageBorderFill;

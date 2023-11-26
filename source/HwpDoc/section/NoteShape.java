@@ -27,7 +27,6 @@ import java.util.logging.Logger;
 import org.w3c.dom.Node;
 
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineType1;
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 

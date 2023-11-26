@@ -20,24 +20,15 @@
  */
 package soffice;
 
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
-
 import com.sun.star.awt.FontDescriptor;
 import com.sun.star.awt.FontSlant;
 import com.sun.star.awt.Size;
-import com.sun.star.awt.XBitmap;
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.XPropertySet;
 import com.sun.star.container.XIndexReplace;
@@ -449,8 +440,6 @@ public class ConvNumbering {
 		   		 		// GraphicBitmap 전달하는 것이 동작하지 않는다. 해결될때까지 GraphicURL 전달하는 방식으로 유지한다.
 		   		 		String imageExtractPath = wContext.getBinFilename(bullet.binItemRefID);
 		   		        String m_sGraphicFileURL = ConvUtil.convertToURL(wContext, "", imageExtractPath);
-		   	    		// byte[] imageAsByteArray = WriterContext.getBinBytes((bullet.binItemRefID));
-		   	    		// MyBitmap myBitmap = new MyBitmap(new ByteArrayInputStream(imageAsByteArray));
 
 						newProps[newProps.length-3] = new PropertyValue();
 						newProps[newProps.length-3].Name = "GraphicSize";
@@ -634,70 +623,6 @@ public class ConvNumbering {
 		}
 		return NumberingType.NUMBER_NONE;
 	}
-	
-	private static class MyBitmap implements XBitmap {
-		BufferedImage bufferedImage;
 
-		public MyBitmap(InputStream ins) {
-			try {
-				bufferedImage = ImageIO.read(ins);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		@Override
-		public byte[] getDIB() {
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			byte[] imageBytes = null;
-			try {
-				ImageIO.write(bufferedImage, "bmp", output);
-				imageBytes = output.toByteArray();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return imageBytes;
-		}
-
-		@Override
-		public byte[] getMaskDIB() {
-			BufferedImage maskBI = new BufferedImage(bufferedImage.getWidth(null), bufferedImage.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-		    Graphics2D bGr = maskBI.createGraphics();
-		    bGr.drawImage(bufferedImage, 0, 0, null);
-		    bGr.dispose();
-		    
-		    int width = maskBI.getWidth();
-		    int height = maskBI.getHeight();
-
-		    int[] imagePixels = maskBI.getRGB(0, 0, width, height, null, 0, width);
-		    int[] maskPixels = maskBI.getRGB(0, 0, width, height, null, 0, width);
-
-		    for (int i = 0; i < imagePixels.length; i++) {
-		        int color = imagePixels[i] & 0x00ffffff; // Mask preexisting alpha
-		        int alpha = maskPixels[i] << 24; // Shift blue to alpha
-		        imagePixels[i] = color | alpha;
-		    }
-		    maskBI.setRGB(0, 0, width, height, imagePixels, 0, width);
-
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			byte[] imageBytes = null;
-			try {
-				ImageIO.write(maskBI, "bmp", output);
-				imageBytes = output.toByteArray();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return imageBytes;
-		}
-
-		@Override
-		public Size getSize() {
-			Size aSize = new Size();
-			aSize.Width = bufferedImage.getWidth();
-			aSize.Height = bufferedImage.getHeight();
-			return aSize;
-		}
-
-	}
 
 }

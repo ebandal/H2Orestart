@@ -22,9 +22,7 @@ package soffice;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.util.logging.Logger;
 
-import com.sun.star.awt.Point;
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.drawing.TextVerticalAdjust;
 import com.sun.star.frame.XStorable;

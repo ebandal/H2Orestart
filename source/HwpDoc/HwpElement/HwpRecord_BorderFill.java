@@ -20,7 +20,6 @@
  */
 package HwpDoc.HwpElement;
 
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,10 +31,6 @@ import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
-import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
-import HwpDoc.HwpElement.HwpRecord_BinData.Type;
-import HwpDoc.paragraph.Ctrl_ShapePic.ImagePath;
-import HwpDoc.paragraph.Ctrl_ShapePic.ImagePathType;
 
 public class HwpRecord_BorderFill extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_BorderFill.class.getName());

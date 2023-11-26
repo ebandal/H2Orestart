@@ -22,7 +22,6 @@ package soffice;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -32,7 +31,6 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.zip.DataFormatException;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -80,7 +78,6 @@ import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
-import HwpDoc.HwpElement.HwpRecord_BinData;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
@@ -2669,82 +2666,6 @@ public class ConvGraphics {
                 | WrappedTargetException e) {
             e.printStackTrace();
         } // Open Bezier 이므로 Fill 하지 않는다.
-    }
-
-    // insert Link Image
-    private static void insertPIC(WriterContext wContext, Ctrl_GeneralShape shape, String imageExtractPath, int step) {
-        boolean hasCaption = shape.caption == null ? false : shape.caption.size() == 0 ? false : true;
-        XTextFrame xFrame = null;
-        XText xFrameText = null;
-        XTextCursor xFrameCursor = null;
-        XPropertySet paraProps = null;
-        try {
-            if (hasCaption) {
-                xFrame = makeOuterFrame(wContext, shape, false, step);
-                // Frame 내부 Cursor 생성
-                xFrameText = xFrame.getText();
-                xFrameCursor = xFrameText.createTextCursor();
-            }
-            // 그림그리기
-            Object oGraphic = wContext.mMSF.createInstance("com.sun.star.text.TextGraphicObject");
-            XTextContent xTextContent = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, oGraphic);
-            XPropertySet xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, oGraphic);
-            String m_sGraphicFileURL = ConvUtil.convertToURL(wContext, "", imageExtractPath);
-            if (!ConvUtil.checkFile(wContext, m_sGraphicFileURL)) {
-                log.fine("Impossible to locate the file " + m_sGraphicFileURL);
-            } else {
-                xPropSet.setPropertyValue("GraphicURL", m_sGraphicFileURL);
-            }
-            if (hasCaption) {
-                try {
-                    xPropSet.setPropertyValue("AnchorType", TextContentAnchorType.AS_CHARACTER);
-                } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException
-                        | WrappedTargetException e) {
-                    log.severe("AnchorType has Exception");
-                }
-                xPropSet.setPropertyValue("VertOrient", VertOrientation.CENTER); // Top, Bottom, Center, fromBottom
-                xPropSet.setPropertyValue("VertOrientRelation", RelOrientation.TEXT_LINE); // Base line, Character, Row
-                xPropSet.setPropertyValue("HoriOrient", HoriOrientation.CENTER); // 0:NONE=From left
-                xPropSet.setPropertyValue("HoriOrientRelation", RelOrientation.PRINT_AREA); // 1:paragraph text area
-            } else {
-                setPosition(xPropSet, shape, shape.nGrp > 0 ? shape.xGrpOffset : 0,
-                        shape.nGrp > 0 ? shape.yGrpOffset : 0);
-            }
-            setWrapStyle(xPropSet, shape);
-            // 위치를 잡은 후에 크기를 조정한다.
-            xPropSet.setPropertyValue("Width", Transform.translateHwp2Office(shape.width));
-            xPropSet.setPropertyValue("Height", Transform.translateHwp2Office(shape.height));
-            // setLineStyle 대신 border 속성값을 직접 넣는다.
-            if (shape instanceof Ctrl_ShapePic) {
-                BorderLine2 pictureBorder = Transform.toBorderLine2(shape);
-                xPropSet.setPropertyValue("TopBorder", pictureBorder);
-                xPropSet.setPropertyValue("BottomBorder", pictureBorder);
-                xPropSet.setPropertyValue("LeftBorder", pictureBorder);
-                xPropSet.setPropertyValue("RightBorder", pictureBorder);
-            }
-            if (hasCaption) {
-                XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, xFrameCursor);
-                paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
-                xFrameText.insertTextContent(xFrameCursor, xTextContent, true);
-                xFrameText.insertControlCharacter(xFrameCursor, ControlCharacter.PARAGRAPH_BREAK, false);
-            } else {
-                wContext.mText.insertTextContent(wContext.mTextCursor, xTextContent, true);
-                if (wContext.version >= 72) {
-                    TextContentAnchorType anchorType = (TextContentAnchorType) xPropSet.getPropertyValue("AnchorType");
-                    if (anchorType == TextContentAnchorType.AT_PARAGRAPH) {
-                        wContext.mText.insertString(wContext.mTextCursor, " ", false);
-                    }
-                }
-            }
-            // 캡션 쓰기
-            if (hasCaption) {
-                addCaptionString(wContext, xFrameText, xFrameCursor, shape, step);
-            }
-        } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
-        } catch (SkipDrawingException e) {
-            e.printStackTrace();
-        }
     }
 
     public static void transform(XPropertySet xPropsSet, Ctrl_GeneralShape shape)
