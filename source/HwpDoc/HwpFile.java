@@ -78,7 +78,16 @@ public class HwpFile {
         bodyText = new ArrayList<HwpSection>();
         viewText = new ArrayList<HwpSection>();
     }
-    
+
+    public HwpFile(File file) throws FileNotFoundException {
+        oleFile = new CompoundFile(file);
+        this.filename = file.toString();
+        fileHeader = new HwpFileHeader();
+        docInfo = new HwpDocInfo(this);
+        bodyText = new ArrayList<HwpSection>();
+        viewText = new ArrayList<HwpSection>();
+    }
+
     public List<HwpSection> getSections() {
         if (fileHeader.bDistributable) {
             return viewText;

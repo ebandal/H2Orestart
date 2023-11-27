@@ -97,11 +97,11 @@ public class WriterContext {
         return sections;
     }
 
-    public static String detectHancom(String inputFile) {
+    public static String detectHancom(File file) {
         String detectingType = null;
 
         try {
-            HwpxFile hwpxTemp = new HwpxFile(inputFile);
+            HwpxFile hwpxTemp = new HwpxFile(file);
             hwpxTemp.detect();
             detectingType = "HWPX";
             hwpxTemp.close();
@@ -110,7 +110,7 @@ public class WriterContext {
             log.info("file detected not HWPX");
 
             try {
-                HwpFile hwpTemp = new HwpFile(inputFile);
+                HwpFile hwpTemp = new HwpFile(file);
                 hwpTemp.detect();
                 detectingType = "HWP";
                 hwpTemp.close();
@@ -141,6 +141,26 @@ public class WriterContext {
                                                                 IOException, DataFormatException, HwpParseException, 
                                                                 NotImplementedException, CompoundParseException, ParserConfigurationException,
                                                                 SAXException, OwpmlParseException {
+        switch (hanTypeStr) {
+        case "HWP":
+            hType = HanType.HWP;
+            hwp = new HwpFile(inputFile);
+            hwp.open();
+            break;
+        case "HWPX":
+            hType = HanType.HWPX;
+            hwpx = new HwpxFile(inputFile);
+            hwpx.open();
+            break;
+        default:
+            throw new HwpDetectException();
+        }
+    }
+
+    public void open(File inputFile, String hanTypeStr) throws HwpDetectException, CompoundDetectException,
+                                                                 IOException, DataFormatException, HwpParseException, 
+                                                                 NotImplementedException, CompoundParseException, ParserConfigurationException,
+                                                                 SAXException, OwpmlParseException {
         switch (hanTypeStr) {
         case "HWP":
             hType = HanType.HWP;
