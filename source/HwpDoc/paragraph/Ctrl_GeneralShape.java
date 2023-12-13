@@ -299,70 +299,49 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 node.removeChild(child);
                 break;
             case "hp:offset":
-                
                 break;
             case "hp:orgSz":
-                
                 break;
             case "hp:curSz":
-                
                 break;
             case "hp:flip":
-                
                 break;
             case "hp:rotationInfo":
-                
                 break;
             case "hp:renderingInfo":
-                
                 break;
             case "hc:pt0":
-                
                 break;
             case "hc:pt1":
-                
                 break;
             case "hc:pt2":
-                
                 break;
             case "hc:pt3":
-                
                 break;
             case "hp:sz":
-                
                 break;
             case "hp:pos":
-                
                 break;
             case "hp:outMargin":
-                
                 break;
             case "hp:imgRect":
-                
                 break;
             case "hp:imgClip":
-                
                 break;
             case "hp:inMargin":
-                
                 break;
             case "hp:imgDim":
-                
                 break;
             case "hc:img":
-                
                 break;
             case "hp:effects":
-                
                 break;
             case "hp:shapeComment":
-            	
                 node.removeChild(child);
                 break;
             default:
-            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
             	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_GeneralShape");
+            		log.fine(child.getNodeName() + "=" + child.getNodeValue());
             	}
             	break;
             }

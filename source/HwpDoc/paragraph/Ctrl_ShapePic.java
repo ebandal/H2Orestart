@@ -253,7 +253,9 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                         switch(grandChild.getNodeName()) {
                         case "hp:listParam":	break;
                         default:
-                            throw new NotImplementedException("Ctrl_ShapePic");
+                        	if (log.isLoggable(Level.FINE)) {
+                        		throw new NotImplementedException("Ctrl_ShapePic");
+                        	}
                         }
                     }
 	            }

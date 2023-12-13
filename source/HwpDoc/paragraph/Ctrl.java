@@ -20,11 +20,16 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.w3c.dom.Node;
 
 import HwpDoc.Exception.NotImplementedException;
 
 public abstract class Ctrl {
+    private static final Logger log = Logger.getLogger(Ctrl.class.getName());
+
 	public String ctrlId;
 	public boolean fullfilled;     // 파싱이 완료되었는지를 나타냄
 
@@ -72,7 +77,9 @@ public abstract class Ctrl {
         case "hp:hiddenComment":
             break;
         default:
-            throw new NotImplementedException("Ctrl");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl");
+        	}
         }
             
         return ctrl;

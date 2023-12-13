@@ -23,6 +23,7 @@ package HwpDoc.paragraph;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -170,7 +171,9 @@ public class TblCell {
                             lastCtrl = (cellP.p==null||cellP.p.size()==0 ? null : cellP.p.getLast());
                             break;
                         default:
-                            throw new NotImplementedException("TblCell");
+                            if (log.isLoggable(Level.FINE)) {
+                            	throw new NotImplementedException("TblCell");
+                            }
                         }
                         
                         // ParaBreak를 subList 중간에 하나씩 강제로 넣는다. Paragraph 단위로 다음줄에 써지도록
@@ -188,7 +191,9 @@ public class TblCell {
                 }
                 break;
             default:
-                throw new NotImplementedException("TblCell");
+                if (log.isLoggable(Level.FINE)) {
+                	throw new NotImplementedException("TblCell");
+                }
             }
         }
 

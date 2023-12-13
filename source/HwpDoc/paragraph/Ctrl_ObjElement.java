@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -204,7 +205,9 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                             }
                             break;
                         default:
-                            throw new NotImplementedException("Ctrl_ObjElement");
+                        	if (log.isLoggable(Level.FINE)) {
+                        		throw new NotImplementedException("Ctrl_ObjElement");
+                        	}
                         }
                     }
                     matCnt = scaMatCnt;
@@ -243,9 +246,10 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 break;
             case "hp:shapeComment":
                 break;
+            case "hp:script":
+            	break;
             default:
                 log.fine(child.getNodeName() + "=" + child.getNodeValue());
-                // throw new NotImplementedException("Ctrl_ObjElement");
             }
         }
     }

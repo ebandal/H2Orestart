@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -135,7 +136,9 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
                 break;
             default:
             	log.fine(child.getNodeName() + "=" + child.getNodeValue());
-                throw new NotImplementedException("Ctrl_ShapeRect");
+            	if (log.isLoggable(Level.FINE)) {
+            		throw new NotImplementedException("Ctrl_ShapeRect");
+            	}
             }
         }
     }

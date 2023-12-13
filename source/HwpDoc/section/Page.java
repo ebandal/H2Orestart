@@ -20,6 +20,7 @@
  */
 package HwpDoc.section;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -55,7 +56,9 @@ public class Page {
         case "WIDELY":
             landscape = false;   break;      // 세로인데, 왜 WIDELY로 되어 있지?
         default:
-            throw new NotImplementedException("Page");
+            if (log.isLoggable(Level.FINE)) {
+            	throw new NotImplementedException("Page");
+            }
         }
         
         String numStr = attributes.getNamedItem("width").getNodeValue();

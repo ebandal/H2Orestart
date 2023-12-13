@@ -21,6 +21,7 @@
 package HwpDoc.paragraph;
 
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -77,7 +78,9 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
         case "1":
             intervalDirty = true;       break;
         default:
-            throw new NotImplementedException("Ctrl_ShapeEllipse");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl_ShapeEllipse");
+        	}
         };
         // 호로 바뀌었는지 여부
         switch(attributes.getNamedItem("hasArcPr").getNodeValue()) {
@@ -86,7 +89,9 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
         case "1":
             intervalDirty = true;       break;
         default:
-            throw new NotImplementedException("Ctrl_ShapeEllipse");
+        	if (log.isLoggable(Level.FINE)) {
+        		throw new NotImplementedException("Ctrl_ShapeEllipse");
+        	}
         };
         // 호의 종류
         arcType = ArcType.valueOf(attributes.getNamedItem("arcType").getNodeValue());
