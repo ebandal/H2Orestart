@@ -80,14 +80,11 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         charSize = Integer.parseInt(numStr);
         
         switch(attributes.getNamedItem("lineMode").getNodeValue()) {  // 수식이 차지하는 범위
-        case "0":
-            break;
         case "LINE":
+        	attr = 1;
+        	break;
         case "CHAR":
-        default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("EqEdit");
-        	}
+        	attr = 0;
         	break;
         }
         
@@ -98,7 +95,15 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
             case "hp:script":    // 수식내용
-                eqn = child.getNodeValue();
+                NodeList grandChildList = child.getChildNodes();
+                for (int j=0; j<grandChildList.getLength(); j++) {
+                    Node grandChild = grandChildList.item(j);
+                    switch(grandChild.getNodeName()) {
+                    case "#text":
+                    	eqn = grandChild.getNodeValue();
+                        break;
+                    }
+                }
                 break;
             default:
                 if (log.isLoggable(Level.FINE)) {
