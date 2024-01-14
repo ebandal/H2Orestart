@@ -296,7 +296,7 @@ public class HwpParagraph {
         offset += 4;
         para.paraShapeID    = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
-        para.paraStyleID    = buf[offset++];
+        para.paraStyleID    = (short) (buf[offset++]&0x00FF);
         para.breakType      = buf[offset++];
         short nCharShapeInfo= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
@@ -343,7 +343,7 @@ public class HwpParagraph {
         offset += 4;
         para.paraShapeID    = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
-        para.paraStyleID    = buf[offset++];
+        para.paraStyleID    = (short) (buf[offset++]&0x00FF);
         para.breakType      = buf[offset++];
         short nCharShapeInfo= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
