@@ -231,7 +231,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 ConvPage.setSectionIndex(secIndex++);
                 
                 for (HwpParagraph para: section.paraList) {
-                    HwpRecurs.printParaRecurs(writerContext, para, null, 1);
+                    HwpRecurs.printParaRecurs(writerContext, writerContext, para, null, 1);
                 }
                 // context.mMyDocument.unlockControllers();
             }

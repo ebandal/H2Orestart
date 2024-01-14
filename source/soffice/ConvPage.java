@@ -414,7 +414,6 @@ public class ConvPage {
 
             HwpDoc.section.Page page = getCurrentPage().page;
             WriterContext context2 = new WriterContext();
-            context2.hwp = wContext.hwp;
             context2.mContext = wContext.mContext;
             context2.mDesktop = wContext.mDesktop;
             context2.mMCF = wContext.mMCF;
@@ -492,7 +491,7 @@ public class ConvPage {
                     }
                 };
                 for (HwpParagraph para : hf.paras) {
-                    HwpRecurs.printParaRecurs(context2, para, callbackOdd, 2);
+                    HwpRecurs.printParaRecurs(context2, wContext, para, callbackOdd, 2);
                 }
                 // REMOVE last PARA_BREAK
                 HwpRecurs.removeLastParaBreak(context2.mTextCursor);
@@ -566,7 +565,7 @@ public class ConvPage {
                     }
                 };
                 for (HwpParagraph para : hf.paras) {
-                    HwpRecurs.printParaRecurs(context2, para, callbackEven, 2);
+                    HwpRecurs.printParaRecurs(context2, wContext, para, callbackEven, 2);
                 }
                 // REMOVE last PARA_BREAK
                 HwpRecurs.removeLastParaBreak(context2.mTextCursor);
@@ -643,7 +642,7 @@ public class ConvPage {
                 };
                 if (hf.paras != null) {
                     for (HwpParagraph para : hf.paras) {
-                        HwpRecurs.printParaRecurs(context2, para, callbackBoth, 2);
+                        HwpRecurs.printParaRecurs(context2, wContext, para, callbackBoth, 2);
                     }
                     // REMOVE last PARA_BREAK
                     HwpRecurs.removeLastParaBreak(context2.mTextCursor);

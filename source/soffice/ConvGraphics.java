@@ -436,7 +436,6 @@ public class ConvGraphics {
             xFrameCursor = xFrameText.createTextCursor();
 
             WriterContext frameContext = new WriterContext();
-            frameContext.hwp = wContext.hwp;
             frameContext.mContext = wContext.mContext;
             frameContext.mDesktop = wContext.mDesktop;
             frameContext.mMCF = wContext.mMCF;
@@ -714,7 +713,7 @@ public class ConvGraphics {
                     if (sizeWidth < maxCtrlWidth || sizeHeight < maxCtrlHeight) {
                         callback = new HwpCallback(TableFrame.MAKE_PART);
                     }
-                    HwpRecurs.printParaRecurs(innerContext, para, callback, step + 1);
+                    HwpRecurs.printParaRecurs(innerContext, wOuterContext, para, callback, step + 1);
                 }
                 HwpRecurs.removeLastParaBreak(innerContext.mTextCursor);
                 if (shape.nGrp == 0) {
@@ -851,7 +850,7 @@ public class ConvGraphics {
                             paraText.text = paraText.text.replaceAll("\r|\n", "");
                         }
                     }
-                    HwpRecurs.printParaRecurs(innerContext, para, callback, step + 1);
+                    HwpRecurs.printParaRecurs(innerContext, wOuterContext, para, callback, step + 1);
                 }
                 // REMOVE last PARA_BREAK. 하지만 shape에서는 동작하지 않음.
                 HwpRecurs.removeLastParaBreak(innerContext.mTextCursor);
@@ -1185,7 +1184,6 @@ public class ConvGraphics {
             // [21.11.24] "글상자 속성" 가진 개체 내에 문단 쓰기.
             if (hasParas) {
                 WriterContext context2 = new WriterContext();
-                context2.hwp = wContext.hwp;
                 context2.mContext = wContext.mContext;
                 context2.mDesktop = wContext.mDesktop;
                 context2.mMCF = wContext.mMCF;
@@ -1196,7 +1194,7 @@ public class ConvGraphics {
 
                 for (HwpParagraph para : pol.paras) {
                     HwpCallback callback = new HwpCallback(TableFrame.MADE);
-                    HwpRecurs.printParaRecurs(context2, para, callback, step + 1);
+                    HwpRecurs.printParaRecurs(context2, wContext, para, callback, step + 1);
                 }
                 // REMOVE last PARA_BREAK
                 HwpRecurs.removeLastParaBreak(context2.mTextCursor);
@@ -1651,7 +1649,7 @@ public class ConvGraphics {
                 return true;
             }
         };
-        HwpRecurs.printParaRecurs(wContext, shape.caption.get(0), callback, 2);
+        HwpRecurs.printParaRecurs(wContext, wContext, shape.caption.get(0), callback, 2);
         if (capStr.size() > 0 && capStr.get(capStr.size() - 1).equals("\r")) { // 마지막이 PARA_BREAK라면 출력하지 않음.
             capStr.remove(capStr.size() - 1);
         }

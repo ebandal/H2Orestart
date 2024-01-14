@@ -60,21 +60,18 @@ public class ConvFootnote {
 
     protected static void insertFootnote(WriterContext wContext, Ctrl_Note note, int step) {
         try {
-            XFootnote xFootnote = UnoRuntime.queryInterface(XFootnote.class,
-                    wContext.mMSF.createInstance("com.sun.star.text.Footnote"));
-            // xFootnote.setLabel(label);
+            XFootnote xFootnote = UnoRuntime.queryInterface(XFootnote.class, wContext.mMSF.createInstance("com.sun.star.text.Footnote"));
             XTextContent xContent = UnoRuntime.queryInterface(XTextContent.class, xFootnote);
             wContext.mText.insertTextContent(wContext.mTextCursor, xContent, false);
 
-            XFootnotesSupplier xFootnoteSupplier = UnoRuntime.queryInterface(XFootnotesSupplier.class,
-                    wContext.mMyDocument);
+            XFootnotesSupplier xFootnoteSupplier = UnoRuntime.queryInterface(XFootnotesSupplier.class, wContext.mMyDocument);
             XIndexAccess xFootnotes = UnoRuntime.queryInterface(XIndexAccess.class, xFootnoteSupplier.getFootnotes());
             XFootnote xNumbers = UnoRuntime.queryInterface(XFootnote.class, xFootnotes.getByIndex(getFootnoteIndex()));
             XText xSimple = UnoRuntime.queryInterface(XText.class, xNumbers);
+            
             XTextCursor xRange = UnoRuntime.queryInterface(XTextCursor.class, xSimple.createTextCursor());
 
             WriterContext context2 = new WriterContext();
-            context2.hwp = wContext.hwp;
             context2.mContext = wContext.mContext;
             context2.mDesktop = wContext.mDesktop;
             context2.mMCF = wContext.mMCF;
@@ -149,7 +146,7 @@ public class ConvFootnote {
                             return true;
                         }
                     };
-                    HwpRecurs.printParaRecurs(context2, para, callback, 2);
+                    HwpRecurs.printParaRecurs(context2, wContext, para, callback, 2);
                 }
             }
         } catch (Exception e) {

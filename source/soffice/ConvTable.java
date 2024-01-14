@@ -990,7 +990,7 @@ public class ConvTable {
                 return true;
             }
         };
-        HwpRecurs.printParaRecurs(wContext, table.caption.get(0), callback, step);
+        HwpRecurs.printParaRecurs(wContext, wContext, table.caption.get(0), callback, step);
         if (capStr.size() > 0) {
             if (step > 2) { // 본문위에 table은 step=2, Frame내에 들어간 table은 step=3
                 if (capStr.get(capStr.size() - 1).equals("\r")) { // 마지막이 PARA_BREAK라면 출력하지 않음.
@@ -1065,7 +1065,6 @@ public class ConvTable {
             return;
 
         WriterContext childContext = new WriterContext();
-        childContext.hwp = wContext.hwp;
         childContext.mContext = wContext.mContext;
         childContext.mDesktop = wContext.mDesktop;
         childContext.mMCF = wContext.mMCF;
@@ -1138,7 +1137,7 @@ public class ConvTable {
                     return true;
                 }
             };
-            HwpRecurs.printParaRecurs(childContext, para, callback, 2);
+            HwpRecurs.printParaRecurs(childContext, wContext, para, callback, 2);
         }
     }
 
