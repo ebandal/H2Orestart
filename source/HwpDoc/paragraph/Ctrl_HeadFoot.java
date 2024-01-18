@@ -61,7 +61,10 @@ public class Ctrl_HeadFoot extends Ctrl {
         // 속성(표 141참조) (머리말이 적용 0:양쪽, 1:짝수쪽만, 2:홀수쪽만)
         attr            = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        whichPage       = PageRange.from(attr);
+        whichPage       = PageRange.from(attr & 0x03);
+        if (whichPage == null) {
+        	whichPage = PageRange.BOTH;
+        }
         
         serialInSec     =  buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
