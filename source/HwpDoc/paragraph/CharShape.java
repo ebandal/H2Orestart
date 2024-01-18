@@ -71,8 +71,14 @@ public class CharShape {
             while(iter.hasNext()) {
                 CharShape shape = iter.next();
                 if (shape.start==0) {
-                    paras.stream().filter(p -> (p instanceof ParaText))
-                                  .forEach(p -> ((ParaText)p).charShapeId = shape.charShapeID);
+                    paras.stream().forEach(p -> {
+                                	  	if (p instanceof ParaText) {
+                                	  		((ParaText)p).charShapeId = shape.charShapeID;
+                                	  	}
+                                	  	if (p instanceof Ctrl_Character) {
+                                	  		((Ctrl_Character)p).charShapeId = shape.charShapeID;
+                                	  	}
+                                  	});
                 } else if (shape.start > 0) {
                     Optional<ParaText> paraTextOp = 
                             paras.stream().filter(p -> (p instanceof ParaText))
@@ -95,9 +101,16 @@ public class CharShape {
                             paras.add(index+1, newParaText);
                         }
                     }
-                    paras.stream().filter(p -> (p instanceof ParaText))
-                                  .filter(p -> ((ParaText)p).startIdx > shape.start)
-                                  .forEach(p -> ((ParaText)p).charShapeId = shape.charShapeID);
+                    paras.stream().forEach(p -> {
+                                	  	if (p instanceof ParaText) {
+                                	  		if (((ParaText)p).startIdx > shape.start) {
+                                	  			((ParaText)p).charShapeId = shape.charShapeID;
+                                	  		}
+                                	  	}
+                                	  	if (p instanceof Ctrl_Character) {
+                                	  		((Ctrl_Character)p).charShapeId = shape.charShapeID;
+                                	  	}
+                                  	});
                 }
             }
             return paras.size();

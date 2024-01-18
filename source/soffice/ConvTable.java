@@ -960,7 +960,9 @@ public class ConvTable {
 
         List<String> capStr = new ArrayList<String>();
         short[] charShapeID = new short[1];
-        Optional<Ctrl> ctrlOp = table.caption.stream().filter(c -> c.p != null).flatMap(c -> c.p.stream()).findFirst();
+        Optional<Ctrl> ctrlOp = table.caption.stream().filter(c -> c.p != null)
+        		                             .flatMap(c -> c.p.stream())
+        		                             .filter(c -> c instanceof ParaText).findFirst();
         if (ctrlOp.isPresent()) {
             charShapeID[0] = (short) ((ParaText) ctrlOp.get()).charShapeId;
         }

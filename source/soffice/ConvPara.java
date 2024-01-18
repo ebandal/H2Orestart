@@ -62,8 +62,8 @@ public class ConvPara {
 	private static Map<Integer, String> paragraphStyleNameMap = new HashMap<Integer, String>();
 	private static final String PARAGRAPH_STYLE_PREFIX = "HWP ";
 
-	static final double PARABREAK_SPACING = 0.75; // 0.91;
-    static final double PARA_SPACING = 0.75; // 0.87;
+	static final double PARABREAK_SPACING = 0.86;
+    static final double PARA_SPACING = 0.85;
     
 	public static void reset(WriterContext wContext) {
 		deleteCustomStyles(wContext);
@@ -262,7 +262,7 @@ public class ConvPara {
 			
 			// marginRight			// 오른쪽 여백
 			xStyleProps.setPropertyValue("ParaRightMargin", Transform.translateHwp2Office(paraShape.marginRight/2));
-			// marginPrev			// 문단 간격 위
+			// marginPrev			// 문단 간격 위 (100 mm)   
 			xStyleProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(paraShape.marginPrev/2));
 			// marginNext			// 문단 간격 아래
 			xStyleProps.setPropertyValue("ParaBottomMargin", Transform.translateHwp2Office(paraShape.marginNext/2));

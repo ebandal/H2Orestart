@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 public class Ctrl_Character extends Ctrl {
     public CtrlCharType    ctrlChar;
+    public int charShapeId;
 
     public Ctrl_Character(String ctrlId, CtrlCharType ctrlChar) {
         super(ctrlId);

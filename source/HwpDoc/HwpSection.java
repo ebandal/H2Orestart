@@ -46,6 +46,7 @@ import HwpDoc.paragraph.CapParagraph;
 import HwpDoc.paragraph.CellParagraph;
 import HwpDoc.paragraph.CharShape;
 import HwpDoc.paragraph.Ctrl;
+import HwpDoc.paragraph.Ctrl_Character;
 import HwpDoc.paragraph.Ctrl_Common;
 import HwpDoc.paragraph.Ctrl_Common.VertAlign;
 import HwpDoc.paragraph.Ctrl_Container;
@@ -69,6 +70,7 @@ import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.LineSeg;
 import HwpDoc.paragraph.TblCell;
+import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
 import HwpDoc.section.NoteShape;
 import HwpDoc.section.Page;
 import HwpDoc.section.PageBorderFill;
@@ -251,8 +253,14 @@ public class HwpSection {
                     }
                     break;
                 case HWPTAG_PARA_CHAR_SHAPE:
-                    CharShape.fillCharShape(tagNum, level, size, buf, offset, version, currPara.p);
-                    offset += size;
+	                {
+	                	if (currPara.p == null)  {
+	                		currPara.p = new LinkedList<>();
+	                		currPara.p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
+	                	}
+	                    CharShape.fillCharShape(tagNum, level, size, buf, offset, version, currPara.p);
+	                    offset += size;
+	                }
                     break;
                 case HWPTAG_PARA_LINE_SEG:
                     currPara.lineSegs = new LineSeg(tagNum, level, size, buf, offset, version);

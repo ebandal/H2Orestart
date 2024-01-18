@@ -79,8 +79,7 @@ public class HwpRecurs {
 		
         if (para.p==null) {
             if (callback==null || callback.onParaBreak()==false) {
-                LineSeg  lineSeg  = para.lineSegs;
-                beforeParaBreak(wContext, lineSeg, para.paraStyleID, para.paraShapeID, oldCharShapeID, false, step);
+                beforeParaBreak(wContext, para.paraShapeID, oldCharShapeID, false, step);
                 wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
             }
             return;
@@ -129,6 +128,7 @@ public class HwpRecurs {
     		            break;
     		        case PARAGRAPH_BREAK:
                         if (callback==null || callback.onParaBreak()==false) {
+                            beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
                             wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
                         }
                         break;
@@ -254,19 +254,16 @@ public class HwpRecurs {
   		}
     }
 
-    public static void beforeParaBreak(WriterContext wContext, LineSeg lineSeg, 
-                                        short styleID, short paraShapeID, short charShapeID, 
+    public static void beforeParaBreak(WriterContext wContext,  
+                                        short paraShapeID, short charShapeID, 
                                         boolean append, int step) {
-        HwpRecord_Style paraStyle = wContext.getParaStyle(styleID);
         HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
         HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);
-        String paraStyleName = ConvPara.getStyleName((int)styleID);
         
-        beforeParaBreak(wContext, lineSeg, paraStyleName, paraStyle, paraShape, charShape, append, false, step);
+        beforeParaBreak(wContext, paraShape, charShape, append, false, step);
     }
 
-    public static void beforeParaBreak(WriterContext wContext, LineSeg lineSeg, 
-                                        String paraStyleName, HwpRecord_Style paraStyle, 
+    public static void beforeParaBreak(WriterContext wContext,  
                                         HwpRecord_ParaShape paraShape, HwpRecord_CharShape charShape, 
                                         boolean append, boolean ignoreNumbering, int step) {
 
@@ -275,17 +272,9 @@ public class HwpRecurs {
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
         try {
             if (append==false) {    // Paragraph의 첫content이면, Property 설정한다. 
-                if (paraStyleName!=null && !paraStyleName.isEmpty()) {
-                    paraProps.setPropertyValue("ParaStyleName", paraStyleName);
-                }
-        
                 if (ignoreNumbering==false) {
                     if (paraShape!=null) {
                         ConvPara.setNumberingProperties(paraProps, paraShape);
-                    } else if (paraStyle!=null) {
-                        // para.paraStyle.paraShape 와 para.paraShape 일치할때.
-                        HwpRecord_ParaShape numberingShape = wContext.getParaShape(paraStyle.paraShape);
-                        ConvPara.setNumberingProperties(paraProps, numberingShape);
                     }
                 }
             }
