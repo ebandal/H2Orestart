@@ -45,6 +45,7 @@ import HwpDoc.paragraph.Ctrl_Note;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.ParaText;
+import HwpDoc.section.Page;
 import soffice.HwpCallback.TableFrame;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.LineSeg;
@@ -94,7 +95,6 @@ public class HwpRecurs {
         String remainChars = para.p.stream().filter(c -> (c instanceof ParaText))
                                             .map(c -> (ParaText)c)
                                             .map(t -> t.text.replaceAll(PATTERN_STRING, "")).collect(Collectors.joining());
-        boolean hasSibling = objCount>1?true:remainChars.length()>1?true:false; // 문단내에 1개 테이블외 다른것이 포함되어 있는지 나타냄
         boolean oweParaBreak = false;
         // End of [Overcome Table discrepancy]
         
@@ -159,12 +159,40 @@ public class HwpRecurs {
 	        case " lbt":    // table
 	            {
                     // 테이블을 그릴때는 문단에 한개의 테이블만 있는지(table + split속성), 다른 개체나 문장과 같이 있는지(table in textframe)에 따라 다르게 그린다.
+	                boolean hasSibling = objCount>1?true:remainChars.length()>1?true:false; // 문단내에 1개 테이블외 다른것이 포함되어 있는지 나타냄
                     if (hasSibling==true) {
                         if (callback==null) {
                             callback = new HwpCallback();
                         }
                         if (callback.onTableWithFrame()!=TableFrame.MADE) {
-                            callback.changeTableFrame(TableFrame.MAKE);
+                        	// (table이 여러 페이지에 걸쳐서 있는지 체크하기 위해) row 높이를 모두 더해서 페이지보다 큰지 체크한다.
+                        	Ctrl_Table table = (Ctrl_Table)ctrl;
+                        	int rowHeightSum = 0;
+                        	int pageHeight = 0;
+                        	if (table.rowSize != null) {
+	                        	for (int row=0, cellIndex=0; row<table.rowSize.length; row++) {
+	                        		cellIndex += table.rowSize[row];
+	                        		rowHeightSum += Transform.translateHwp2Office(table.cells.get(cellIndex-1).height);
+	                        	}
+	                        	Page currPage = ConvPage.getCurrentPage().page;
+	                        	pageHeight = Transform.translateHwp2Office(currPage.height)
+		                                    - Transform.translateHwp2Office(currPage.marginTop)
+		                                    - Transform.translateHwp2Office(currPage.marginBottom)
+				                            - Transform.translateHwp2Office(currPage.marginHeader)
+				                            - Transform.translateHwp2Office(currPage.marginFooter);
+	                        	log.finest("curr Page=[top:" + currPage.marginTop + ",height:"+ currPage.height + ",bottom:" + currPage.marginBottom + "]");
+	                        	log.finest("Table acutual height=" + rowHeightSum + ", Page height=" + pageHeight);
+                        	}
+                        	if (rowHeightSum==0 || rowHeightSum<pageHeight) {
+                            	log.finest("make OuterFrame to show table");
+                        		callback.changeTableFrame(TableFrame.MAKE);
+                        	} else {
+                                oweParaBreak = true;
+	                        	if (table.treatAsChar==false) {
+	                        		// Frame이 없이 table을 하나 그릴것이기에, 나머지 같이 그려야할 obj카운트에서 제외한다.
+	                        		objCount -= 1;
+	                        	}
+                        	}
                         }
                     } else {
                         // table 다음 PARA_BREAK 1개를 생략한다.
