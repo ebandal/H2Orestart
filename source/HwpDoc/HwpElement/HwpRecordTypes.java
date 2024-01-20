@@ -22,7 +22,8 @@ package HwpDoc.HwpElement;
 
 public class HwpRecordTypes {
 
-	public static enum LineType1 {
+	// 밑줄
+	public static enum LineStyle1 {
 		SOLID				(0),	// 실선
 		DASH				(1),	// 긴 점선
 		DOT					(2),	// 점선
@@ -42,11 +43,11 @@ public class HwpRecordTypes {
 		SOLID_3D_REVERS_LI	(16);	// 3D 단선(광원 반대)
 		
 		private int num;
-	    private LineType1(int num) { 
+	    private LineStyle1(int num) { 
 	    	this.num = num;
 	    }
-	    public static LineType1 from(int num) {
-	    	for (LineType1 shape: values()) {
+	    public static LineStyle1 from(int num) {
+	    	for (LineStyle1 shape: values()) {
 	    		if (shape.num == num)
 	    			return shape;
 	    	}
@@ -54,6 +55,7 @@ public class HwpRecordTypes {
 	    }
 	}
 	
+	// 테두리선, 취소선, 단 구분선
 	public static enum LineStyle2 {
 		NONE				(0),
 		SOLID				(1),	// 실선

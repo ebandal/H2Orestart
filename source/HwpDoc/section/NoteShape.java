@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import org.w3c.dom.Node;
 
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineType1;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle1;
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 
 public class NoteShape {
@@ -46,7 +46,7 @@ public class NoteShape {
 	public short			spacingAboveLine;	// 구분선 위 여백
 	public short			spacingBelowLine;	// 구분선 아래 여백
 	public short			sapcingBetweenNotes;// 주석 사이 여백
-	public LineType1		noteLineType;
+	public LineStyle1		noteLineType;
 	public byte				noteLineWidth;
 	public int				noteLineColor;
 
@@ -85,7 +85,7 @@ public class NoteShape {
         offset += 2;
         noteShape.sapcingBetweenNotes   = (short) (buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
         offset += 2;
-        noteShape.noteLineType          = LineType1.from(buf[offset++]);
+        noteShape.noteLineType          = LineStyle1.from(buf[offset++]);
         noteShape.noteLineWidth         = buf[offset++];
         noteShape.noteLineColor         = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
         offset += 4;          

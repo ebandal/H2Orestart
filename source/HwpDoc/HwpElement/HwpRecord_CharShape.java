@@ -28,6 +28,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle1;
 import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 
 public class HwpRecord_CharShape extends HwpRecord {
@@ -45,7 +46,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 	public boolean 		italic;									// 기울임 여부					// it
 	public boolean 		bold;									// 진하게 여부					// bo
 	public Underline	underline;								// 밑줄 종류					// ut
-	public LineStyle2	underlineShape;							// 밑줄 모양					// us
+	public LineStyle1	underlineShape;							// 밑줄 모양					// us
 	public int			underlineColor;							// 밑줄 색
 	public Outline		outline;								// 외곽선종류					// 
 	public Shadow		shadow;									// 그림자 종류					// 
@@ -104,7 +105,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 		italic			= (attrBits&0x01)==0x01?true:false;
 		bold			= (attrBits&0x02)==0x02?true:false;
 		underline   	= Underline.from((attrBits>>>2)&0x03);
-		underlineShape 	= LineStyle2.from((attrBits>>>4)&0x0F);
+		underlineShape 	= LineStyle1.from((attrBits>>>4)&0x0F);
 		outline			= Outline.from((attrBits>>>8)&0x7);
 		shadow			= Shadow.from((attrBits>>11)&0x03);
 		emboss			= (attrBits&0x2000)==0x2000?true:false;
@@ -355,7 +356,7 @@ public class HwpRecord_CharShape extends HwpRecord {
                     NamedNodeMap childAttrs = child.getAttributes();
                     underline = Underline.valueOf(childAttrs.getNamedItem("type").getNodeValue());
                     
-                    underlineShape = LineStyle2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
+                    underlineShape = LineStyle1.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
                     
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
                     if (!numStr.equals("none")) {
