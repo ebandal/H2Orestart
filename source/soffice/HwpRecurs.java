@@ -27,6 +27,7 @@ import com.sun.star.beans.XPropertySet;
 import com.sun.star.text.ControlCharacter;
 import com.sun.star.text.XParagraphCursor;
 import com.sun.star.text.XTextCursor;
+import com.sun.star.text.XTextRange;
 import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecord_CharShape;
@@ -296,27 +297,29 @@ public class HwpRecurs {
                                         boolean append, boolean ignoreNumbering, int step) {
 
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
-        paraCursor.gotoEnd(false);
-        XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
-        try {
-            if (append==false) {    // Paragraph의 첫content이면, Property 설정한다. 
-                if (ignoreNumbering==false) {
-                    if (paraShape!=null) {
-                        ConvPara.setNumberingProperties(paraProps, paraShape);
-                    }
-                }
-            }
-        
-            if (paraShape!=null) {
-                ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARABREAK_SPACING);
-            }
-        
-            if (charShape!=null) {
-                ConvPara.setCharacterProperties(paraProps, charShape, step);
-            }
-        
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (paraCursor!=null) {
+	        paraCursor.gotoEnd(false);
+	        XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
+	        try {
+	            if (append==false) {    // Paragraph의 첫content이면, Property 설정한다. 
+	                if (ignoreNumbering==false) {
+	                    if (paraShape!=null) {
+	                        ConvPara.setNumberingProperties(paraProps, paraShape);
+	                    }
+	                }
+	            }
+	        
+	            if (paraShape!=null) {
+	                ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARABREAK_SPACING);
+	            }
+	        
+	            if (charShape!=null) {
+	                ConvPara.setCharacterProperties(paraProps, charShape, step);
+	            }
+	        
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        }
         }
     }
     
@@ -374,4 +377,40 @@ public class HwpRecurs {
     	wContext.mText.insertString(wContext.mTextCursor, content, false);
     }
 
+    public static void insertDrawingString(WriterContext wContext, String content,  
+					short styleID, short paraShapeID, short charShapeID, 
+					boolean append, int step) {
+		HwpRecord_Style paraStyle = wContext.getParaStyle(styleID);
+		HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
+		HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);
+		String paraStyleName = ConvPara.getStyleName((int)styleID);
+
+		insertDrawingString(wContext, content, paraStyleName, paraStyle, paraShape, charShape, append, false, step);
+    }
+
+    public static void insertDrawingString(WriterContext wContext, String content,  
+										String paraStyleName, HwpRecord_Style paraStyle, 
+										HwpRecord_ParaShape paraShape, HwpRecord_CharShape charShape, 
+										boolean append, boolean ignoreNumbering, int step) {
+
+		wContext.mTextCursor.gotoEnd(false);
+		XTextRange xTextRange = (XTextRange)UnoRuntime.queryInterface(XTextRange.class, wContext.mTextCursor);
+		XPropertySet xTextPropSet = (XPropertySet)UnoRuntime.queryInterface(XPropertySet.class, xTextRange);
+	
+		try {
+			if (paraShape!=null) {
+				ConvPara.setDrawingParagraphProperties(xTextPropSet, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
+			}
+	
+			if (charShape!=null) {
+				ConvPara.setDrawingCharacterProperties(xTextPropSet, charShape, step);
+			}
+	
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	
+		log.finest("Text=" + content);
+		wContext.mText.insertString(wContext.mTextCursor, content, false);
+    }
 }

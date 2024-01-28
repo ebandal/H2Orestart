@@ -78,11 +78,14 @@ import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
+import HwpDoc.HwpElement.HwpRecord_BorderFill.ColorFillPattern;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
+import HwpDoc.HwpElement.HwpRecord_BorderFill.ImageFillType;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
+import HwpDoc.paragraph.Ctrl_Character;
 import HwpDoc.paragraph.Ctrl_Common;
 import HwpDoc.paragraph.Ctrl_Container;
 import HwpDoc.paragraph.Ctrl_GeneralShape;
@@ -279,6 +282,7 @@ public class ConvGraphics {
                     }
                 }
             }
+            
             if (pic.nGrp == 0) {
                 ++autoNum;
             }
@@ -490,11 +494,7 @@ public class ConvGraphics {
                     insertELLIPSE(frameContext, ell, step + 1, sizeWidth, sizeHeight);
                 } else if (shape instanceof Ctrl_ShapeRect) {
                     Ctrl_ShapeRect rect = (Ctrl_ShapeRect) shape;
-                    if (shape.paras == null || shape.paras.size() < 1) {
-                        insertRECTANGLE(frameContext, rect, step + 1, sizeWidth, sizeHeight);
-                    } else {
-                        insertTextFrame(frameContext, rect, step + 1, sizeWidth, sizeHeight);
-                    }
+                    insertRECTANGLE(frameContext, rect, step + 1, sizeWidth, sizeHeight);
                 } else if (shape instanceof Ctrl_ShapePolygon) {
                     // Polygon 내부에 테이블이 있는 경우 LibreOffice에서는 틀(Frame)으로 변환한다. LibreOffice에서 테이블을 넣을수
                     // 있는 개체는 Frame뿐인듯 하다.
@@ -511,7 +511,14 @@ public class ConvGraphics {
                     }
                 } else if (shape instanceof Ctrl_ShapePic) {
                     Ctrl_ShapePic pic = (Ctrl_ShapePic) shape;
-                    insertPICTURE(frameContext, pic, step + 1, sizeWidth, sizeHeight);
+                    String imageFormat = wContext.getBinFormat(pic.binDataID).toLowerCase();
+                	// PICTURE는 translate이 되지 않으므로 묶음개체일때 이미지 배경이 있는 사각형으로 처리
+                    if ("bmp".equals(imageFormat)) {
+	                	// bmp포맷은 storeGraphic으로 저장되지 않는다. 파악될때까지 insertPICTURE()로 처리
+	                    insertPICTURE(frameContext, pic, step + 1, sizeWidth, sizeHeight);
+                	} else {
+                    	insertPictureRECTAGLE(frameContext, pic, step + 1, sizeWidth, sizeHeight);
+                    }
                 } else if (shape instanceof Ctrl_ShapeLine) {
                     Ctrl_ShapeLine lin = (Ctrl_ShapeLine) shape;
                     insertLINE(frameContext, lin, step + 1, sizeWidth, sizeHeight);
@@ -728,8 +735,8 @@ public class ConvGraphics {
 
     }
 
-    private static void insertRECTANGLE(WriterContext wOuterContext, Ctrl_GeneralShape shape, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertRECTANGLE(WriterContext wOuterContext, Ctrl_GeneralShape shape, 
+    									int step, int shapeWidth, int shapeHeight) {
         try {
             Object xObj = wOuterContext.mMSF.createInstance("com.sun.star.drawing.RectangleShape");
 
@@ -754,25 +761,12 @@ public class ConvGraphics {
                 xShape.setSize(
                         new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight)));
             } else {
-                xShape.setSize(new Size(shape.iniWidth, shape.iniHeight));
+            	// transform 방식 변경 (2024.01.28)
+                xShape.setSize(new Size(shape.width, shape.height));
             }
 
             // anchor the text frame
             XPropertySet xPropsSet = UnoRuntime.queryInterface(XPropertySet.class, xShape);
-
-            BorderLine2 border = Transform.toBorderLine2(shape);
-            xPropsSet.setPropertyValue("TopBorder", border);
-            xPropsSet.setPropertyValue("BottomBorder", border);
-            xPropsSet.setPropertyValue("LeftBorder", border);
-            xPropsSet.setPropertyValue("RightBorder", border);
-            xPropsSet.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(shape.leftSpace) <= 100 ? 0
-                    : Transform.translateHwp2Office(shape.leftSpace) - 100);
-            xPropsSet.setPropertyValue("RightBorderDistance", Transform.translateHwp2Office(shape.rightSpace) <= 100 ? 0
-                    : Transform.translateHwp2Office(shape.rightSpace) - 100);
-            xPropsSet.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(shape.upSpace) <= 100 ? 0
-                    : Transform.translateHwp2Office(shape.upSpace) - 100);
-            xPropsSet.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(shape.downSpace) <= 100 ? 0
-                    : Transform.translateHwp2Office(shape.downSpace) - 100);
 
             // insert text frame into document (order is important here)
             XText xText = wOuterContext.mTextCursor.getText();
@@ -788,7 +782,6 @@ public class ConvGraphics {
             if (shape.nGrp > 0) {
                 transform(xPropsSet, shape);
             }
-
             setWrapStyle(xPropsSet, shape);
 
             // ZOrder 설정해도 변경되지 않는다. 대신 gso Ctrl에서 꺼내올때 zOrder 순서로 가져와서 그린다.
@@ -800,6 +793,7 @@ public class ConvGraphics {
 
             // fill color
             setFillStyle(wOuterContext, xPropsSet, shape.fill);
+            setLineStyle(xPropsSet, shape);
 
             if (wOuterContext.version >= 72) {
                 TextContentAnchorType anchorType = (TextContentAnchorType) xPropsSet.getPropertyValue("AnchorType");
@@ -837,23 +831,30 @@ public class ConvGraphics {
                 } catch (NoSuchElementException e) {
                     log.fine("Cannot get OptionalInt either maxCtrlWidth or maxCtrlHeight. " + e.getLocalizedMessage());
                 }
-                for (HwpParagraph para : shape.paras) {
+                for (int i=0; i<shape.paras.size(); i++) {
+                	HwpParagraph para = shape.paras.get(i);
                     // 테이블은 Frame 크기를 넘지 못하므로, 테이블 크기만큼 내부 Frame을 다시 만들어야 한다.
                     // 다만, 큰 테이블이라도 보이는건 외부 Frame 만큼 보이도록 한다.
                     HwpCallback callback = new HwpCallback(TableFrame.MAKE);
                     if (shape.curWidth < maxCtrlWidth || shape.curHeight < maxCtrlHeight) {
                         callback = new HwpCallback(TableFrame.MAKE_PART);
                     }
-                    for (Ctrl c : para.p) {
+                    int charShapeId = 0;
+                    for (int j=0; j<para.p.size(); j++) {
+                    	Ctrl c = para.p.get(j);
+                    	ParaText paraText = null;
                         if (c instanceof ParaText) {
-                            ParaText paraText = (ParaText) c;
-                            paraText.text = paraText.text.replaceAll("\r|\n", "");
+                            paraText = (ParaText) c;
+        		            charShapeId = ((ParaText)c).charShapeId;
+                        	HwpRecurs.insertDrawingString(innerContext, paraText.text, para.paraStyleID, para.paraShapeID, (short)charShapeId, false, step);
+                        } else if (c instanceof Ctrl_Character) {
+                            // last PARA_BREAK은 쓰지 않는다.
+                        	if (i<shape.paras.size()-1 || j<para.p.size()-1) {
+                        		innerContext.mText.insertControlCharacter(innerContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
+                        	}
                         }
                     }
-                    HwpRecurs.printParaRecurs(innerContext, wOuterContext, para, callback, step + 1);
                 }
-                // REMOVE last PARA_BREAK. 하지만 shape에서는 동작하지 않음.
-                HwpRecurs.removeLastParaBreak(innerContext.mTextCursor);
                 if (shape.nGrp == 0) {
                     ++autoNum;
                 }
@@ -863,6 +864,114 @@ public class ConvGraphics {
         } catch (SkipDrawingException e) {
             e.printStackTrace();
         }
+    }
+    
+    private static void insertPictureRECTAGLE(WriterContext wOuterContext, Ctrl_ShapePic pic, 
+    											int step, int shapeWidth, int shapeHeight) {
+        boolean hasCaption = pic.caption == null ? false : pic.caption.size() == 0 ? false : true;
+
+        XTextFrame xFrame = null;
+        XText xFrameText = null;
+        XTextCursor xFrameCursor = null;
+        try {
+            if (hasCaption) {
+                xFrame = makeOuterFrame(wOuterContext, pic, false, step);
+                // Frame 내부 Cursor 생성
+                xFrameText = xFrame.getText();
+                xFrameCursor = xFrameText.createTextCursor();
+            }
+
+            Object xObj = wOuterContext.mMSF.createInstance("com.sun.star.drawing.RectangleShape");
+            XShape xShape = UnoRuntime.queryInterface(XShape.class, xObj);
+            XTextContent xTextContent = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
+            
+            // anchor the Shape
+            XPropertySet xPropsSet = UnoRuntime.queryInterface(XPropertySet.class, xShape);
+
+            if (hasCaption) {
+                try {
+                	xPropsSet.setPropertyValue("AnchorType", TextContentAnchorType.AS_CHARACTER);
+                } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException
+                        | WrappedTargetException e) {
+                    log.severe("AnchorType has Exception");
+                }
+                xPropsSet.setPropertyValue("VertOrient", VertOrientation.CENTER); // Top, Bottom, Center, fromBottom
+                xPropsSet.setPropertyValue("VertOrientRelation", RelOrientation.TEXT_LINE); // Base line, Character, Row
+                xPropsSet.setPropertyValue("HoriOrient", HoriOrientation.CENTER); // 0:NONE=From left
+                xPropsSet.setPropertyValue("HoriOrientRelation", RelOrientation.PRINT_AREA); // 1:paragraph text area
+            } else {
+                if (pic.nGrp == 0) {
+                    int sizeWidth = 0, sizeHeight = 0;
+                    if (shapeWidth <= 0 && shapeHeight <= 0) {
+                        sizeWidth = pic.width == 0 ? pic.curWidth : pic.width;
+                        sizeHeight = pic.height == 0 ? pic.curHeight : pic.height;
+                        if (pic.rotat != 0) {
+                            Point2D ptSrc = new Point2D.Double(pic.curWidth, pic.curHeight);
+                            Point2D ptDst = Transform.rotateValue(pic.rotat, ptSrc);
+                            sizeWidth = (int) ptDst.getX();
+                            sizeHeight = (int) ptDst.getY();
+                        }
+                    } else {
+                        sizeWidth = shapeWidth;
+                        sizeHeight = shapeHeight;
+                    }
+                    xShape.setSize(
+                            new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight)));
+                } else {
+                	// transform 방식 변경 (2024.01.28)
+                    xShape.setSize(new Size(pic.width, pic.height));
+                }
+
+                if (pic.nGrp > 0) {
+                    xPropsSet.setPropertyValue("AnchorType", TextContentAnchorType.AT_PARAGRAPH);
+                } else {
+                    xPropsSet.setPropertyValue("AnchorType", TextContentAnchorType.AT_PARAGRAPH);
+                    setPosition(xPropsSet, pic, 0, 0);
+                }
+            }
+            setLineStyle(xPropsSet, pic);
+            setWrapStyle(xPropsSet, pic);
+
+            if (hasCaption) {
+                xFrameText.insertTextContent(xFrameCursor, xTextContent, true);
+                xFrameText.insertControlCharacter(xFrameCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+            } else {
+            	wOuterContext.mText.insertTextContent(wOuterContext.mTextCursor, xTextContent, true);
+                if (wOuterContext.version >= 72) {
+                    TextContentAnchorType anchorType = (TextContentAnchorType) xPropsSet.getPropertyValue("AnchorType");
+                    if (anchorType == TextContentAnchorType.AT_PARAGRAPH) {
+                    	wOuterContext.mText.insertString(wOuterContext.mTextCursor, " ", false);
+                    }
+                }
+            }
+            
+            if (pic.nGrp > 0) {
+                transform(xPropsSet, pic);
+            }
+            
+            Fill imageFill = new Fill();
+            imageFill.fillType = 0x02;
+            imageFill.mode = ImageFillType.TOTAL;
+            imageFill.effect = 0;
+            imageFill.binItemID = pic.binDataID;
+            imageFill.alpha = 0;
+            setFillStyle(wOuterContext, xPropsSet, imageFill);
+            
+            if (pic.nGrp == 0) {
+                ++autoNum;
+            }
+
+            // 캡션 쓰기
+            if (hasCaption) {
+                addCaptionString(wOuterContext, xFrameText, xFrameCursor, pic, step);
+            }
+
+        } catch (com.sun.star.uno.Exception e) {
+            e.printStackTrace();
+        } catch (SkipDrawingException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private static void insertLINE(WriterContext wContext, Ctrl_ShapeLine shape, int step, int shapeWidth,
@@ -1056,7 +1165,6 @@ public class ConvGraphics {
             setLineStyle(xPropSet, ell);
 
             xPropSet.setPropertyValue("CircleKind", CircleKind.FULL);
-            setFillStyle(wContext, xPropSet, ell.fill);
 
             if (hasCaption) {
                 XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
@@ -1076,7 +1184,8 @@ public class ConvGraphics {
                 }
                 // workaround-LibreOffice7.2 END
             }
-
+            setFillStyle(wContext, xPropSet, ell.fill);
+            
             if (ell.nGrp == 0) {
                 ++autoNum;
             }
@@ -1699,7 +1808,7 @@ public class ConvGraphics {
                     xProps.setPropertyValue("AnchorType", TextContentAnchorType.AT_PARAGRAPH);
                     xProps.setPropertyValue("VertOrientRelation", RelOrientation.PRINT_AREA);
                     xProps.setPropertyValue("VertOrient", VertOrientation.NONE);
-                    xProps.setPropertyValue("VertOrientPosition", yOffsetToAdd);
+                   	xProps.setPropertyValue("VertOrientPosition", yOffsetToAdd);
                 } else {
                     switch (shape.vertRelTo) {
                     case PAPER: // Anchor to Page
@@ -2326,73 +2435,75 @@ public class ConvGraphics {
     }
 
     private static void setLineStyle(XPropertySet xPropSet, Ctrl_GeneralShape shape) {
-        if (shape.lineStyle == null)
-            return;
-
         try {
-            switch (shape.lineStyle) {
-            case NONE:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.NONE);
-                break;
-            case SOLID:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.SOLID);
-                break;
-            case DASH:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Long Dash");
-                break;
-            case DOT:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dot");
-                break;
-            case DASH_DOT:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dash Dot");
-                break;
-            case DASH_DOT_DOT:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dash Dot Dot");
-                break;
-            case LONG_DASH:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Long Dash");
-                break;
-            case CIRCLE:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dot");
-                break;
-            case DOUBLE_SLIM:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dot");
-                break;
-            case SLIM_THICK:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dot");
-                break;
-            case THICK_SLIM:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dot");
-                break;
-            case SLIM_THICK_SLIM:
-                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
-                xPropSet.setPropertyValue("LineDashName", "Dot");
-                break;
-            }
-            // xPropSet.setPropertyValue("LineDash", lineDash);
-            xPropSet.setPropertyValue("LineColor", shape.lineColor);
-
-            int convertedLineWidth = Transform.translateHwp2Office(shape.lineThick);
-            log.finest("Line width=" + convertedLineWidth + " from " + shape.lineThick + " in HWP.");
-            // TextFrame
-            // Line 566(2mm)
-            // Curve 33(0.12mm)
-            // Polygon
-            xPropSet.setPropertyValue("LineWidth", convertedLineWidth);
-
-            if ((shape.outline & 0x1) == 0x1) {
-                xPropSet.setPropertyValue("LineEndType", LineEndType.NONE);
-                xPropSet.setPropertyValue("LineColor", shape.lineColor);
-            }
+	        if (shape.lineStyle == null) {
+	            xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.NONE);
+	            return;
+	        } else {
+	            switch (shape.lineStyle) {
+	            case NONE:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.NONE);
+	                break;
+	            case SOLID:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.SOLID);
+	                break;
+	            case DASH:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Long Dash");
+	                break;
+	            case DOT:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dot");
+	                break;
+	            case DASH_DOT:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dash Dot");
+	                break;
+	            case DASH_DOT_DOT:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dash Dot Dot");
+	                break;
+	            case LONG_DASH:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Long Dash");
+	                break;
+	            case CIRCLE:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dot");
+	                break;
+	            case DOUBLE_SLIM:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dot");
+	                break;
+	            case SLIM_THICK:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dot");
+	                break;
+	            case THICK_SLIM:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dot");
+	                break;
+	            case SLIM_THICK_SLIM:
+	                xPropSet.setPropertyValue("LineStyle", com.sun.star.drawing.LineStyle.DASH);
+	                xPropSet.setPropertyValue("LineDashName", "Dot");
+	                break;
+	            }
+	            // xPropSet.setPropertyValue("LineDash", lineDash);
+	            xPropSet.setPropertyValue("LineColor", shape.lineColor);
+	
+	            int convertedLineWidth = Transform.translateHwp2Office(shape.lineThick);
+	            log.finest("Line width=" + convertedLineWidth + " from " + shape.lineThick + " in HWP.");
+	            // TextFrame
+	            // Line 566(2mm)
+	            // Curve 33(0.12mm)
+	            // Polygon
+	            xPropSet.setPropertyValue("LineWidth", convertedLineWidth);
+	
+	            if ((shape.outline & 0x1) == 0x1) {
+	                xPropSet.setPropertyValue("LineEndType", LineEndType.NONE);
+	                xPropSet.setPropertyValue("LineColor", shape.lineColor);
+	            }
+	        }
 
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
@@ -2668,32 +2779,46 @@ public class ConvGraphics {
 
     public static void transform(XPropertySet xPropsSet, Ctrl_GeneralShape shape)
             throws UnknownPropertyException, WrappedTargetException, IllegalArgumentException, PropertyVetoException {
-        // 화면에 그리기 전에는 Transformation 속성값을 가져오지 못한다. 즉, 화면에 그리고 나서 rotation 할 것.
-        HomogenMatrix3 aHomogenMatrix3 = (HomogenMatrix3) xPropsSet.getPropertyValue("Transformation");
-        AffineTransform prevMatrix = new AffineTransform(aHomogenMatrix3.Line1.Column1, aHomogenMatrix3.Line2.Column1,
-                aHomogenMatrix3.Line1.Column2, aHomogenMatrix3.Line2.Column2, aHomogenMatrix3.Line1.Column3,
-                aHomogenMatrix3.Line2.Column3);
+    	// transform 방식 변경 (2024.01.28)
+        // 화면에 크기(0,0)로 그린 후, getProperty하지 않고, transformation값 연산, 이후 setProperty로 설정
+        // HomogenMatrix3 aHomogenMatrix3 = (HomogenMatrix3) xPropsSet.getPropertyValue("Transformation");
+        HomogenMatrix3 aHomogenMatrix3 = new HomogenMatrix3();
+        aHomogenMatrix3.Line1.Column1 = shape.iniWidth;
+		aHomogenMatrix3.Line2.Column2 = shape.iniHeight;
+		aHomogenMatrix3.Line3.Column3 = 1;
+		
+        AffineTransform prevMatrix = 
+        		new AffineTransform(aHomogenMatrix3.Line1.Column1, aHomogenMatrix3.Line2.Column1,
+        							aHomogenMatrix3.Line1.Column2, aHomogenMatrix3.Line2.Column2,
+        							aHomogenMatrix3.Line1.Column3, aHomogenMatrix3.Line2.Column3);
 
         for (int i = shape.matCnt - 1; i >= 0; i--) {
             // 1. scale matrix
-            AffineTransform scaleMatrix = new AffineTransform(shape.matrixSeq[i * 12 + 0], shape.matrixSeq[i * 12 + 3],
-                    shape.matrixSeq[i * 12 + 1], /* shape.matrixSeq[i*12+4]==0.0 ? 1 : */shape.matrixSeq[i * 12 + 4],
-                    shape.matrixSeq[i * 12 + 2], shape.matrixSeq[i * 12 + 5]);
+            AffineTransform scaleMatrix = 
+            	new AffineTransform(shape.matrixSeq[i * 12 + 0], shape.matrixSeq[i * 12 + 3],
+            						shape.matrixSeq[i * 12 + 1], shape.matrixSeq[i * 12 + 4],
+            						shape.matrixSeq[i * 12 + 2], shape.matrixSeq[i * 12 + 5]);
             scaleMatrix.concatenate(prevMatrix);
             // 2. rotation matrix
-            AffineTransform rotatMatrix = new AffineTransform(shape.matrixSeq[i * 12 + 6], shape.matrixSeq[i * 12 + 9],
-                    shape.matrixSeq[i * 12 + 7], shape.matrixSeq[i * 12 + 10], shape.matrixSeq[i * 12 + 8],
-                    shape.matrixSeq[i * 12 + 11]);
+            AffineTransform rotatMatrix = 
+            	new AffineTransform(shape.matrixSeq[i * 12 + 6], shape.matrixSeq[i * 12 + 9],
+            						shape.matrixSeq[i * 12 + 7], shape.matrixSeq[i * 12 + 10],
+            						shape.matrixSeq[i * 12 + 8], shape.matrixSeq[i * 12 + 11]);
             rotatMatrix.concatenate(scaleMatrix);
             prevMatrix = rotatMatrix;
         }
         // 3. translation matrix
-        AffineTransform translateMatrix = new AffineTransform(shape.matrix[0], shape.matrix[3], shape.matrix[1],
-                shape.matrix[4], shape.matrix[2], shape.matrix[5]);
+        AffineTransform translateMatrix = 
+        		new AffineTransform(shape.matrix[0], shape.matrix[3], 
+        							shape.matrix[1], shape.matrix[4],
+        							shape.matrix[2], shape.matrix[5]);
         translateMatrix.concatenate(prevMatrix);
 
         // 4. Hwp Unit -> LO Unit
-        AffineTransform hwp2LoScale = new AffineTransform((double) 21000 / 59529, 0, 0, (double) 21000 / 59529, 0, 0);
+        AffineTransform hwp2LoScale = 
+        		new AffineTransform((double) 21000 / 59529, 0, 
+        							0, (double) 21000 / 59529,
+        							0, 0);
         hwp2LoScale.concatenate(translateMatrix);
 
         double transformMatrix[] = new double[6];
@@ -2707,4 +2832,5 @@ public class ConvGraphics {
         aHomogenMatrix3.Line2.Column3 = transformMatrix[5];
         xPropsSet.setPropertyValue("Transformation", aHomogenMatrix3);
     }
+
 }

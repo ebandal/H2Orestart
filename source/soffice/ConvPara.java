@@ -253,19 +253,24 @@ public class ConvPara {
 			if (paraShape.indent >= 0) {
 				xStyleProps.setPropertyValue("ParaFirstLineIndent", Transform.translateHwp2Office(paraShape.indent/2));
 				// marginLeft			// 왼쪽 여백
-				xStyleProps.setPropertyValue("ParaLeftMargin", Transform.translateHwp2Office(paraShape.marginLeft/2));
+				xStyleProps.setPropertyValue("ParaLeftMargin", 
+							paraShape.marginLeft<0 ? 0 : Transform.translateHwp2Office(paraShape.marginLeft/2));
 			} else {
 				xStyleProps.setPropertyValue("ParaFirstLineIndent", Transform.translateHwp2Office(paraShape.indent/2));
 				// marginLeft			// 왼쪽 여백
-				xStyleProps.setPropertyValue("ParaLeftMargin", Transform.translateHwp2Office(paraShape.marginLeft/2-paraShape.indent/2));
+				xStyleProps.setPropertyValue("ParaLeftMargin", 
+							paraShape.marginLeft<0 ? 0 : Transform.translateHwp2Office(paraShape.marginLeft/2-paraShape.indent/2));
 			}
 			
 			// marginRight			// 오른쪽 여백
-			xStyleProps.setPropertyValue("ParaRightMargin", Transform.translateHwp2Office(paraShape.marginRight/2));
+			xStyleProps.setPropertyValue("ParaRightMargin", 
+							paraShape.marginRight<0 ? 0 : Transform.translateHwp2Office(paraShape.marginRight/2));
 			// marginPrev			// 문단 간격 위 (100 mm)   
-			xStyleProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(paraShape.marginPrev/2));
+			xStyleProps.setPropertyValue("ParaTopMargin", 
+							paraShape.marginPrev<0 ? 0 : Transform.translateHwp2Office(paraShape.marginPrev/2));
 			// marginNext			// 문단 간격 아래
-			xStyleProps.setPropertyValue("ParaBottomMargin", Transform.translateHwp2Office(paraShape.marginNext/2));
+			xStyleProps.setPropertyValue("ParaBottomMargin", 
+							paraShape.marginNext<0 ? 0 : Transform.translateHwp2Office(paraShape.marginNext/2));
 			// lineSpacing			// 줄 간격. 한글2007 이하버전(5.0.2.5 버전 미만)에서 사용.
 			// 							percent일때:0%~500%, fixed일때:hpwunit또는 글자수,betweenline일때:hwpunit또는글자수
 			// lineSpacingType;		// 줄간격 종류(0:Percent,1:Fixed,2:BetweenLines,4:AtLeast)
@@ -400,6 +405,157 @@ public class ConvPara {
 		}
 	}
 
+	static void setDrawingParagraphProperties(XPropertySet xStyleProps, HwpRecord_ParaShape paraShape, CompatDoc compat, double preferSpace) {
+		try {
+			ParagraphAdjust align = ParagraphAdjust.BLOCK;
+			switch(paraShape.align) {
+			case LEFT:
+				align = ParagraphAdjust.LEFT;
+				break;
+			case RIGHT:
+				align = ParagraphAdjust.RIGHT;
+				break;
+			case CENTER:
+				align = ParagraphAdjust.CENTER;
+				break;
+			case JUSTIFY:
+			case DISTRIBUTE:
+			case DISTRIBUTE_SPACE:
+				align = ParagraphAdjust.BLOCK;
+				break;
+			}
+			xStyleProps.setPropertyValue("ParaAdjust", align);
+			
+			if (paraShape.indent >= 0) {
+				xStyleProps.setPropertyValue("ParaFirstLineIndent", Transform.translateHwp2Office(paraShape.indent/2));
+				// marginLeft			// 왼쪽 여백
+				xStyleProps.setPropertyValue("ParaLeftMargin", 
+							paraShape.marginLeft<0 ? 0 : Transform.translateHwp2Office(paraShape.marginLeft/2));
+			} else {
+				xStyleProps.setPropertyValue("ParaFirstLineIndent", Transform.translateHwp2Office(paraShape.indent/2));
+				// marginLeft			// 왼쪽 여백
+				xStyleProps.setPropertyValue("ParaLeftMargin", 
+							paraShape.marginLeft<0 ? 0 : Transform.translateHwp2Office(paraShape.marginLeft/2-paraShape.indent/2));
+			}
+			
+			// marginRight			// 오른쪽 여백
+			xStyleProps.setPropertyValue("ParaRightMargin", 
+							paraShape.marginRight<0 ? 0 : Transform.translateHwp2Office(paraShape.marginRight/2));
+			// marginPrev			// 문단 간격 위 (100 mm)   
+			xStyleProps.setPropertyValue("ParaTopMargin", 
+							paraShape.marginPrev<0 ? 0 : Transform.translateHwp2Office(paraShape.marginPrev/2));
+			// marginNext			// 문단 간격 아래
+			xStyleProps.setPropertyValue("ParaBottomMargin", 
+							paraShape.marginNext<0 ? 0 : Transform.translateHwp2Office(paraShape.marginNext/2));
+			// lineSpacing			// 줄 간격. 한글2007 이하버전(5.0.2.5 버전 미만)에서 사용.
+			// 							percent일때:0%~500%, fixed일때:hpwunit또는 글자수,betweenline일때:hwpunit또는글자수
+			// lineSpacingType;		// 줄간격 종류(0:Percent,1:Fixed,2:BetweenLines,4:AtLeast)
+			LineSpacing lineSpacing = new LineSpacing();
+			switch(paraShape.lineSpacingType) {
+			case 0x0:
+				lineSpacing.Mode = LineSpacingMode.PROP;
+				// 일반텍스트에서는 lineSpacing을 줄인다. HWP 24pt=8.5mm, LO 24pt=11mm, so delta=2.5/11=22.7%
+				// 텍스트 상자 내, 테이블 내에서는  lineSpacing을 그대로 반영.
+	            double scale = 1.0;
+				switch(compat) {
+				case HWP:
+	                scale = preferSpace>0.0?preferSpace:PARA_SPACING;
+	                break;
+				case MS_WORD:
+                    scale = 1.21;
+                    break;
+                case OLD_HWP:
+                default:
+                    scale = 1.0;
+				}
+				lineSpacing.Height = (short)(paraShape.lineSpacing*scale);
+				break;
+			case 0x1:
+				lineSpacing.Mode = LineSpacingMode.FIX;
+				lineSpacing.Height = (short)(paraShape.lineSpacing/2*0.352778);	//예) 값:4600, 한컴:23pt, LO:8.113894mm. (1pt=0.352778mm)
+				break;
+			case 0x2:
+				lineSpacing.Mode = LineSpacingMode.LEADING;
+				lineSpacing.Height = (short)(paraShape.lineSpacing);	//
+				break;
+			case 0x3:
+				lineSpacing.Mode = LineSpacingMode.MINIMUM; 
+				lineSpacing.Height = (short)(paraShape.lineSpacing);	//
+				break;
+			}
+			log.finest("lineSpacing="+lineSpacing.Height+"("+lineSpacing.Mode+") <= LineSpacing="+paraShape.lineSpacing + "("+paraShape.lineSpacingType+")");
+			
+			xStyleProps.setPropertyValue("ParaLineSpacing", lineSpacing);
+			// tabDef				// 탭 정의 아이디(TabDef ID) 참조 값
+			HwpRecord_TabDef tabDef = WriterContext.getTabDef(paraShape.tabDef);
+			TabStop[] tss = new TabStop[tabDef.count];
+			if (tabDef.count>0) {
+				for (int i=0; i<tabDef.count; i++) {
+			  		tss[i] = new TabStop();
+			  		Tab tab = tabDef.tabs.get(i);
+			  		switch(tab.type) {
+			  		case LEFT:
+			  			tss[i].Alignment = TabAlign.LEFT;
+			  			break;
+			  		case RIGHT:
+			  			tss[i].Alignment = TabAlign.RIGHT;
+			  			break;
+			  		case CENTER:
+			  			tss[i].Alignment = TabAlign.CENTER;
+			  			break;
+			  		case DECIMAL:
+			  			tss[i].Alignment = TabAlign.DECIMAL;
+						tss[i].DecimalChar = 46;
+			  			break;
+			  		}
+			  		switch(tab.leader) {
+					case NONE:
+						tss[i].FillChar = 32;
+						break;
+					case SOLID:
+					case DASH:
+					case DOT:
+					case DASH_DOT:
+					case DASH_DOT_DOT:
+					case LONG_DASH:
+						tss[i].FillChar = 45;
+						break;
+					default:
+						tss[i].FillChar = 45;
+						break;
+					}
+					tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 150)*100;	// 15cm
+				}
+			} else {
+				if ((tabDef.attr&0x2)==0x2) {			// 문단 오른쪽 끝 자동 탭
+			  		tss = new TabStop[1];
+		  			tss[0] = new TabStop();
+		  			HwpDoc.section.Page page = ConvPage.getCurrentPage().page;
+					tss[0].Position = Transform.translateHwp2Office(page.width-page.marginLeft-page.marginRight); // 150*100;
+					tss[0].Alignment = TabAlign.RIGHT;
+					tss[0].FillChar = 32;
+				} else if ((tabDef.attr&0x1)==0x1) {	// 내어쓰기용 자동 탭
+			  		tss = new TabStop[1];
+		  			tss[0] = new TabStop();
+					tss[0].Position = 0;
+					tss[0].Alignment = TabAlign.LEFT;
+					tss[0].FillChar = 32;
+				}
+			}
+			xStyleProps.setPropertyValue("ParaTabStops", tss);
+			// borderFill			// 테두리/배경 모양 ID(BorderFill ID) 참조 값
+			HwpRecord_BorderFill borders = WriterContext.getBorderFill(paraShape.borderFill);
+			if (borders!=null) {
+				if (borders.fill!=null && borders.fill.isColorFill()==true && borders.fill.faceColor!=-1) {
+					xStyleProps.setPropertyValue("ParaBackColor", borders.fill.faceColor);
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 	static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, int step) {
 		try {
 			xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
@@ -561,6 +717,177 @@ public class ConvPara {
 				sf.Color = charShape.shadowColor;
 				xStyleProps.setPropertyValue("CharShadowed", true);
 				xStyleProps.setPropertyValue("CharShadowFormat", sf);
+			}
+			//	charShape.borderFillId;							// 글자 테두리/배경 ID(CharShapeBorderFill ID) 참조 값
+
+			//	https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1CharacterProperties.html
+			//	CharFontName,CharFontStyleName,CharFontFamily,CharFontCharSet,CharFontPitch,CharColor,CharEscapement,CharHeight,CharUnderline,CharWeight,CharPosture,
+			//	CharAutoKerning,CharBackColor,CharShadingValue,CharBackTransparent,CharCaseMap,CharCrossedOut,CharFlash,CharStrikeout,CharWordMode,CharKerning,CharLocale,
+			//	CharKeepTogether,CharNoLineBreak,CharShadowed,CharFontType,CharStyleName,CharContoured,CharCombineIsOn,CharCombinePrefix,CharCombineSuffix,CharEmphasis
+			//	CharRelief,RubyText,RubyAdjust,RubyCharStyleName,RubyIsAbove,CharRotation,CharRotationIsFitToLine,CharScaleWidth,HyperLinkURL,HyperLinkTarget,HyperLinkName
+			//	VisitedCharStyleName,UnvisitedCharStyleName,CharEscapementHeight,CharNoHyphenation,CharUnderlineColor,CharUnderlineHasColor,CharHidden,TextUserDefinedAttributes
+			//	CharLeftBorder,CharRightBorder,CharTopBorder,CharBottomBorder,CharBorderDistance,CharLeftBorderDistance,CharRightBorderDistance,CharTopBorderDistance
+			//	CharBottomBorderDistance,CharShadowFormat,CharHighlight,RubyPosition
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	static void setDrawingCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, int step) {
+		try {
+			xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
+			// paraProps.setPropertyValue("CharFontStyleName", faceName.faceName);
+			xStyleProps.setPropertyValue("CharFontNameAsian", charShape.fontName[0]);
+			// paraProps.setPropertyValue("CharFontStyleNameAsian", faceName.faceName);
+			
+			// charShape.fontID[0];						// 언어별 글꼴ID(FaceID)		// f#
+			// charShape.ratio[0];						// 언어별 장평, 50%~200%		// r#
+			log.finest("CharWidth="+charShape.ratio[0]);
+			xStyleProps.setPropertyValue("CharScaleWidth", charShape.ratio[0]);
+			// charShape.spacing[0];							// 언어별 자간, -50%~50%		// s#
+			// 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)*한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
+			double spacing = ((double)charShape.height)/100 * (charShape.spacing[0] / 100.0f) * 0.8 + 0.4; 
+			// 1pt = 0.35278mm = 35.278 (1/100 mm)
+			spacing *= 35.278;
+			xStyleProps.setPropertyValue("CharKerning", (short)Math.round(spacing));
+			// charShape.relSize[0];							// 언어별 상대 크기, 10%~250%	// e#
+			// charShape.charOffset[0];						// 언어별 글자 위치, -100%~100%	// o#
+			// charShape.height;								// 기준 크기, 0pt~4096pt		// he
+			xStyleProps.setPropertyValue("CharHeight", (float)charShape.height*(charShape.relSize[1]/100.0f)/100.0f);	// 1000 (10.0pt)
+			xStyleProps.setPropertyValue("CharHeightAsian", (float)charShape.height*(charShape.relSize[0]/100.0f)/100.0f);	// 1000 (10.0pt)
+			
+			// charShape.bold;									// 진하게 여부					// bo
+			if (charShape.bold) {
+				xStyleProps.setPropertyValue("CharWeight", FontWeight.BOLD);
+				xStyleProps.setPropertyValue("CharWeightAsian", FontWeight.BOLD);
+			} else {
+				xStyleProps.setPropertyValue("CharWeight", FontWeight.NORMAL);
+				xStyleProps.setPropertyValue("CharWeightAsian", FontWeight.NORMAL);
+			}
+			// charShape.italic;								// 기울임 여부					// it
+			if (charShape.italic) {
+				xStyleProps.setPropertyValue("CharPosture", FontSlant.ITALIC);
+				xStyleProps.setPropertyValue("CharPostureAsian", FontSlant.ITALIC);
+			} else {
+				xStyleProps.setPropertyValue("CharPosture", FontSlant.NONE);
+				xStyleProps.setPropertyValue("CharPostureAsian", FontSlant.NONE);
+			}
+			
+			// charShape.underline;							// 밑줄 종류					// ut
+			// charShape.underlineShape;						// 밑줄 모양					// us
+			if (charShape.underline!=null) {
+				switch(charShape.underline) {
+				case NONE:
+					xStyleProps.setPropertyValue("CharUnderline", FontUnderline.NONE);
+					break;
+				case BOTTOM:
+				case CENTER:
+				case TOP:
+					switch (charShape.underlineShape) {
+					case SOLID:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
+						break;
+					case DASH:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASH);
+						break;
+					case DOT:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DOTTED);
+						break;
+					case DASH_DOT:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASHDOT);
+						break;
+					case DASH_DOT_DOT:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DASHDOTDOT);
+						break;
+					case LONG_DASH:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.LONGDASH);
+						break;
+					case DOUBLE_SLIM:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.DOUBLE);
+						break;
+					case CIRCLE:
+					case SLIM_THICK:
+					case THICK_SLIM:
+					case SLIM_THICK_SLIM:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
+						break;
+					default:
+						break;
+					}
+					break;
+				}
+			}
+			// charShape.underlineColor;						// 밑줄 색
+			xStyleProps.setPropertyValue("CharUnderlineColor", charShape.underlineColor);
+			// charShape.outline;								// 외곽선종류					//
+			if (charShape.outline==Outline.NONE) {
+				xStyleProps.setPropertyValue("CharContoured", false);
+			} else {
+				xStyleProps.setPropertyValue("CharContoured", true);
+			}
+		
+			// charShape.emboss;								// 양각 여부					// em?
+			// charShape.engrave;								// 음각 여부					// en?
+			if (charShape.emboss) {
+				xStyleProps.setPropertyValue("CharRelief", FontRelief.EMBOSSED);
+			} else if (charShape.engrave) {
+				xStyleProps.setPropertyValue("CharRelief", FontRelief.ENGRAVED);
+			} else {
+				xStyleProps.setPropertyValue("CharRelief", FontRelief.NONE);
+			}
+			// charShape.superScript;							// 위 첨자 여부					// su?
+			// charShape.subScript;							// 아래 첨자 여부				// sb?
+			
+			// charShape.strikeOut;							// 취소선 여부
+			//	charShape.strikeOutShape;						// 취소선 모양
+			//	charShape.strikeOutColor;						// 취소선 색
+			if (charShape.strikeOut!=0) {
+				switch(charShape.strikeOutShape) {
+					case SOLID:
+						xStyleProps.setPropertyValue("CharStrikeout", FontStrikeout.SINGLE);
+			  			break;
+					case DASH:
+						xStyleProps.setPropertyValue("CharStrikeout", FontStrikeout.SINGLE);
+			  			break;
+					case DOT:
+					case DASH_DOT:
+					case DASH_DOT_DOT:
+					case LONG_DASH:
+						xStyleProps.setPropertyValue("CharStrikeout", FontStrikeout.SINGLE);
+			  			break;
+					case DOUBLE_SLIM:
+						xStyleProps.setPropertyValue("CharStrikeout", FontStrikeout.DOUBLE);
+			  			break;
+					case CIRCLE:
+					case SLIM_THICK:
+					case THICK_SLIM:
+					case SLIM_THICK_SLIM:
+						xStyleProps.setPropertyValue("CharUnderline", FontUnderline.SINGLE);
+						break;
+					default:
+			  			break;
+				}
+			}
+		
+			//charShape.symMark;								// 강조점 종류
+			xStyleProps.setPropertyValue("CharEmphasis", FontEmphasis.NONE);
+		
+			//charShape.useFontSpace;							// 글꼴에 어울리는 빈칸 사용 여부		// uf?
+			//charShape.useKerning;							// kerning여부				// uk?
+			//charShape.textColor;							// 글자 색						//
+			xStyleProps.setPropertyValue("CharColor", charShape.textColor);
+		
+			//charShape.shadeColor;							// 음영 색
+			if (charShape.shadeColor != 0xFFFFFFFF) {
+			    xStyleProps.setPropertyValue("CharBackColor", charShape.shadeColor);
+			}
+
+		
+			//	charShape.shadow;								// 그림자 종류					// 
+			//	charShape.shadowSpacing;						// 그림자 간격, -100%~100%
+			//	charShape.shadowColor;							// 그림자 색
+			if (charShape.shadow!=Shadow.NONE) {
+				xStyleProps.setPropertyValue("CharShadowed", true);
 			}
 			//	charShape.borderFillId;							// 글자 테두리/배경 ID(CharShapeBorderFill ID) 참조 값
 
