@@ -172,21 +172,25 @@ public class ConvPara {
 			ParagraphAdjust align = ParagraphAdjust.BLOCK;
 			switch(paraShape.align) {
 			case LEFT:
-				align = ParagraphAdjust.LEFT;
+				xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.LEFT);
 				break;
 			case RIGHT:
-				align = ParagraphAdjust.RIGHT;
+				xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.RIGHT);
 				break;
 			case CENTER:
-				align = ParagraphAdjust.CENTER;
+				xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
 				break;
 			case JUSTIFY:
+				xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
+				xStyleProps.setPropertyValue("ParaLastLineAdjust", (short)1);
+				break;
 			case DISTRIBUTE:
 			case DISTRIBUTE_SPACE:
-				align = ParagraphAdjust.BLOCK;
+				xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
+				xStyleProps.setPropertyValue("ParaLastLineAdjust", (short)2);
+				xStyleProps.setPropertyValue("ParaExpandSingleWord", true);
 				break;
 			}
-			xStyleProps.setPropertyValue("ParaAdjust", align);
 			// breakLatinWord		// 줄 나눔 기준 영어 단위 (0:단어, 1:하이픈, 2:글자)
 			// breakNonLatinWord	// 줄 나눔 기준 한글 단위 (0:어절, 1:글자)
 			// snapToGrid			// 편집 용지의 줄 격자 사용 여부
@@ -392,8 +396,8 @@ public class ConvPara {
 			// autoSpaceEAsianNum;						// 		한글과 숫자 간격을 자동 조절
 			
 			//	https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1ParagraphProperties.html
-			//	ParaAdjust,ParaLineSpacing,ParaBackColor,ParaBackTransparent,ParaBackGraphicURL,ParaBackGraphicFilter,ParaBackGraphicLocation,ParaLastLineAdjust,
-			//	ParaExpandSingleWord,ParaLeftMargin,ParaRightMargin,ParaTopMargin,ParaBottomMargin,ParaContextMargin,ParaLineNumberCount,ParaLineNumberStartValue,
+			//	ParaAdjust,ParaLineSpacing,ParaBackColor,ParaBackTransparent,ParaBackGraphicURL,ParaBackGraphicFilter,ParaBackGraphicLocation,
+			//	ParaLeftMargin,ParaRightMargin,ParaTopMargin,ParaBottomMargin,ParaContextMargin,ParaLineNumberCount,ParaLineNumberStartValue,
 			//	PageDescName,PageNumberOffset,ParaRegisterModeActive,ParaStyleName,PageStyleName,DropCapFormat,DropCapWholeWord,ParaKeepTogether,ParaSplit,
 			//	NumberingLevel,NumberingRules,NumberingStartValue,ParaIsNumberingRestart,NumberingStyleName,ParaOrphans,ParaWidows,ParaShadowFormat,LeftBorder,
 			//	RightBorder,TopBorder,BottomBorder,BorderDistance,LeftBorderDistance,RightBorderDistance,TopBorderDistance,BottomBorderDistance,BreakType,
