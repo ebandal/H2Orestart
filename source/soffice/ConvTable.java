@@ -113,7 +113,8 @@ public class ConvTable {
             // 칼럼을 제거하고, colSpan을 조정한다.
             cellArray = removeAllNullColumns(cellArray);
             int maxColSize = Arrays.stream(cellArray).map(row -> row.length)
-                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())).entrySet().stream()
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                    .entrySet().stream()
                     .max(Map.Entry.comparingByValue()).get().getKey();
 
             Object tableObj = wContext.mMSF.createInstance("com.sun.star.text.TextTable");
@@ -301,15 +302,29 @@ public class ConvTable {
                                     Transform.translateHwp2Office(table.inDSpace));
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
-                            if (cellBorderFill != null && cellBorderFill.fill.isColorFill()) {
-                                if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
-                                    cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
-                                } else {
-                                    cellProps.setPropertyValue("BackTransparent", false);
-                                    cellProps.setPropertyValue("BackColor", cellBorderFill.fill.faceColor);
-                                }
-                            } else {
-                                cellProps.setPropertyValue("BackTransparent", false);
+                            if (cellBorderFill != null) {
+                            	if (cellBorderFill.fill.isColorFill()) {
+	                                if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
+	                                    cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
+	                                } else {
+	                                    cellProps.setPropertyValue("BackTransparent", false);
+	                                    cellProps.setPropertyValue("BackColor", cellBorderFill.fill.faceColor);
+	                                }
+                            	} else if (cellBorderFill.fill.isGradFill()) {
+                            		// CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
+                            		if (cellBorderFill.fill.colors.length==2) {
+	                            		short r, g, b;
+	                            		r = (short) (((cellBorderFill.fill.colors[0]>>16&0x00FF) + (cellBorderFill.fill.colors[1]>>16&0x00FF))/2);  
+	                            		g = (short) (((cellBorderFill.fill.colors[0]>>8&0x00FF) + (cellBorderFill.fill.colors[1]>>8&0x00FF))/2);  
+	                            		b = (short) (((cellBorderFill.fill.colors[0]&0x00FF) + (cellBorderFill.fill.colors[1]&0x00FF))/2);  
+	                            		int midColor = (r<<16)|(g<<8)|b;
+	                            		cellProps.setPropertyValue("BackColor", midColor);
+                            		}
+                            	} else if (cellBorderFill.fill.isImageFill()) {
+                            		ConvGraphics.fillGraphic(wContext, cellProps, cellBorderFill.fill);
+	                            } else {
+	                                cellProps.setPropertyValue("BackTransparent", false);
+	                            }
                             }
                         }
                     } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
@@ -1124,6 +1139,11 @@ public class ConvTable {
                     String styleNameTemp = ConvPara.getStyleName((int) para.paraStyleID);
                     HwpRecord_Style paraStyleTemp = wContext.getParaStyle(para.paraStyleID);
                     HwpRecord_ParaShape paraShapeTemp = wContext.getParaShape(para.paraShapeID);
+                    if (cell.paras.size()==1) {
+                    	// Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
+                    	paraShapeTemp.lineSpacing = 100;
+                    	paraShapeTemp.lineSpacingType = 0x3;
+                    }
                     HwpRecord_CharShape charShapeTemp = wContext.getCharShape((short) charShapeId);
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
                             paraShapeTemp, charShapeTemp, append, true, step);

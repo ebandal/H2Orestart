@@ -2695,74 +2695,7 @@ public class ConvGraphics {
                     xPropSet.setPropertyValue("FillGradient", gradient);
                 }
                 if (fill.isImageFill()) {
-                    Object graphicProviderObject = wContext.mMCF
-                            .createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
-                    XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class,
-                            graphicProviderObject);
-                    byte[] imageAsByteArray = wContext.getBinBytes(fill.binItemID);
-                    if (imageAsByteArray != null) {
-                        PropertyValue[] v = new PropertyValue[2];
-                        v[0] = new PropertyValue();
-                        v[0].Name = "InputStream";
-                        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
-                        v[1] = new PropertyValue();
-                        v[1].Name = "MimeType";
-                        String imageFormat = wContext.getBinFormat(fill.binItemID).toLowerCase();
-                        switch (imageFormat) {
-                        case "png":
-                            v[1].Value = "image/png";
-                            break;
-                        case "bmp":
-                            v[1].Value = "image/bmp";
-                            break;
-                        case "wmf":
-                            v[1].Value = "image/x-wmf";
-                            break;
-                        case "jpg":
-                            v[1].Value = "image/jpeg";
-                            break;
-                        case "gif":
-                            v[1].Value = "image/gif";
-                            break;
-                        case "tif":
-                            v[1].Value = "image/tiff";
-                            break;
-                        case "svg":
-                            v[1].Value = "image/svg+xml";
-                            break;
-                        }
-                        XGraphic graphic = xGraphicProvider.queryGraphic(v);
-                        try {
-                            Path path = Files.createTempFile("H2Orestart", "_" + fill.binItemID + "." + imageFormat);
-                            URL url = path.toFile().toURI().toURL();
-                            String urlString = url.toExternalForm();
-                            v[0].Name = "URL";
-                            v[0].Value = urlString;
-                            xGraphicProvider.storeGraphic(graphic, v);
-
-                            Object bt = wContext.mMSF.createInstance("com.sun.star.drawing.BitmapTable");
-                            XNameContainer bitmapContainer = UnoRuntime.queryInterface(XNameContainer.class, bt);
-                            try {
-                                log.fine("FillBMP" + fill.binItemID + " saved to " + urlString);
-                                bitmapContainer.insertByName("FillBMP" + fill.binItemID, urlString);
-                            } catch (com.sun.star.container.ElementExistException e) {
-                            }
-                            XNameAccess bitmapAccess = (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, bt);
-                            Object ob = null;
-                            xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
-                            /*
-                             * 여러개 FillBitmap 처리시 같은 이미지만 반복됨. 대신 FillBitmapName을 사용하도록 함 try { ob =
-                             * bitmapAccess.getByName("FillBMP"+String.valueOf(fill.binItem)); XBitmap
-                             * xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
-                             * xPropSet.setPropertyValue("FillBitmap", xBitmap); } catch
-                             * (com.sun.star.container.NoSuchElementException e) { }
-                             */
-                            xPropSet.setPropertyValue("FillBitmapName", "FillBMP" + fill.binItemID);
-                            xPropSet.setPropertyValue("FillBitmapMode", BitmapMode.STRETCH);
-                            Files.delete(path);
-                        } catch (IOException e) {
-                        }
-                    }
+                	fillGraphic(wContext, xPropSet, fill);
                 }
 
                 if (fill.isColorFill() == false && fill.isImageFill() == false && fill.isGradFill() == false) {
@@ -2831,6 +2764,82 @@ public class ConvGraphics {
         aHomogenMatrix3.Line1.Column3 = transformMatrix[4];
         aHomogenMatrix3.Line2.Column3 = transformMatrix[5];
         xPropsSet.setPropertyValue("Transformation", aHomogenMatrix3);
+    }
+    
+    public static void fillGraphic(WriterContext wContext, XPropertySet xPropSet, Fill fill) {
+    	try {
+		    Object graphicProviderObject 
+		    	= wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider",
+		    											  wContext.mContext);
+		    XGraphicProvider xGraphicProvider
+		    	= UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
+		    byte[] imageAsByteArray = wContext.getBinBytes(fill.binItemID);
+		    if (imageAsByteArray != null) {
+		        PropertyValue[] v = new PropertyValue[2];
+		        v[0] = new PropertyValue();
+		        v[0].Name = "InputStream";
+		        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+		        v[1] = new PropertyValue();
+		        v[1].Name = "MimeType";
+		        String imageFormat = wContext.getBinFormat(fill.binItemID).toLowerCase();
+		        switch (imageFormat) {
+		        case "png":
+		            v[1].Value = "image/png";
+		            break;
+		        case "bmp":
+		            v[1].Value = "image/bmp";
+		            break;
+		        case "wmf":
+		            v[1].Value = "image/x-wmf";
+		            break;
+		        case "jpg":
+		            v[1].Value = "image/jpeg";
+		            break;
+		        case "gif":
+		            v[1].Value = "image/gif";
+		            break;
+		        case "tif":
+		            v[1].Value = "image/tiff";
+		            break;
+		        case "svg":
+		            v[1].Value = "image/svg+xml";
+		            break;
+		        }
+		        XGraphic graphic = xGraphicProvider.queryGraphic(v);
+		        try {
+		            Path path = Files.createTempFile("H2Orestart", "_" + fill.binItemID + "." + imageFormat);
+		            URL url = path.toFile().toURI().toURL();
+		            String urlString = url.toExternalForm();
+		            v[0].Name = "URL";
+		            v[0].Value = urlString;
+		            xGraphicProvider.storeGraphic(graphic, v);
+		
+		            Object bt = wContext.mMSF.createInstance("com.sun.star.drawing.BitmapTable");
+		            XNameContainer bitmapContainer = UnoRuntime.queryInterface(XNameContainer.class, bt);
+		            try {
+		                log.fine("FillBMP" + fill.binItemID + " saved to " + urlString);
+		                bitmapContainer.insertByName("FillBMP" + fill.binItemID, urlString);
+		            } catch (com.sun.star.container.ElementExistException e) {
+		            }
+		            XNameAccess bitmapAccess = (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, bt);
+		            Object ob = null;
+		            xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
+		            /*
+		             * 여러개 FillBitmap 처리시 같은 이미지만 반복됨. 대신 FillBitmapName을 사용하도록 함 try { ob =
+		             * bitmapAccess.getByName("FillBMP"+String.valueOf(fill.binItem)); XBitmap
+		             * xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
+		             * xPropSet.setPropertyValue("FillBitmap", xBitmap); } catch
+		             * (com.sun.star.container.NoSuchElementException e) { }
+		             */
+		            xPropSet.setPropertyValue("FillBitmapName", "FillBMP" + fill.binItemID);
+		            xPropSet.setPropertyValue("FillBitmapMode", BitmapMode.STRETCH);
+		            Files.delete(path);
+		        } catch (IOException | Exception e) {
+		        }
+		    }
+    	} catch (IllegalArgumentException | Exception e) {
+            e.printStackTrace();
+    	}
     }
 
 }
