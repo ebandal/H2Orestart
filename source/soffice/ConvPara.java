@@ -182,7 +182,7 @@ public class ConvPara {
 				break;
 			case JUSTIFY:
 				xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
-				xStyleProps.setPropertyValue("ParaLastLineAdjust", (short)1);
+				// xStyleProps.setPropertyValue("ParaLastLineAdjust", (short)2);
 				break;
 			case DISTRIBUTE:
 			case DISTRIBUTE_SPACE:
