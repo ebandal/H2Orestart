@@ -833,27 +833,29 @@ public class ConvGraphics {
                 }
                 for (int i=0; i<shape.paras.size(); i++) {
                 	HwpParagraph para = shape.paras.get(i);
-                    // 테이블은 Frame 크기를 넘지 못하므로, 테이블 크기만큼 내부 Frame을 다시 만들어야 한다.
-                    // 다만, 큰 테이블이라도 보이는건 외부 Frame 만큼 보이도록 한다.
-                    HwpCallback callback = new HwpCallback(TableFrame.MAKE);
-                    if (shape.curWidth < maxCtrlWidth || shape.curHeight < maxCtrlHeight) {
-                        callback = new HwpCallback(TableFrame.MAKE_PART);
-                    }
-                    int charShapeId = 0;
-                    for (int j=0; j<para.p.size(); j++) {
-                    	Ctrl c = para.p.get(j);
-                    	ParaText paraText = null;
-                        if (c instanceof ParaText) {
-                            paraText = (ParaText) c;
-        		            charShapeId = ((ParaText)c).charShapeId;
-                        	HwpRecurs.insertDrawingString(innerContext, paraText.text, para.paraStyleID, para.paraShapeID, (short)charShapeId, false, step);
-                        } else if (c instanceof Ctrl_Character) {
-                            // last PARA_BREAK은 쓰지 않는다.
-                        	if (i<shape.paras.size()-1 || j<para.p.size()-1) {
-                        		innerContext.mText.insertControlCharacter(innerContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
-                        	}
-                        }
-                    }
+                	if (para.p!=null) {
+	                    // 테이블은 Frame 크기를 넘지 못하므로, 테이블 크기만큼 내부 Frame을 다시 만들어야 한다.
+	                    // 다만, 큰 테이블이라도 보이는건 외부 Frame 만큼 보이도록 한다.
+	                    HwpCallback callback = new HwpCallback(TableFrame.MAKE);
+	                    if (shape.curWidth < maxCtrlWidth || shape.curHeight < maxCtrlHeight) {
+	                        callback = new HwpCallback(TableFrame.MAKE_PART);
+	                    }
+	                    int charShapeId = 0;
+	                    for (int j=0; j<para.p.size(); j++) {
+	                    	Ctrl c = para.p.get(j);
+	                    	ParaText paraText = null;
+	                        if (c instanceof ParaText) {
+	                            paraText = (ParaText) c;
+	        		            charShapeId = ((ParaText)c).charShapeId;
+	                        	HwpRecurs.insertDrawingString(innerContext, paraText.text, para.paraStyleID, para.paraShapeID, (short)charShapeId, false, step);
+	                        } else if (c instanceof Ctrl_Character) {
+	                            // last PARA_BREAK은 쓰지 않는다.
+	                        	if (i<shape.paras.size()-1 || j<para.p.size()-1) {
+	                        		innerContext.mText.insertControlCharacter(innerContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
+	                        	}
+	                        }
+	                    }
+                	}
                 }
                 if (shape.nGrp == 0) {
                     ++autoNum;
