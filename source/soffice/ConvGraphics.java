@@ -621,8 +621,8 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = shape.width == 0 ? shape.curWidth : shape.width;
-                sizeHeight = shape.height == 0 ? shape.curHeight : shape.height;
+                sizeWidth = shape.curWidth;
+                sizeHeight = shape.curHeight;
                 if (shape.rotat != 0) {
                     Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                     Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
