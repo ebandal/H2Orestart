@@ -1399,6 +1399,10 @@ public class ConvTable {
         int nRow = cellArray.length;
         int[] rowHeight = new int[nRow];
 
+        if (nRow == 1) {
+        	rowHeight[0] = Arrays.stream(cellArray[0]).filter(c -> c!=null)
+        			             .mapToInt(c -> c.height).min().orElse(0); 
+        }
         // print
         for (int row = 0; row < cellArray.length; row++) {
             log.finest("CELLS [" + row + "]=" + Arrays.stream(cellArray[row])
