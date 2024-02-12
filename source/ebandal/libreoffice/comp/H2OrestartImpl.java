@@ -23,6 +23,8 @@ package ebandal.libreoffice.comp;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 import com.sun.star.uno.XComponentContext;
+import com.sun.star.util.CloseVetoException;
+import com.sun.star.util.XCloseable;
 
 import HwpDoc.CustomLogFormatter;
 import HwpDoc.HwpDetectException;
@@ -53,19 +55,15 @@ import com.sun.star.lib.uno.helper.Factory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Properties;
-import java.util.function.BiPredicate;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -80,6 +78,7 @@ import org.xml.sax.SAXException;
 
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.io.XInputStream;
+import com.sun.star.lang.EventObject;
 import com.sun.star.lang.IllegalArgumentException;
 import com.sun.star.lang.XComponent;
 import com.sun.star.lang.XMultiServiceFactory;
@@ -94,7 +93,8 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                                                             com.sun.star.lang.XInitialization,
                                                             com.sun.star.document.XImporter,
                                                             com.sun.star.document.XFilter,
-                                                            com.sun.star.document.XExtendedFilterDetection {
+                                                            com.sun.star.document.XExtendedFilterDetection,
+                                                            com.sun.star.util.XCloseListener {
     private static final Logger log = Logger.getLogger(H2OrestartImpl.class.getName());
 
     private static final String m_implementationName = H2OrestartImpl.class.getName();
@@ -244,6 +244,9 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         } catch (IOException | HwpDetectException e) {
             e.printStackTrace();
         }
+        
+        XCloseable xCloseable = (XCloseable) UnoRuntime.queryInterface(XCloseable.class, writerContext.mMyDocument);
+        xCloseable.addCloseListener(this);
 
         return true;
     }
@@ -326,7 +329,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 switch(args[i][j].Name) {
                 case "URL":
                     // https://... , "file:///... , "ftp://... , smb://... 
-                    log.info("URL=" + args[i][j].Value.toString().replaceAll("^([^:]*://.{20}).*", "$1"));
+                    log.info("URL starts with : " + args[i][j].Value.toString().replaceAll("^([^:]*://.{10}).*", "$1"));
                     if (args[i][j].Value.toString().startsWith("file:///")) {
                         isFileURL = true;
                         String systemPath = ConvUtil.convertToSystemPath(writerContext, args[i][j].Value.toString());
@@ -414,5 +417,25 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         } else {
             log.fine("HwpFile not exists.");
         }
+    }
+    
+    @Override
+    public void disposing(EventObject arg0) {
+        try {
+            if (tmpFilePath!=null) {
+                log.info("Disposing temp file");
+                Files.deleteIfExists(new File(tmpFilePath).toPath());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public void notifyClosing(EventObject arg0) {
+    }
+    
+    @Override
+    public void queryClosing(EventObject arg0, boolean arg1) throws CloseVetoException {
     }
 }
