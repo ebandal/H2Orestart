@@ -60,8 +60,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.ConsoleHandler;
@@ -278,7 +277,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         Path tmpFolder = Paths.get(System.getProperty("user.home"),".H2Orestart");
         try (Stream<Path> paths = Files.find(tmpFolder, Integer.MAX_VALUE, 
                                             (path, attr) -> {
-                                                Instant delInstant = LocalDateTime.now().minusDays(5).toInstant(ZoneOffset.of("+09:00"));
+                                                Instant delInstant = ZonedDateTime.now().minusDays(5).toInstant();
                                                 FileTime fileTime = FileTime.from(delInstant);
                                                 int comp = attr.creationTime().compareTo(fileTime);
                                                 if (path.toFile().isFile() && comp==-1) {
