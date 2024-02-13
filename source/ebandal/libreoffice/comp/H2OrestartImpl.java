@@ -59,6 +59,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -261,7 +262,8 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             }
         }
         try {
-            Files.createDirectories(Paths.get(System.getProperty("user.home"),".H2Orestart"));
+            Files.createDirectories(Paths.get(System.getProperty("user.home"),".H2Orestart"),
+                                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
             // "%h" the value of the "user.home" system property
             FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, false);
             fileHandler.setLevel(Level.INFO);
@@ -346,8 +348,9 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                         byte[] buf = new byte[4096];
                         XInputStream xinput = UnoRuntime.queryInterface(XInputStream.class, args[i][j].Value);
                         try {
-                            File tmpFile = File.createTempFile("H2O_TMP_", null, 
-                                                                Paths.get(System.getProperty("user.home"),".H2Orestart").toFile());
+                            File tmpFile = Files.createTempFile(Paths.get(System.getProperty("user.home"),".H2Orestart"),
+                                                                "H2O_TMP_", null,
+                                                                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))).toFile();
                             tmpFile.deleteOnExit();
                             tmpFilePath = tmpFile.toString();
                             try (FileOutputStream fos = new FileOutputStream(tmpFile);
