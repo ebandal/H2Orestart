@@ -64,6 +64,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -152,22 +153,16 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
     public boolean filter(PropertyValue[] lDescriptor) {
         log.fine("filter called");
         File file = null;
-        boolean isFileURL = false;
-        
+        String filePath = null;
+        Object inputStream = null;
+
         for (int i=0; i<lDescriptor.length; i++) {
             switch(lDescriptor[i].Name) {
             case "URL":
-                if (lDescriptor[i].Value.toString().startsWith("file:///")) {
-                    isFileURL = true;
-                    String filePath = lDescriptor[i].Value.toString();
-                    String systemPath = ConvUtil.convertToSystemPath(writerContext, filePath);
-                    file = new File(systemPath);
-                }
+                filePath = lDescriptor[i].Value.toString();
                 break;
             case "InputStream":
-                if (isFileURL==false && tmpFilePath!=null) {
-                    file = new File(tmpFilePath);
-                }
+                inputStream = lDescriptor[i].Value;
                 break;
             case "FilterName":
             case "Referer":
@@ -177,14 +172,115 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             case "FrameName":
             case "MacroExecutionMode":
             case "UpdateDocMode":
-            case "DocumentBaseURL": // file:///D:/workspace/Ebook/hwpviewer/doc/%EB%B3%80%ED%99%98_%ED%95%9C%EA%B8%80%EB%AC%B8%EC%84%9C%ED%8C%8C%EC%9D%BC%ED%98%95%EC%8B%9D_%EB%B0%B0%ED%8F%AC%EC%9A%A9%EB%AC%B8%EC%84%9C_revision1.2.hwp\n"
-            case "DocumentService": // com.sun.star.text.TextDocument
+            case "DocumentBaseURL":
+            case "DocumentService":
             case "Replaceable":
                 log.fine("Name="+lDescriptor[i].Name+",Value="+lDescriptor[i].Value.toString());
             }
         }
 
+        if (filePath!=null && filePath.startsWith("file:///")) {
+            String systemPath = ConvUtil.convertToSystemPath(writerContext, filePath);
+            file = new File(systemPath);
+        } else {
+            if (tmpFilePath==null) {
+                tmpFilePath = copyToTmpFile(inputStream);
+            }
+            file = new File(tmpFilePath);
+        }
+
         return impl_import(file);
+    }
+
+    @Override
+    public void initialize(Object[] args) throws Exception {
+        log.fine("initialize called");
+
+        for (int i=0; i<args.length; i++) {
+            if (args[i] instanceof PropertyValue[]) {
+                PropertyValue[] pValues = (PropertyValue[])args[i];
+                for (PropertyValue pValue: pValues) {
+                    log.finest("Name="+pValue.Name+",Value="+pValue.Value.toString());
+                }
+            }
+        }
+
+        reset();
+    }
+
+    @Override
+    public String detect(PropertyValue[][] args) {
+        log.fine("detect called");
+        reset();
+
+        StringBuffer typeName = new StringBuffer("Hwp2002_File");
+        String url = null;
+        Object inputStream = null;
+        
+        for (int i=0; i<args.length; i++) {
+            for (int j=0; j<args[i].length; j++) {
+                switch(args[i][j].Name) {
+                case "URL":
+                    url = args[i][j].Value.toString();
+                    break;
+                case "InputStream":
+                    inputStream = args[i][j].Value;
+                    break;
+                default:
+                    log.finest("Name="+args[i][j].Name + ", Value="+args[i][j].Value);
+                    break;
+                }
+            }
+        }
+
+        // https://... , "file:///... , "ftp://... , smb://... 
+        log.info("URL starts with : " + url.replaceAll("^([^:]*://.{10}).*", "$1"));
+
+        if (url!=null && url.startsWith("file:///")) {
+            log.info("reading file directly");
+            String systemPath = ConvUtil.convertToSystemPath(writerContext, url);
+            detectedFileExt = WriterContext.detectHancom(new File(systemPath));
+        } else if (inputStream!=null) {
+            log.info("copying InputStream to temp File");
+            tmpFilePath = copyToTmpFile(inputStream);
+            detectedFileExt = WriterContext.detectHancom(new File(tmpFilePath));
+        }
+
+        if (detectedFileExt==null) {
+            log.info("File is not Hancomm document.");
+            typeName.setLength(0);
+        } else {
+            log.info("File is Hancomm document.");
+        }
+
+        try {
+            writerContext.close();
+        } catch (IOException | HwpDetectException e) {
+            log.severe(e.getMessage());
+        }
+
+        return typeName.toString();
+    }
+
+    @Override
+    public void disposing(EventObject arg0) {
+        if (tmpFilePath!=null) {
+            log.info("Disposing tmp file");
+            try {
+                Files.deleteIfExists(new File(tmpFilePath).toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            tmpFilePath=null;
+        }
+    }
+
+    @Override
+    public void notifyClosing(EventObject arg0) {
+    }
+
+    @Override
+    public void queryClosing(EventObject arg0, boolean arg1) throws CloseVetoException {
     }
 
     private boolean impl_import(File file) {
@@ -211,25 +307,25 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 // Numbering ID는 1부터 시작한다.
                 ConvNumbering.makeCustomNumberingStyle(writerContext, i+1, (HwpRecord_Numbering)writerContext.getDocInfo().numberingList.get(i));
             }
-            
+
             for (HwpSection section: sections) {
                 // 커스톰 PageStyle 생성
-                Ctrl_SectionDef secd =  (Ctrl_SectionDef)section.paraList.stream()
-                                                                .filter(p -> p.p!=null && p.p.size()>0)
-                                                                .flatMap(p -> p.p.stream())
-                                                                .filter(c -> (c instanceof Ctrl_SectionDef)).findAny().get();
+                Ctrl_SectionDef secd = (Ctrl_SectionDef)section.paraList.stream()
+                                                               .filter(p -> p.p!=null && p.p.size()>0)
+                                                               .flatMap(p -> p.p.stream())
+                                                               .filter(c -> (c instanceof Ctrl_SectionDef)).findAny().get();
                 ConvPage.makeCustomPageStyle(writerContext, secd);
             }
             for (int i=0; i<writerContext.getDocInfo().styleList.size();i++) {
                 ConvPara.makeCustomParagraphStyle(writerContext, i, (HwpRecord_Style)writerContext.getDocInfo().styleList.get(i));
             }
-    
+
             int secIndex = 0;
             for (int i=0; i<sections.size(); i++) {
                 // context.mMyDocument.lockControllers();
                 HwpSection section = sections.get(i);
                 ConvPage.setSectionIndex(secIndex++);
-                
+
                 for (HwpParagraph para: section.paraList) {
                     HwpRecurs.printParaRecurs(writerContext, writerContext, para, null, 1);
                 }
@@ -238,13 +334,10 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 
             // 화면 갱신 resume
             // writerContext.mMyDocument.unlockControllers();
-
-            log.fine("Cleaning temporary folder.");
-            WriterContext.cleanTempFolder();
-        } catch (IOException | HwpDetectException e) {
+        } catch (HwpDetectException e) {
             e.printStackTrace();
         }
-        
+
         XCloseable xCloseable = (XCloseable) UnoRuntime.queryInterface(XCloseable.class, writerContext.mMyDocument);
         xCloseable.addCloseListener(this);
 
@@ -253,7 +346,6 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 
     private void initialLogger() {
         //initialize logger
-        Properties properties = new Properties();
         rootLogger = Logger.getLogger("");
         Handler[] handlers = rootLogger.getHandlers();
         for (Handler handler: handlers) {
@@ -262,8 +354,18 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             }
         }
         try {
-            Files.createDirectories(Paths.get(System.getProperty("user.home"),".H2Orestart"),
-                                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+            Path baseDir = Paths.get(System.getProperty("user.home"),".H2Orestart");
+            Set<String> attrViews = baseDir.getFileSystem().supportedFileAttributeViews();
+            if (attrViews.contains("posix")) {
+                if (baseDir.toFile().exists()) {
+                    Files.setPosixFilePermissions(baseDir, PosixFilePermissions.fromString("rwx------"));
+                } else {
+                    Files.createDirectories(baseDir,
+                                            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+                }
+            } else {
+                Files.createDirectories(baseDir);
+            }
             // "%h" the value of the "user.home" system property
             FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, false);
             fileHandler.setLevel(Level.INFO);
@@ -274,123 +376,34 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             e.printStackTrace();
         }
     }
-    
+
     private void cleanTmpFolder() {
         Path tmpFolder = Paths.get(System.getProperty("user.home"),".H2Orestart");
-        try (Stream<Path> paths = Files.find(tmpFolder, Integer.MAX_VALUE, 
-                                            (path, attr) -> {
-                                                Instant delInstant = ZonedDateTime.now().minusDays(5).toInstant();
-                                                FileTime fileTime = FileTime.from(delInstant);
-                                                int comp = attr.creationTime().compareTo(fileTime);
-                                                if (path.toFile().isFile() && comp==-1) {
-                                                    return true;
-                                                } else {
-                                                    return false;
-                                                }
-                                            })) {
-            paths.forEach(p -> {
-                        try {
-                            Files.deleteIfExists(p);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        
-    }
-	
-    @Override
-    public void initialize(Object[] args) throws Exception {
-        log.fine("initialize called");
-
-        for (int i=0; i<args.length; i++) {
-            if (args[i] instanceof PropertyValue[]) {
-                PropertyValue[] pValues = (PropertyValue[])args[i];
-                for (PropertyValue pValue: pValues) {
-                    log.finest("Name="+pValue.Name+",Value="+pValue.Value.toString());
-                }
+        if (tmpFolder.toFile().exists()) {
+            try (Stream<Path> paths = Files.find(tmpFolder, Integer.MAX_VALUE, 
+                                                (path, attr) -> {
+                                                    Instant delInstant = ZonedDateTime.now().minusDays(5).toInstant();
+                                                    FileTime fileTime = FileTime.from(delInstant);
+                                                    int comp = attr.creationTime().compareTo(fileTime);
+                                                    if (path.toFile().isFile() && comp==-1) {
+                                                        return true;
+                                                    } else {
+                                                        return false;
+                                                    }
+                                                })) {
+                paths.forEach(p -> {
+                            try {
+                                Files.deleteIfExists(p);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        });
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
-
-        reset();
     }
-	
-    @Override
-    public String detect(PropertyValue[][] args) {
-        log.fine("detect called");
-        reset();
 
-        StringBuffer typeName = new StringBuffer("Hwp2002_File");
-        boolean isFileURL = false;
-
-        for (int i=0; i<args.length; i++) {
-            for (int j=0; j<args[i].length; j++) {
-                switch(args[i][j].Name) {
-                case "URL":
-                    // https://... , "file:///... , "ftp://... , smb://... 
-                    log.info("URL starts with : " + args[i][j].Value.toString().replaceAll("^([^:]*://.{10}).*", "$1"));
-                    if (args[i][j].Value.toString().startsWith("file:///")) {
-                        isFileURL = true;
-                        String systemPath = ConvUtil.convertToSystemPath(writerContext, args[i][j].Value.toString());
-                        detectedFileExt = WriterContext.detectHancom(new File(systemPath));
-                        if (detectedFileExt == null) {
-                            log.info("File is not Hancomm document.");
-                            typeName.setLength(0);
-                        } else {
-                            log.info("File is Hancomm document.");
-                        }
-                    }
-                    break;
-                case "InputStream":
-                    if (isFileURL == false) {
-                        byte[] buf = new byte[4096];
-                        XInputStream xinput = UnoRuntime.queryInterface(XInputStream.class, args[i][j].Value);
-                        try {
-                            File tmpFile = Files.createTempFile(Paths.get(System.getProperty("user.home"),".H2Orestart"),
-                                                                "H2O_TMP_", null,
-                                                                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))).toFile();
-                            tmpFile.deleteOnExit();
-                            tmpFilePath = tmpFile.toString();
-                            try (FileOutputStream fos = new FileOutputStream(tmpFile);
-                                 XInputStreamToInputStreamAdapter adapter = new XInputStreamToInputStreamAdapter(xinput)) {
-                                while(true) {
-                                    int readLen = adapter.read(buf, 0, buf.length);
-                                    fos.write(buf, 0, readLen);
-                                    if (readLen != buf.length) {
-                                        break;
-                                    }
-                                }
-                            }
-                            xinput.closeInput();
-                            detectedFileExt = WriterContext.detectHancom(tmpFile);
-                            if (detectedFileExt == null) {
-                                log.info("File is not Hancomm document.");
-                                typeName.setLength(0);
-                            } else {
-                                log.info("File is Hancomm document.");
-                            }
-                        } catch (IOException | com.sun.star.io.IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    break;
-                default:
-                    log.finest("Name="+args[i][j].Name + ", Value="+args[i][j].Value);
-                    break;
-                }
-            }
-        }
-        try {
-            writerContext.close();
-        } catch (IOException | HwpDetectException e) {
-            log.severe(e.getMessage());
-        }
-        
-        return typeName.toString();
-    }
-	
     private void reset() {
         log.fine("Resetting Page info.");
         ConvPage.reset(writerContext);
@@ -410,8 +423,6 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         if (writerContext!=null) {
             log.fine("HwpFile still exists. Will be closed.");
             try {
-                log.fine("Cleaning temporary folder.");
-                WriterContext.cleanTempFolder();
                 writerContext.close();
             } catch (IOException | HwpDetectException e) {
                 log.severe(e.getMessage());
@@ -421,23 +432,38 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         }
     }
     
-    @Override
-    public void disposing(EventObject arg0) {
+    private String copyToTmpFile(Object inputStream) {
+        String ret = null;
+        byte[] buf = new byte[4096];
+        XInputStream xinput = UnoRuntime.queryInterface(XInputStream.class, inputStream);
         try {
-            if (tmpFilePath!=null) {
-                log.info("Disposing temp file");
-                Files.deleteIfExists(new File(tmpFilePath).toPath());
+            Path baseDir = Paths.get(System.getProperty("user.home"),".H2Orestart");
+            Set<String> attrViews = baseDir.getFileSystem().supportedFileAttributeViews();
+            File tmpFile = null;
+            if (attrViews.contains("posix")) {
+                tmpFile = Files.createTempFile(baseDir, "H2O_TMP_", null,
+                                               PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))
+                               .toFile();
+            } else {
+                tmpFile = Files.createTempFile(baseDir, "H2O_TMP_", null)
+                               .toFile();
             }
-        } catch (IOException e) {
+            ret = tmpFile.toString();
+            try (FileOutputStream fos = new FileOutputStream(tmpFile);
+                 XInputStreamToInputStreamAdapter adapter = new XInputStreamToInputStreamAdapter(xinput)) {
+                while(true) {
+                    int readLen = adapter.read(buf, 0, buf.length);
+                    fos.write(buf, 0, readLen);
+                    if (readLen != buf.length) {
+                        break;
+                    }
+                }
+            }
+            xinput.closeInput();
+        } catch (IOException | com.sun.star.io.IOException e) {
             e.printStackTrace();
         }
-    }
-    
-    @Override
-    public void notifyClosing(EventObject arg0) {
-    }
-    
-    @Override
-    public void queryClosing(EventObject arg0, boolean arg1) throws CloseVetoException {
+
+        return ret;
     }
 }
