@@ -262,8 +262,12 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             }
         }
         try {
-            Files.createDirectories(Paths.get(System.getProperty("user.home"),".H2Orestart"),
-                                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+            Path path = Paths.get(System.getProperty("user.home"),".H2Orestart");
+            if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+                Files.createDirectories(path, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwx------")));
+            } else {
+                Files.createDirectories(path);
+            }
             // "%h" the value of the "user.home" system property
             FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, false);
             fileHandler.setLevel(Level.INFO);
@@ -348,9 +352,13 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                         byte[] buf = new byte[4096];
                         XInputStream xinput = UnoRuntime.queryInterface(XInputStream.class, args[i][j].Value);
                         try {
-                            File tmpFile = Files.createTempFile(Paths.get(System.getProperty("user.home"),".H2Orestart"),
-                                                                "H2O_TMP_", null,
-                                                                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))).toFile();
+                            Path path = Paths.get(System.getProperty("user.home"),".H2Orestart");
+                            File tmpFile;
+                            if (path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+                                tmpFile = Files.createTempFile(path, "H2O_TMP_", null, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------"))).toFile();
+                            } else {
+                                tmpFile = Files.createTempFile(path, "H2O_TMP_", null).toFile();
+                            }
                             tmpFile.deleteOnExit();
                             tmpFilePath = tmpFile.toString();
                             try (FileOutputStream fos = new FileOutputStream(tmpFile);
