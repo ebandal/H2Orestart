@@ -211,8 +211,6 @@ public class ConvTable {
                 xSeparators[col].Position = (short) Math.ceil(dPosition);
             }
             tableProps.setPropertyValue("TableColumnSeparators", xSeparators);
-
-            tableProps.setPropertyValue("TableBorder", tBorder);
             // table row 높이 조정
             XTableRows xTableRows = xTextTable.getRows();
             if (xTableRows != null) {
@@ -240,14 +238,17 @@ public class ConvTable {
                     if (xCell != null) {
                         // 인접한 Cell Border때문에 border가 지워지지 않는 현상있음. 모든 Cell에 대해 border가 없는 상태로 먼저 만든다.
                         XPropertySet cellProps = UnoRuntime.queryInterface(XPropertySet.class, xCell);
-                        cellProps.setPropertyValue("LeftBorder",
-                                Transform.toBorderLine((HwpRecord_BorderFill.Border) null));
-                        cellProps.setPropertyValue("RightBorder",
-                                Transform.toBorderLine((HwpRecord_BorderFill.Border) null));
-                        cellProps.setPropertyValue("TopBorder",
-                                Transform.toBorderLine((HwpRecord_BorderFill.Border) null));
-                        cellProps.setPropertyValue("BottomBorder",
-                                Transform.toBorderLine((HwpRecord_BorderFill.Border) null));
+                        HwpRecord_BorderFill.Border nullBorder = null;
+                        cellProps.setPropertyValue("LeftBorder", Transform.toBorderLine(nullBorder));
+                        cellProps.setPropertyValue("RightBorder", Transform.toBorderLine(nullBorder));
+                        cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(nullBorder));
+                        cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(nullBorder));
+                        // 테이블 경계선 근처에서 텍스트 잘리지 않도록 함
+                        cellProps.setPropertyValue("LeftBorderDistance", 0);
+                        cellProps.setPropertyValue("RightBorderDistance", 0);
+                        cellProps.setPropertyValue("TopBorderDistance", 0);
+                        cellProps.setPropertyValue("BottomBorderDistance", 0);
+                        cellProps.setPropertyValue("BorderDistance", 0);
                     }
                     if (cell == null)
                         continue;
@@ -289,42 +290,37 @@ public class ConvTable {
                                 cellProps.setPropertyValue("LeftBorder", Transform.toBorderLine(cellBorderFill.left));
                                 cellProps.setPropertyValue("RightBorder", Transform.toBorderLine(cellBorderFill.right));
                                 cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(cellBorderFill.top));
-                                cellProps.setPropertyValue("BottomBorder",
-                                        Transform.toBorderLine(cellBorderFill.bottom));
+                                cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(cellBorderFill.bottom));
                             }
-                            cellProps.setPropertyValue("LeftBorderDistance",
-                                    Transform.translateHwp2Office(table.inLSpace));
-                            cellProps.setPropertyValue("RightBorderDistance",
-                                    Transform.translateHwp2Office(table.inRSpace));
-                            cellProps.setPropertyValue("TopBorderDistance",
-                                    Transform.translateHwp2Office(table.inUSpace));
-                            cellProps.setPropertyValue("BottomBorderDistance",
-                                    Transform.translateHwp2Office(table.inDSpace));
+                            cellProps.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(table.inLSpace));
+                            cellProps.setPropertyValue("RightBorderDistance", Transform.translateHwp2Office(table.inRSpace));
+                            cellProps.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(table.inUSpace));
+                            cellProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(table.inDSpace));
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
-                            	if (cellBorderFill.fill.isColorFill()) {
-	                                if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
-	                                    cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
-	                                } else {
-	                                    cellProps.setPropertyValue("BackTransparent", false);
-	                                    cellProps.setPropertyValue("BackColor", cellBorderFill.fill.faceColor);
-	                                }
-                            	} else if (cellBorderFill.fill.isGradFill()) {
-                            		// CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
-                            		if (cellBorderFill.fill.colors.length==2) {
-	                            		short r, g, b;
-	                            		r = (short) (((cellBorderFill.fill.colors[0]>>16&0x00FF) + (cellBorderFill.fill.colors[1]>>16&0x00FF))/2);  
-	                            		g = (short) (((cellBorderFill.fill.colors[0]>>8&0x00FF) + (cellBorderFill.fill.colors[1]>>8&0x00FF))/2);  
-	                            		b = (short) (((cellBorderFill.fill.colors[0]&0x00FF) + (cellBorderFill.fill.colors[1]&0x00FF))/2);  
-	                            		int midColor = (r<<16)|(g<<8)|b;
-	                            		cellProps.setPropertyValue("BackColor", midColor);
-                            		}
-                            	} else if (cellBorderFill.fill.isImageFill()) {
-                            		ConvGraphics.fillGraphic(wContext, cellProps, cellBorderFill.fill);
-	                            } else {
-	                                cellProps.setPropertyValue("BackTransparent", false);
-	                            }
+                                if (cellBorderFill.fill.isColorFill()) {
+                                    if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
+                                        cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
+                                    } else {
+                                        cellProps.setPropertyValue("BackTransparent", false);
+                                        cellProps.setPropertyValue("BackColor", cellBorderFill.fill.faceColor);
+                                    }
+                                } else if (cellBorderFill.fill.isGradFill()) {
+                                    // CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
+                                    if (cellBorderFill.fill.colors.length==2) {
+                                        short r, g, b;
+                                        r = (short) (((cellBorderFill.fill.colors[0]>>16&0x00FF) + (cellBorderFill.fill.colors[1]>>16&0x00FF))/2);  
+                                        g = (short) (((cellBorderFill.fill.colors[0]>>8&0x00FF) + (cellBorderFill.fill.colors[1]>>8&0x00FF))/2);  
+                                        b = (short) (((cellBorderFill.fill.colors[0]&0x00FF) + (cellBorderFill.fill.colors[1]&0x00FF))/2);  
+                                        int midColor = (r<<16)|(g<<8)|b;
+                                        cellProps.setPropertyValue("BackColor", midColor);
+                                    }
+                                } else if (cellBorderFill.fill.isImageFill()) {
+                                    ConvGraphics.fillGraphic(wContext, cellProps, cellBorderFill.fill);
+                                } else {
+                                    cellProps.setPropertyValue("BackTransparent", false);
+                                }
                             }
                         }
                     } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
@@ -1453,17 +1449,6 @@ public class ConvTable {
 
         log.finest("caculated:"
                 + Arrays.stream(rowHeight).mapToObj(w -> String.valueOf(w)).collect(Collectors.joining(",")));
-        /*
-         * Map<Integer, Long> valueCountMap = Arrays.stream(rowHeight).mapToObj(a ->
-         * Integer.valueOf(a)).collect(Collectors.groupingBy(a -> a, TreeMap::new,
-         * Collectors.counting())); long heightSum = Arrays.stream(rowHeight).filter(w
-         * -> w>0).sum(); Map.Entry<Integer,Long> minEntry =
-         * valueCountMap.entrySet().iterator().next(); int minValue = minEntry.getKey();
-         * long minRowCount = minEntry.getValue(); if (minRowCount>0 && totalHeight >
-         * heightSum) { int delta = (int) ((totalHeight-heightSum)/minRowCount); for
-         * (int row=0; row<nRow; row++) { if (rowHeight[row]==minValue) { rowHeight[row]
-         * += delta; } } }
-         */
         return rowHeight;
     }
 
