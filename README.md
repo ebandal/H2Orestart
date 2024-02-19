@@ -28,6 +28,13 @@ https://extensions.libreoffice.org/en/extensions/show/27504
 ### ArchLinux (AUR)
 https://aur.archlinux.org/packages/libreoffice-extension-h2orestart
 
+### Debian / Ubuntu
+```sh
+sudo apt install libreoffice-h2orestart
+```
+https://packages.debian.org/h2orestart
+https://packages.ubuntu.com/h2orestart
+
 ### 직접 설치 (Manual installation)
 Release에서 직접 oxt 파일 다운로드 후 LibreOffice 확장 관리자를 통해 설치
 
