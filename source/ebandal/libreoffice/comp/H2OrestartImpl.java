@@ -354,7 +354,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             }
         }
         try {
-            Path baseDir = Paths.get(System.getProperty("user.home"),".H2Orestart");
+            Path baseDir = getAppCachePath();
             Set<String> attrViews = baseDir.getFileSystem().supportedFileAttributeViews();
             if (attrViews.contains("posix")) {
                 if (baseDir.toFile().exists()) {
@@ -367,7 +367,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 Files.createDirectories(baseDir);
             }
             // "%h" the value of the "user.home" system property
-            FileHandler fileHandler = new FileHandler("%h/.H2Orestart/import_%g.log", 4194304, 10, false);
+            FileHandler fileHandler = new FileHandler(baseDir.toAbsolutePath() + "/import_%g.log", 4194304, 10, false);
             fileHandler.setLevel(Level.INFO);
             CustomLogFormatter sformatter = new CustomLogFormatter();
             fileHandler.setFormatter(sformatter);
@@ -378,7 +378,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
     }
 
     private void cleanTmpFolder() {
-        Path tmpFolder = Paths.get(System.getProperty("user.home"),".H2Orestart");
+        Path tmpFolder = getAppCachePath();
         if (tmpFolder.toFile().exists()) {
             try (Stream<Path> paths = Files.find(tmpFolder, Integer.MAX_VALUE, 
                                                 (path, attr) -> {
@@ -437,7 +437,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         byte[] buf = new byte[4096];
         XInputStream xinput = UnoRuntime.queryInterface(XInputStream.class, inputStream);
         try {
-            Path baseDir = Paths.get(System.getProperty("user.home"),".H2Orestart");
+            Path baseDir = getAppCachePath();
             Set<String> attrViews = baseDir.getFileSystem().supportedFileAttributeViews();
             File tmpFile = null;
             if (attrViews.contains("posix")) {
@@ -465,5 +465,25 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         }
 
         return ret;
+    }
+
+    private Path getAppCachePath() {
+        String osName = System.getProperty("os.name").toLowerCase();
+
+        if (osName.contains("linux")) {
+            // Linux: Use XDG Base Directory Specification
+            // https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
+            String cacheHomeDir = System.getenv("XDG_CACHE_HOME");
+            if (cacheHomeDir == null || cacheHomeDir.isEmpty())
+                return Paths.get(System.getProperty("user.home"), ".cache", "H2Orestart");
+            else
+                return Paths.get(cacheHomeDir, "H2Orestart");
+        } else if (osName.contains("mac")) {
+            // MacOS: Use ~/Library/Caches/H2Orestart
+            // https://developer.apple.com/library/archive/documentation/FileManagement/Conceptual/FileSystemProgrammingGuide/FileSystemOverview/FileSystemOverview.html
+            return Paths.get(System.getProperty("user.home"), "Library", "Caches", "H2Orestart");
+        } else {
+            return Paths.get(System.getProperty("user.home"),".H2Orestart");
+        }
     }
 }
