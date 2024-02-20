@@ -148,43 +148,6 @@ public class HwpFile {
         }
     }
     
-    public void removeSaveFolder(Path rootPath) throws IOException {
-        String patternStr = ".*"+Pattern.quote(File.separator)+"([^"+Pattern.quote(File.separator)+"]+)$";
-        String shortFilename = filename.replaceAll(patternStr, "$1");	// ".*\\\\([^\\\\]+)$"
-        shortFilename = shortFilename.replaceAll("(.*)\\.hwp$", "$1");
-        log.finer("HwpFilePath="+filename + ", FileName="+shortFilename);
-        Path deletePath = Paths.get(rootPath.toString(), shortFilename);
-        
-        if (deletePath.toFile().exists()) {
-        	// 하위폴더
-            try(Stream<Path> mediaPaths = Files.walk(deletePath)) {
-                mediaPaths.sorted((p1, p2) -> {
-                                if (p1.getNameCount() > p2.getNameCount()) 
-                                    return -1;
-                                else if (p1.getNameCount() < p2.getNameCount())
-                                    return 1;
-                                else {
-                                    return p1.toString().compareTo(p2.toString());
-                                }
-                            })
-                           .forEach(p -> {
-                               try {
-                                   log.fine("deleting " + p.getFileName().toString());
-                                   Files.deleteIfExists(p);
-                               } catch (IOException e) {
-                                   log.severe(e.getMessage());
-                               }
-                           });
-            }
-        }
-        
-        // 지워졌는지 확인
-        if (deletePath.toFile().exists()) {
-            throw new IOException("cannot delete Temporary folder");
-        }
-        
-    }
-    
     public void saveHwpComponent() throws IOException {
         Compressed compressed = fileHeader.bCompressed?Compressed.COMPRESS:Compressed.NO_COMPRESS;
         
