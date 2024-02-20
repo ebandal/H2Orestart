@@ -292,10 +292,10 @@ public class ConvTable {
                                 cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(cellBorderFill.top));
                                 cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(cellBorderFill.bottom));
                             }
-                            cellProps.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(table.inLSpace));
-                            cellProps.setPropertyValue("RightBorderDistance", Transform.translateHwp2Office(table.inRSpace));
-                            cellProps.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(table.inUSpace));
-                            cellProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(table.inDSpace));
+                            cellProps.setPropertyValue("LeftBorderDistance", 0 /*Transform.translateHwp2Office(table.inLSpace)*/);
+                            cellProps.setPropertyValue("RightBorderDistance", 0 /*Transform.translateHwp2Office(table.inRSpace)*/);
+                            cellProps.setPropertyValue("TopBorderDistance", 0 /*Transform.translateHwp2Office(table.inUSpace)*/);
+                            cellProps.setPropertyValue("BottomBorderDistance", 0 /*Transform.translateHwp2Office(table.inDSpace)*/);
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
