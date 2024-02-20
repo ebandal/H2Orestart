@@ -723,9 +723,23 @@ public class ConvPara {
 				xStyleProps.setPropertyValue("CharShadowFormat", sf);
 			}
 			//	charShape.borderFillId;							// 글자 테두리/배경 ID(CharShapeBorderFill ID) 참조 값
-
+			
+			// 위 첨자, 아래 첨자 처리
+			if (charShape.superScript) {
+				xStyleProps.setPropertyValue("CharAutoEscapement", true);
+				xStyleProps.setPropertyValue("CharEscapement", (short)14000);
+				xStyleProps.setPropertyValue("CharEscapementHeight", (byte)58);
+			} else if (charShape.subScript) {
+				xStyleProps.setPropertyValue("CharAutoEscapement", true);
+				xStyleProps.setPropertyValue("CharEscapement", (short)-14000);
+				xStyleProps.setPropertyValue("CharEscapementHeight", (byte)58);
+			} else {
+				xStyleProps.setPropertyValue("CharEscapement", (short)0);
+				xStyleProps.setPropertyValue("CharEscapementHeight", (byte)100);
+			}
+			
 			//	https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1CharacterProperties.html
-			//	CharFontName,CharFontStyleName,CharFontFamily,CharFontCharSet,CharFontPitch,CharColor,CharEscapement,CharHeight,CharUnderline,CharWeight,CharPosture,
+			//	CharFontName,CharFontStyleName,CharFontFamily,CharFontCharSet,CharFontPitch,CharColor,CharHeight,CharUnderline,CharWeight,CharPosture,
 			//	CharAutoKerning,CharBackColor,CharShadingValue,CharBackTransparent,CharCaseMap,CharCrossedOut,CharFlash,CharStrikeout,CharWordMode,CharKerning,CharLocale,
 			//	CharKeepTogether,CharNoLineBreak,CharShadowed,CharFontType,CharStyleName,CharContoured,CharCombineIsOn,CharCombinePrefix,CharCombineSuffix,CharEmphasis
 			//	CharRelief,RubyText,RubyAdjust,RubyCharStyleName,RubyIsAbove,CharRotation,CharRotationIsFitToLine,CharScaleWidth,HyperLinkURL,HyperLinkTarget,HyperLinkName
