@@ -23,8 +23,6 @@ package soffice;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -396,33 +394,6 @@ public class WriterContext {
             break;
         }
         return (HwpRecord_TabDef) docInfo.tabDefList.get(id);
-    }
-
-    public static void cleanTempFolder() throws IOException {
-        if (hwp != null) {
-            hwp.removeSaveFolder(Paths.get(System.getProperty("user.home"), ".H2Orestart"));
-        }
-    }
-
-    public static Path getWorkingFolder() {
-        Path path = null;
-        try {
-            path = Files.createDirectories(Paths.get(System.getProperty("user.home"), ".H2Orestart"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return path;
-    }
-
-    public static Path makeTempFile(String fileName) {
-        Path path = null;
-        try {
-            path = Files.createDirectories(Paths.get(System.getProperty("user.home"), ".H2Orestart"));
-            path = Paths.get(path.toString(), fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return path;
     }
 
 }
