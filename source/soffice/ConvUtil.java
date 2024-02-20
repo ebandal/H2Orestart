@@ -365,9 +365,47 @@ public class ConvUtil {
                         value = xInterface==null?"":xInterface.toString();
                     }
                     break;
+                case "com.sun.star.table.TableBorder":
+                    {
+                        com.sun.star.table.TableBorder border = (com.sun.star.table.TableBorder)xPropertySet.getPropertyValue(property.Name);
+                        value = "D=" + border.Distance;
+                        value += ",H=[" + border.HorizontalLine.Color + "," + border.HorizontalLine.InnerLineWidth + "," + border.HorizontalLine.LineDistance + "," + border.HorizontalLine.OuterLineWidth + "]";
+                        value += ",V=[" + border.VerticalLine.Color + "," + border.VerticalLine.InnerLineWidth + "," + border.VerticalLine.LineDistance + "," + border.VerticalLine.OuterLineWidth + "]";
+                        value += ",T=[" + border.TopLine.Color + "," + border.TopLine.InnerLineWidth + "," + border.TopLine.LineDistance + "," + border.TopLine.OuterLineWidth + "]";
+                        value += ",L=["+border.LeftLine.Color+","+border.LeftLine.InnerLineWidth+","+border.LeftLine.LineDistance+","+border.LeftLine.OuterLineWidth+"]";
+                        value += ",R=["+border.RightLine.Color+","+border.RightLine.InnerLineWidth+","+border.RightLine.LineDistance+","+border.RightLine.OuterLineWidth+"]";
+                        value += ",B=[" + border.BottomLine.Color + "," + border.BottomLine.InnerLineWidth + "," + border.BottomLine.LineDistance + "," + border.BottomLine.OuterLineWidth + "]";
+                    }
+                    break;
+                case "com.sun.star.table.TableBorder2":
+                    {
+                        com.sun.star.table.TableBorder2 border = (com.sun.star.table.TableBorder2)xPropertySet.getPropertyValue(property.Name);
+                        value = "D=" + border.Distance;
+                        value += ",H=["+border.HorizontalLine.Color+","+border.HorizontalLine.InnerLineWidth+","+border.HorizontalLine.LineDistance+","+border.HorizontalLine.LineStyle+","+border.HorizontalLine.LineWidth+","+border.HorizontalLine.OuterLineWidth+"]";
+                        value += ",V=["+border.VerticalLine.Color+","+border.VerticalLine.InnerLineWidth+","+border.VerticalLine.LineDistance+","+border.VerticalLine.LineStyle+","+border.VerticalLine.LineWidth+","+border.VerticalLine.OuterLineWidth+"]";
+                        value += ",T=["+border.TopLine.Color+","+border.TopLine.InnerLineWidth+","+border.TopLine.LineDistance+","+border.TopLine.LineStyle+","+border.TopLine.LineWidth+","+border.TopLine.OuterLineWidth+"]";
+                        value += ",L=["+border.LeftLine.Color+","+border.LeftLine.InnerLineWidth+","+border.LeftLine.LineDistance+","+border.LeftLine.LineStyle+","+border.LeftLine.LineWidth+","+border.LeftLine.OuterLineWidth+"]";
+                        value += ",R=["+border.RightLine.Color+","+border.RightLine.InnerLineWidth+","+border.RightLine.LineDistance+","+border.RightLine.LineStyle+","+border.RightLine.LineWidth+","+border.RightLine.OuterLineWidth+"]";
+                        value += ",B=["+border.BottomLine.Color+","+border.BottomLine.InnerLineWidth+","+border.BottomLine.LineDistance+","+border.BottomLine.LineStyle+","+border.BottomLine.LineWidth+","+border.BottomLine.OuterLineWidth+"]";
+                    }
+                    break;
+                case "com.sun.star.table.TableBorderDistances":
+                    {
+                        com.sun.star.table.TableBorderDistances dist = (com.sun.star.table.TableBorderDistances)xPropertySet.getPropertyValue(property.Name);
+                        value = dist.TopDistance + "," + dist.LeftDistance + "," + dist.RightDistance + "," + dist.BottomDistance;
+                    }
+                    break;
+                case "com.sun.star.table.BorderLine":
+                    {
+                        com.sun.star.table.BorderLine borderLine = (com.sun.star.table.BorderLine)xPropertySet.getPropertyValue(property.Name);
+                        value = borderLine.Color + "," + borderLine.InnerLineWidth + "," + borderLine.OuterLineWidth + "," + borderLine.LineDistance;
+                    }
+                    break;
                 case "com.sun.star.container.XIndexReplace":
                 case "com.sun.star.container.XNameContainer":
                 case "com.sun.star.drawing.HomogenMatrix3":
+                case "com.sun.star.util.XComplexColor":
+                case "com.sun.star.text.XTextSection":
                     log.finest("unhandled type = " + property.Type.getTypeName());
                     break;
                 default:
