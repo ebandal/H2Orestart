@@ -1083,6 +1083,7 @@ public class ConvTable {
         childContext.mMCF = wContext.mMCF;
         childContext.mMSF = wContext.mMSF;
         childContext.mMyDocument = wContext.mMyDocument;
+        childContext.userHomeDir = wContext.userHomeDir;
         childContext.mText = cellText;
         childContext.mTextCursor = cellCursor;
 

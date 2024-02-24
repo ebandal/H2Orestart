@@ -419,6 +419,7 @@ public class ConvPage {
             context2.mMCF = wContext.mMCF;
             context2.mMSF = wContext.mMSF;
             context2.mMyDocument = wContext.mMyDocument;
+            context2.userHomeDir = wContext.userHomeDir;
 
             switch (hf.whichPage) {
             case ODD:

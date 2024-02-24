@@ -111,6 +111,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         writerContext = new WriterContext();
         writerContext.mContext = context;
         writerContext.mMCF = writerContext.mContext.getServiceManager();
+        writerContext.userHomeDir = getAppCachePath();
         if (rootLogger==null) {
             cleanTmpFolder();
             initialLogger();
@@ -366,6 +367,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             } else {
                 Files.createDirectories(baseDir);
             }
+            writerContext.userHomeDir = baseDir;
             // "%h" the value of the "user.home" system property
             FileHandler fileHandler = new FileHandler(baseDir.toAbsolutePath() + "/import_%g.log", 4194304, 10, false);
             fileHandler.setLevel(Level.INFO);

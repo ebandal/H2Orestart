@@ -445,6 +445,7 @@ public class ConvGraphics {
             frameContext.mMCF = wContext.mMCF;
             frameContext.mMSF = wContext.mMSF;
             frameContext.mMyDocument = wContext.mMyDocument;
+            frameContext.userHomeDir = wContext.userHomeDir;
             frameContext.mText = xFrameText;
             frameContext.mTextCursor = xFrameCursor;
 
@@ -697,6 +698,7 @@ public class ConvGraphics {
                 innerContext.mMCF = wOuterContext.mMCF;
                 innerContext.mMSF = wOuterContext.mMSF;
                 innerContext.mMyDocument = wOuterContext.mMyDocument;
+                innerContext.userHomeDir = wOuterContext.userHomeDir;
                 innerContext.mText = xInternalFrame.getText();
                 innerContext.mTextCursor = innerContext.mText.createTextCursor();
 
@@ -816,6 +818,7 @@ public class ConvGraphics {
                 innerContext.mMCF = wOuterContext.mMCF;
                 innerContext.mMSF = wOuterContext.mMSF;
                 innerContext.mMyDocument = wOuterContext.mMyDocument;
+                innerContext.userHomeDir = wOuterContext.userHomeDir;
                 innerContext.mText = (XText) UnoRuntime.queryInterface(XText.class, xShape);
                 innerContext.mTextCursor = innerContext.mText.createTextCursor();
 
@@ -1300,6 +1303,7 @@ public class ConvGraphics {
                 context2.mMCF = wContext.mMCF;
                 context2.mMSF = wContext.mMSF;
                 context2.mMyDocument = wContext.mMyDocument;
+                context2.userHomeDir = wContext.userHomeDir;
                 context2.mText = xFrameText;
                 context2.mTextCursor = xFrameCursor;
 
@@ -2723,37 +2727,37 @@ public class ConvGraphics {
 		aHomogenMatrix3.Line3.Column3 = 1;
 		
         AffineTransform prevMatrix = 
-        		new AffineTransform(aHomogenMatrix3.Line1.Column1, aHomogenMatrix3.Line2.Column1,
-        							aHomogenMatrix3.Line1.Column2, aHomogenMatrix3.Line2.Column2,
-        							aHomogenMatrix3.Line1.Column3, aHomogenMatrix3.Line2.Column3);
+                new AffineTransform(aHomogenMatrix3.Line1.Column1, aHomogenMatrix3.Line2.Column1,
+                                    aHomogenMatrix3.Line1.Column2, aHomogenMatrix3.Line2.Column2,
+                                    aHomogenMatrix3.Line1.Column3, aHomogenMatrix3.Line2.Column3);
 
         for (int i = shape.matCnt - 1; i >= 0; i--) {
             // 1. scale matrix
             AffineTransform scaleMatrix = 
-            	new AffineTransform(shape.matrixSeq[i * 12 + 0], shape.matrixSeq[i * 12 + 3],
-            						shape.matrixSeq[i * 12 + 1], shape.matrixSeq[i * 12 + 4],
-            						shape.matrixSeq[i * 12 + 2], shape.matrixSeq[i * 12 + 5]);
+                new AffineTransform(shape.matrixSeq[i * 12 + 0], shape.matrixSeq[i * 12 + 3],
+                                    shape.matrixSeq[i * 12 + 1], shape.matrixSeq[i * 12 + 4],
+                                    shape.matrixSeq[i * 12 + 2], shape.matrixSeq[i * 12 + 5]);
             scaleMatrix.concatenate(prevMatrix);
             // 2. rotation matrix
             AffineTransform rotatMatrix = 
-            	new AffineTransform(shape.matrixSeq[i * 12 + 6], shape.matrixSeq[i * 12 + 9],
-            						shape.matrixSeq[i * 12 + 7], shape.matrixSeq[i * 12 + 10],
-            						shape.matrixSeq[i * 12 + 8], shape.matrixSeq[i * 12 + 11]);
+                new AffineTransform(shape.matrixSeq[i * 12 + 6], shape.matrixSeq[i * 12 + 9],
+                                    shape.matrixSeq[i * 12 + 7], shape.matrixSeq[i * 12 + 10],
+                                    shape.matrixSeq[i * 12 + 8], shape.matrixSeq[i * 12 + 11]);
             rotatMatrix.concatenate(scaleMatrix);
             prevMatrix = rotatMatrix;
         }
         // 3. translation matrix
         AffineTransform translateMatrix = 
-        		new AffineTransform(shape.matrix[0], shape.matrix[3], 
-        							shape.matrix[1], shape.matrix[4],
-        							shape.matrix[2], shape.matrix[5]);
+                new AffineTransform(shape.matrix[0], shape.matrix[3], 
+                                    shape.matrix[1], shape.matrix[4],
+                                    shape.matrix[2], shape.matrix[5]);
         translateMatrix.concatenate(prevMatrix);
 
         // 4. Hwp Unit -> LO Unit
         AffineTransform hwp2LoScale = 
-        		new AffineTransform((double) 21000 / 59529, 0, 
-        							0, (double) 21000 / 59529,
-        							0, 0);
+                new AffineTransform((double) 21000 / 59529, 0, 
+                                    0, (double) 21000 / 59529,
+                                    0, 0);
         hwp2LoScale.concatenate(translateMatrix);
 
         double transformMatrix[] = new double[6];
@@ -2769,79 +2773,82 @@ public class ConvGraphics {
     }
     
     public static void fillGraphic(WriterContext wContext, XPropertySet xPropSet, Fill fill) {
-    	try {
-		    Object graphicProviderObject 
-		    	= wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider",
-		    											  wContext.mContext);
-		    XGraphicProvider xGraphicProvider
-		    	= UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
-		    byte[] imageAsByteArray = wContext.getBinBytes(fill.binItemID);
-		    if (imageAsByteArray != null) {
-		        PropertyValue[] v = new PropertyValue[2];
-		        v[0] = new PropertyValue();
-		        v[0].Name = "InputStream";
-		        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
-		        v[1] = new PropertyValue();
-		        v[1].Name = "MimeType";
-		        String imageFormat = wContext.getBinFormat(fill.binItemID).toLowerCase();
-		        switch (imageFormat) {
-		        case "png":
-		            v[1].Value = "image/png";
-		            break;
-		        case "bmp":
-		            v[1].Value = "image/bmp";
-		            break;
-		        case "wmf":
-		            v[1].Value = "image/x-wmf";
-		            break;
-		        case "jpg":
-		            v[1].Value = "image/jpeg";
-		            break;
-		        case "gif":
-		            v[1].Value = "image/gif";
-		            break;
-		        case "tif":
-		            v[1].Value = "image/tiff";
-		            break;
-		        case "svg":
-		            v[1].Value = "image/svg+xml";
-		            break;
-		        }
-		        XGraphic graphic = xGraphicProvider.queryGraphic(v);
-		        try {
-		            Path path = Files.createTempFile("H2Orestart", "_" + fill.binItemID + "." + imageFormat);
-		            URL url = path.toFile().toURI().toURL();
-		            String urlString = url.toExternalForm();
-		            v[0].Name = "URL";
-		            v[0].Value = urlString;
-		            xGraphicProvider.storeGraphic(graphic, v);
-		
-		            Object bt = wContext.mMSF.createInstance("com.sun.star.drawing.BitmapTable");
-		            XNameContainer bitmapContainer = UnoRuntime.queryInterface(XNameContainer.class, bt);
-		            try {
-		                log.fine("FillBMP" + fill.binItemID + " saved to " + urlString);
-		                bitmapContainer.insertByName("FillBMP" + fill.binItemID, urlString);
-		            } catch (com.sun.star.container.ElementExistException e) {
-		            }
-		            XNameAccess bitmapAccess = (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, bt);
-		            Object ob = null;
-		            xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
-		            /*
-		             * 여러개 FillBitmap 처리시 같은 이미지만 반복됨. 대신 FillBitmapName을 사용하도록 함 try { ob =
-		             * bitmapAccess.getByName("FillBMP"+String.valueOf(fill.binItem)); XBitmap
-		             * xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
-		             * xPropSet.setPropertyValue("FillBitmap", xBitmap); } catch
-		             * (com.sun.star.container.NoSuchElementException e) { }
-		             */
-		            xPropSet.setPropertyValue("FillBitmapName", "FillBMP" + fill.binItemID);
-		            xPropSet.setPropertyValue("FillBitmapMode", BitmapMode.STRETCH);
-		            Files.delete(path);
-		        } catch (IOException | Exception e) {
-		        }
-		    }
-    	} catch (IllegalArgumentException | Exception e) {
+        try {
+            Object graphicProviderObject 
+                = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider",
+                                                          wContext.mContext);
+            XGraphicProvider xGraphicProvider
+                = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
+            byte[] imageAsByteArray = wContext.getBinBytes(fill.binItemID);
+            if (imageAsByteArray != null) {
+                PropertyValue[] v = new PropertyValue[2];
+                v[0] = new PropertyValue();
+                v[0].Name = "InputStream";
+                v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+                v[1] = new PropertyValue();
+                v[1].Name = "MimeType";
+                String imageFormat = wContext.getBinFormat(fill.binItemID).toLowerCase();
+                switch (imageFormat) {
+                case "png":
+                    v[1].Value = "image/png";
+                    break;
+                case "bmp":
+                    v[1].Value = "image/bmp";
+                    break;
+                case "wmf":
+                    v[1].Value = "image/x-wmf";
+                    break;
+                case "jpg":
+                    v[1].Value = "image/jpeg";
+                    break;
+                case "gif":
+                    v[1].Value = "image/gif";
+                    break;
+                case "tif":
+                    v[1].Value = "image/tiff";
+                    break;
+                case "svg":
+                    v[1].Value = "image/svg+xml";
+                    break;
+                }
+                XGraphic graphic = xGraphicProvider.queryGraphic(v);
+                try {
+                    Path homeDir = wContext.userHomeDir;
+                    Path path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + fill.binItemID + "." + imageFormat);
+                    URL url = path.toFile().toURI().toURL();
+                    String urlString = url.toExternalForm();
+                    v[0].Name = "URL";
+                    v[0].Value = urlString;
+                    xGraphicProvider.storeGraphic(graphic, v);
+
+                    Object bt = wContext.mMSF.createInstance("com.sun.star.drawing.BitmapTable");
+                    XNameContainer bitmapContainer = UnoRuntime.queryInterface(XNameContainer.class, bt);
+                    try {
+                        log.fine("FillBMP" + fill.binItemID + " saved to " + urlString);
+                        bitmapContainer.insertByName("FillBMP" + fill.binItemID, urlString);
+                    } catch (com.sun.star.container.ElementExistException e) {
+                    }
+                    XNameAccess bitmapAccess = (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, bt);
+                    Object ob = null;
+                    xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.BITMAP);
+                    /*
+                     * 여러개 FillBitmap 처리시 같은 이미지만 반복됨. 대신 FillBitmapName을 사용하도록 함 
+                     * try {
+                     *    ob =bitmapAccess.getByName("FillBMP"+String.valueOf(fill.binItem));
+                     *    XBitmap xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
+                     *    xPropSet.setPropertyValue("FillBitmap", xBitmap);
+                     * } catch (com.sun.star.container.NoSuchElementException e) {
+                     * }
+                     */
+                    xPropSet.setPropertyValue("FillBitmapName", "FillBMP" + fill.binItemID);
+                    xPropSet.setPropertyValue("FillBitmapMode", BitmapMode.STRETCH);
+                    Files.delete(path);
+                } catch (IOException | Exception e) {
+                }
+            }
+        } catch (IllegalArgumentException | Exception e) {
             e.printStackTrace();
-    	}
+        }
     }
 
 }

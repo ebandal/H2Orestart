@@ -77,6 +77,7 @@ public class ConvFootnote {
             context2.mMCF = wContext.mMCF;
             context2.mMSF = wContext.mMSF;
             context2.mMyDocument = wContext.mMyDocument;
+            context2.userHomeDir = wContext.userHomeDir;
             context2.mText = xSimple;
             context2.mTextCursor = xRange;
 

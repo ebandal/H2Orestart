@@ -23,6 +23,7 @@ package soffice;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -76,6 +77,7 @@ public class WriterContext {
     public XTextDocument mMyDocument = null;
     public XText mText = null;
     public XTextCursor mTextCursor = null;
+    public Path userHomeDir = null;
 
     public WriterContext() {
     }
