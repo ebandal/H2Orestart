@@ -622,8 +622,8 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = shape.width == 0 ? shape.curWidth : shape.width;
-                sizeHeight = shape.height == 0 ? shape.curHeight : shape.height;
+                sizeWidth = shape.curWidth == 0 ? shape.width : shape.curWidth;
+                sizeHeight = shape.curHeight == 0 ? shape.height : shape.curHeight;
                 if (shape.rotat != 0) {
                     Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                     Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -738,7 +738,7 @@ public class ConvGraphics {
     }
 
     private static void insertRECTANGLE(WriterContext wOuterContext, Ctrl_GeneralShape shape, 
-    									int step, int shapeWidth, int shapeHeight) {
+                                        int step, int shapeWidth, int shapeHeight) {
         try {
             Object xObj = wOuterContext.mMSF.createInstance("com.sun.star.drawing.RectangleShape");
 
