@@ -64,7 +64,7 @@ public class HwpRecurs {
         if (step<=1 && oldParaShapeID!=para.paraShapeID) {
             ConvPara.setDefaultParaStyle(wContext);
         }
-        
+
         if (para.breakType > 0) {
             if ((para.breakType&0x01)==0x01) { // 구역나누기
                 ConvPage.makeNextPage(wContext);
@@ -78,7 +78,7 @@ public class HwpRecurs {
                 ConvPage.makeNextColumn(wContext);
             }
         }
-        
+
         if (para.p==null) {
             if (callback==null || callback.onParaBreak()==false) {
                 beforeParaBreak(wContext, para.paraShapeID, oldCharShapeID, false, step);
@@ -86,7 +86,7 @@ public class HwpRecurs {
             }
             return;
         }
-        
+
         // Start of [Overcome Table discrepancy]
         // HWP table과  LibreOffice table 표현 방법이 다름을 극복하기 위한 방법
         // 다른 공통개체(그림으로 표시하는 개체)가 현재 문단내에 존재하는지 갯수를 가져온다.  단, 문자로 취급하지 않는 개체만 카운트한다.
@@ -98,6 +98,10 @@ public class HwpRecurs {
                                             .map(t -> t.text.replaceAll(PATTERN_STRING, "")).collect(Collectors.joining());
         boolean oweParaBreak = false;
         // End of [Overcome Table discrepancy]
+        
+        // Start of [Overcome COLD > SECD order]
+        boolean secdDone = false;
+        // End of [Overcome COLD > SECD order]
         
         boolean append = false;
 
@@ -143,9 +147,20 @@ public class HwpRecurs {
                 }
                 break;
             case "dces":
-                ConvPage.setupPage(wContext, ((Ctrl_SectionDef)ctrl).page);
+                if (secdDone==false) {
+                    ConvPage.setupPage(wContext, ((Ctrl_SectionDef)ctrl).page);
+                    secdDone = true;
+                }
                 break;
             case "dloc":
+                if (secdDone == false) {
+                    Ctrl_SectionDef ctrlSecd = para.p.stream().filter(c -> (c instanceof Ctrl_SectionDef))
+                                                    .map(c -> (Ctrl_SectionDef)c).findAny().orElse(null);
+                    if (ctrlSecd!=null) {
+                        ConvPage.setupPage(wContext, ctrlSecd.page);
+                        secdDone = true;
+                    }
+                }
                 ConvPage.setColumn(wContext, (Ctrl_ColumnDef)ctrl);
                 break;
             case "daeh":    // 머리말
@@ -212,7 +227,7 @@ public class HwpRecurs {
                 Ctrl_NewNumber newNumber = (Ctrl_NewNumber) ctrl;
                 break;
             case " osg":    // GeneralShapeObject
-            case "cip$":    // 그림       ShapePic obj = new ShapePic(shape);
+            case "cip$":    // 그림
             case "cer$":    // 사각형
             case "cra$":    // 호
             case "elo$":    // OLE
@@ -288,7 +303,7 @@ public class HwpRecurs {
                                         boolean append, int step) {
         HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
         HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);
-        
+
         beforeParaBreak(wContext, paraShape, charShape, append, false, step);
     }
 
@@ -298,28 +313,28 @@ public class HwpRecurs {
 
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         if (paraCursor!=null) {
-	        paraCursor.gotoEnd(false);
-	        XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
-	        try {
-	            if (append==false) {    // Paragraph의 첫content이면, Property 설정한다. 
-	                if (ignoreNumbering==false) {
-	                    if (paraShape!=null) {
-	                        ConvPara.setNumberingProperties(paraProps, paraShape);
-	                    }
-	                }
-	            }
-	        
-	            if (paraShape!=null) {
-	                ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARABREAK_SPACING);
-	            }
-	        
-	            if (charShape!=null) {
-	                ConvPara.setCharacterProperties(paraProps, charShape, step);
-	            }
-	        
-	        } catch (Exception e) {
-	            e.printStackTrace();
-	        }
+            paraCursor.gotoEnd(false);
+            XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
+            try {
+                if (append==false) {    // Paragraph의 첫content이면, Property 설정한다. 
+                    if (ignoreNumbering==false) {
+                        if (paraShape!=null) {
+                            ConvPara.setNumberingProperties(paraProps, paraShape);
+                        }
+                    }
+                }
+
+                if (paraShape!=null) {
+                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARABREAK_SPACING);
+                }
+
+                if (charShape!=null) {
+                    ConvPara.setCharacterProperties(paraProps, charShape, step);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
     
@@ -338,7 +353,7 @@ public class HwpRecurs {
                                         String paraStyleName, HwpRecord_Style paraStyle, 
                                         HwpRecord_ParaShape paraShape, HwpRecord_CharShape charShape, 
                                         boolean append, boolean ignoreNumbering, int step) {
-        
+
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         if (paraCursor != null) {
             paraCursor.gotoEnd(false);
@@ -348,7 +363,7 @@ public class HwpRecurs {
                     if (paraStyleName!=null && !paraStyleName.isEmpty()) {
                         paraProps.setPropertyValue("ParaStyleName", paraStyleName);
                     }
-                    
+
                     if (ignoreNumbering==false) {
                         if (paraShape!=null) {
                             ConvPara.setNumberingProperties(paraProps, paraShape);
@@ -359,11 +374,11 @@ public class HwpRecurs {
                         }
                     }
                 }
-                
+
                 if (paraShape!=null) {
                     ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
                 }
-                
+
                 if (charShape!=null) {
                     ConvPara.setCharacterProperties(paraProps, charShape, step);
                 }
@@ -372,7 +387,7 @@ public class HwpRecurs {
                 e.printStackTrace();
             }
         }
-        
+
         log.finest("Text=" + content);
         wContext.mText.insertString(wContext.mTextCursor, content, false);
     }
@@ -401,15 +416,15 @@ public class HwpRecurs {
             if (paraShape!=null) {
                 ConvPara.setDrawingParagraphProperties(xTextPropSet, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
             }
-            
+
             if (charShape!=null) {
                 ConvPara.setDrawingCharacterProperties(xTextPropSet, charShape, step);
             }
-            
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         log.finest("Text=" + content);
         wContext.mText.insertString(wContext.mTextCursor, content, false);
     }
