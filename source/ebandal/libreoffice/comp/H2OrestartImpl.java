@@ -35,6 +35,7 @@ import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.Exception.OwpmlParseException;
 import HwpDoc.HwpElement.HwpRecord_Bullet;
+import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_Numbering;
 import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.paragraph.Ctrl_SectionDef;
@@ -300,6 +301,10 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
             List<HwpSection> sections = writerContext.getSections();
 
             ConvPage.adjustFontIfNotExists(writerContext);    // 별 효과 없음.  차라리 미리 font 들을  OS에 설치하는 게 좋겠음.
+            for (int i=0; i < writerContext.getDocInfo().charShapeList.size(); i++) {
+                // Bullet ID는 1부터 시작한다.
+                ConvPara.makeCustomCharacterStyle(writerContext, i+1, (HwpRecord_CharShape)writerContext.getDocInfo().charShapeList.get(i));
+            }
             for (int i=0; i < writerContext.getDocInfo().bulletList.size(); i++) {
                 // Bullet ID는 1부터 시작한다.
                 ConvNumbering.makeCustomBulletStyle(writerContext, i+1, (HwpRecord_Bullet)writerContext.getDocInfo().bulletList.get(i));

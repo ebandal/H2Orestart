@@ -106,6 +106,7 @@ public class ConvNumbering {
         long listtabStopPosition = -1;
         long firstLineIndent = -1;
         long indentAt = -1;
+        int charShapeId;
         
         // Hwp에서 수준(level)은 7개+확장3개,  LibreOffice에서 level은  10개이다.
         if (i<7) {
@@ -125,7 +126,8 @@ public class ConvNumbering {
                 suffix = getSuffix(numb.numFormat);
                 listFormat = getNumberFormat(numb.numFormat);
                 numberingType = getNumberingType(numb.numFormat, i);
-                // charStyleName = WriterContext.getCharShape((short)numb.charShape).fontName[0];
+                charShapeId = numb.charShape+1;
+                charStyleName = ConvPara.getCharStyleName(charShapeId);
                 if (numb.textOffsetType==0x1) {         // 절대값 거리
                     indentAt = Transform.translateHwp2Office(numb.textOffset);
                     listtabStopPosition = indentAt/2;
@@ -169,7 +171,7 @@ public class ConvNumbering {
                 aProps[j].Value = suffix;
                 break;
             case "CharStyleName":
-                if (charStyleName.equals("")==false) {
+                if (charStyleName!=null && charStyleName.equals("")==false) {
                     aProps[j].Value = charStyleName;
                 }
                 break;
