@@ -175,8 +175,9 @@ public class ConvGraphics {
                 xFrameCursor = xFrameText.createTextCursor();
             }
 
-            int sizeWidth = shapeWidth <= 0 ? pic.width : shapeWidth;
-            int sizeHeight = shapeHeight <= 0 ? pic.height : shapeHeight;
+            /* transform을 거치지 않는 TextGrapicObject는 curWidth curHeight 로 크기 설정 */
+            int sizeWidth = shapeWidth <= 0 ? pic.curWidth : shapeWidth;
+            int sizeHeight = shapeHeight <= 0 ? pic.curHeight : shapeHeight;
 
             // 그림그리기
             Object textGraphicObject = wContext.mMSF.createInstance("com.sun.star.text.TextGraphicObject");
