@@ -143,6 +143,9 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                 break;
             case "hp:effects":      // 이미지 효과 정보
                 {
+                    if (picEffect==null) {
+                        picEffect = new ArrayList<>();
+                    }
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
