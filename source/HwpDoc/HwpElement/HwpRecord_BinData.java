@@ -31,96 +31,96 @@ import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 
 public class HwpRecord_BinData extends HwpRecord {
-	private static final Logger log = Logger.getLogger(HwpRecord_BinData.class.getName());
+    private static final Logger log = Logger.getLogger(HwpRecord_BinData.class.getName());
 
-	public Type	  		type;
-	public Compressed	compressed;
-	public State  		state;
-	
-	public String aPath;		// Type이 "LINK"일때, 연결 파일의 절대 경로
-	// public String rPath;		// Type이 "LINK"일때, 연결 파일의 상대 경로
-	public short  binDataID;	// Type이 "EMBEDDING"이거나 "STORAGE"일때, BINDATASTORAGE에 저장된 바이너리 데이터의 아이디
-	public String format;		// Type이 "EMBEDDING"일때, extension("."제외)
+    public Type type;
+    public Compressed compressed;
+    public State state;
 
-	public String itemId;        // hwpx에서는 itemId가 String
-    
-	
-	HwpRecord_BinData(int tagNum, int level, int size) {
-		super(tagNum, level, size);
-	}
-	
-	public HwpRecord_BinData(HwpDocInfo docInfo, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
-		this(tagNum, level, size);
+    public String aPath;        // Type이 "LINK"일때, 연결 파일의 절대 경로
+    // public String rPath;     // Type이 "LINK"일때, 연결 파일의 상대 경로
+    public short binDataID;     // Type이 "EMBEDDING"이거나 "STORAGE"일때, BINDATASTORAGE에 저장된 바이너리 데이터의 아이디
+    public String format;       // Type이 "EMBEDDING"일때, extension("."제외)
 
-		if (docInfo.hanType == HanType.HWP) {
-    		if (docInfo.getParentHwp().getBinData()==null) {
-    		    docInfo.getParentHwp().setBinData(docInfo.getParentHwp().getOleFile().getChildEntries("BinData"));
-    		}
-		}
-		
-		int offset = off;
-		short typeBits = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
-		offset += 2;
-		type = Type.from(typeBits&0x0F);
-		compressed = Compressed.from(typeBits&0x30);
-		state = State.from(typeBits&0x300);
+    public String itemId;       // hwpx에서는 itemId가 String
 
-		int pathLen1 = 0, pathLen2 = 0;
-		if (type==Type.LINK) {
-			pathLen1 = (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2;
-			offset += 2;
-			if (pathLen1 > 0) {
-				aPath = new String(buf, offset, pathLen1, StandardCharsets.UTF_16LE);
-				offset += pathLen1;
-				log.finest("                                                  " + aPath + "(AbsoluteLink)");
-			}
-			pathLen2 = (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2;
-			offset += 2;
-			if (pathLen2 > 0) {
-				// rPath = new String(buf, offset, pathLen2, StandardCharsets.UTF_16LE);
-				offset += pathLen2;
-				// log.fine("                                                  " + rPath + "(RelativeLink)");
-			}
-		}
-		if (type==Type.EMBEDDING || type==Type.STORAGE) {
-			binDataID = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
-			offset += 2;
-		    // aPath = docInfo.getParentHwp().getBinData().get(binDataID-1).getDirectoryEntryName().trim();
-			itemId = String.valueOf(binDataID);
-		}
-		if (type==Type.EMBEDDING || type==Type.STORAGE) {
-			int extLen = (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2;
-			offset += 2;
-			if (extLen > 0) {
-				format = new String(buf, offset, extLen, StandardCharsets.UTF_16LE);
-				offset += extLen;
-			}
-			aPath = String.format("BIN%04X.%s", binDataID, format);
-			log.fine("                                                  "
-					+"ID="+binDataID+"("+aPath+")");
-		}
-		
-		if (offset-off-size!=0) {
-			throw new HwpParseException();
-		}
-	}
-	
-	public HwpRecord_BinData(Node node, int version) {
+    HwpRecord_BinData(int tagNum, int level, int size) {
+        super(tagNum, level, size);
+    }
+
+    public HwpRecord_BinData(HwpDocInfo docInfo, int tagNum, int level, int size, byte[] buf, int off, int version)
+            throws HwpParseException {
+        this(tagNum, level, size);
+
+        if (docInfo.hanType == HanType.HWP) {
+            if (docInfo.getParentHwp().getBinData() == null) {
+                docInfo.getParentHwp().setBinData(docInfo.getParentHwp().getOleFile().getChildEntries("BinData"));
+            }
+        }
+
+        int offset = off;
+        short typeBits = (short) (buf[offset + 1] << 8 & 0xFF00 | buf[offset] & 0x00FF);
+        offset += 2;
+        type = Type.from(typeBits & 0x0F);
+        compressed = Compressed.from(typeBits & 0x30);
+        state = State.from(typeBits & 0x300);
+
+        int pathLen1 = 0, pathLen2 = 0;
+        if (type == Type.LINK) {
+            pathLen1 = (buf[offset + 1] << 8 & 0xFF00 | buf[offset] & 0x00FF) * 2;
+            offset += 2;
+            if (pathLen1 > 0) {
+                aPath = new String(buf, offset, pathLen1, StandardCharsets.UTF_16LE);
+                offset += pathLen1;
+                log.finest("                                                  " + aPath + "(AbsoluteLink)");
+            }
+            pathLen2 = (buf[offset + 1] << 8 & 0xFF00 | buf[offset] & 0x00FF) * 2;
+            offset += 2;
+            if (pathLen2 > 0) {
+                // rPath = new String(buf, offset, pathLen2, StandardCharsets.UTF_16LE);
+                offset += pathLen2;
+                // log.fine(" " + rPath + "(RelativeLink)");
+            }
+        }
+        if (type == Type.EMBEDDING || type == Type.STORAGE) {
+            binDataID = (short) (buf[offset + 1] << 8 & 0xFF00 | buf[offset] & 0x00FF);
+            offset += 2;
+            // aPath =
+            // docInfo.getParentHwp().getBinData().get(binDataID-1).getDirectoryEntryName().trim();
+            itemId = String.valueOf(binDataID);
+        }
+        if (type == Type.EMBEDDING || type == Type.STORAGE) {
+            int extLen = (buf[offset + 1] << 8 & 0xFF00 | buf[offset] & 0x00FF) * 2;
+            offset += 2;
+            if (extLen > 0) {
+                format = new String(buf, offset, extLen, StandardCharsets.UTF_16LE);
+                offset += extLen;
+            }
+            aPath = String.format("BIN%04X.%s", binDataID, format);
+            log.fine("                                                  " + "ID=" + binDataID + "(" + aPath + ")");
+        }
+
+        if (offset - off - size != 0) {
+            throw new HwpParseException();
+        }
+    }
+
+    public HwpRecord_BinData(Node node, int version) {
         super(HwpTag.HWPTAG_BIN_DATA, 0, 0);
 
         NamedNodeMap attributes = node.getAttributes();
 
         itemId = attributes.getNamedItem("id").getNodeValue();
-        
+
         Node tempNode = attributes.getNamedItem("isEmbeded");
-        if (tempNode!=null) {
-            switch(tempNode.getNodeValue()) {
+        if (tempNode != null) {
+            switch (tempNode.getNodeValue()) {
             case "0":
                 type = Type.LINK;
-                if (attributes.getNamedItem("sub-path")!=null) {
-                	aPath = attributes.getNamedItem("sub-path").getNodeValue();
+                if (attributes.getNamedItem("sub-path") != null) {
+                    aPath = attributes.getNamedItem("sub-path").getNodeValue();
                 }
-                if (aPath==null) {
+                if (aPath == null) {
                     aPath = attributes.getNamedItem("href").getNodeValue();
                 }
                 break;
@@ -132,70 +132,72 @@ public class HwpRecord_BinData extends HwpRecord {
         } else {
             aPath = attributes.getNamedItem("href").getNodeValue();
         }
-        
+
         format = attributes.getNamedItem("media-type").getNodeValue();
-        format = format.replaceAll("image/(jpg)", "$1");
+        if (format.matches("image/(.*)")) {
+            format = format.replaceAll("image/(.*)", "$1");
+        }
     }
-	
-	public static enum Type {
-		LINK		(0),
-		EMBEDDING	(1),
-		STORAGE		(2);
 
-		private int type;
-		
-	    private Type(int type) { 
-	    	this.type = type;
-	    }
+    public static enum Type {
+        LINK        (0),
+        EMBEDDING   (1),
+        STORAGE     (2);
 
-	    public static Type from(int type) {
-	    	for (Type typeNum: values()) {
-	    		if (typeNum.type == type)
-	    			return typeNum;
-	    	}
-	    	return null;
-	    }
-	}
+        private int type;
 
-	public static enum Compressed {
-		FOLLOW_STORAGE	(0x00),
-		COMPRESS		(0x10),
-		NO_COMPRESS		(0x20);
-		
-		private int comp;
-		
-	    private Compressed(int comp) { 
-	    	this.comp = comp;
-	    }
+        private Type(int type) {
+            this.type = type;
+        }
 
-	    public static Compressed from(int comp) {
-	    	for (Compressed compNum: values()) {
-	    		if (compNum.comp == comp)
-	    			return compNum;
-	    	}
-	    	return null;
-	    }
-	}
+        public static Type from(int type) {
+            for (Type typeNum : values()) {
+                if (typeNum.type == type)
+                    return typeNum;
+            }
+            return null;
+        }
+    }
 
-	public static enum State {
-		NEVER_ACCESSED		(0x000),
-		FOUND_FILE_BY_ACCESS(0x100),
-		ACCESS_FAILED		(0x200),
-		LINK_ACCESS_IGNORED (0x400);
-		
-		private int state;
-		
-	    private State(int state) { 
-	    	this.state = state;
-	    }
+    public static enum Compressed {
+        FOLLOW_STORAGE  (0x00),
+        COMPRESS        (0x10),
+        NO_COMPRESS     (0x20);
 
-	    public static State from(int state) {
-	    	for (State stateNum: values()) {
-	    		if (stateNum.state == state)
-	    			return stateNum;
-	    	}
-	    	return null;
-	    }
-	}
+        private int comp;
+
+        private Compressed(int comp) {
+            this.comp = comp;
+        }
+
+        public static Compressed from(int comp) {
+            for (Compressed compNum : values()) {
+                if (compNum.comp == comp)
+                    return compNum;
+            }
+            return null;
+        }
+    }
+
+    public static enum State {
+        NEVER_ACCESSED      (0x000),
+        FOUND_FILE_BY_ACCESS(0x100),
+        ACCESS_FAILED       (0x200),
+        LINK_ACCESS_IGNORED (0x400);
+
+        private int state;
+
+        private State(int state) {
+            this.state = state;
+        }
+
+        public static State from(int state) {
+            for (State stateNum : values()) {
+                if (stateNum.state == state)
+                    return stateNum;
+            }
+            return null;
+        }
+    }
 
 }
