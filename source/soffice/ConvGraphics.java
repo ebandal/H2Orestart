@@ -22,6 +22,8 @@ package soffice;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -31,6 +33,9 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import javax.imageio.ImageIO;
+
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -78,7 +83,6 @@ import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
-import HwpDoc.HwpElement.HwpRecord_BorderFill.ColorFillPattern;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.ImageFillType;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
@@ -235,9 +239,67 @@ public class ConvGraphics {
             if (graphic == null) {
                 log.severe("Error loading the image");
             } else {
+                if (pic.cropLeft>0 || pic.cropRight>0 || pic.cropTop>0 || pic.cropBottom>0) {
+                    /* 이미지 원본이 페이지보다 크면  원본이미지가 아닌 페이지크기에서 crop하므로 원하는 그림을 가져오지 못한다.
+                    GraphicCrop crop = new GraphicCrop();
+                    crop.Left   = Transform.translateHwp2Office(pic.cropLeft);
+                    crop.Right  = Transform.translateHwp2Office(pic.iniPicWidth-pic.cropRight);
+                    crop.Top    = Transform.translateHwp2Office(pic.cropTop);
+                    crop.Bottom = Transform.translateHwp2Office(pic.iniPicHeight-pic.cropBottom);
+                    xPropSet.setPropertyValue("GraphicCrop", crop);
+                    */
+                    try {
+                        PropertyValue[] pv = new PropertyValue[2];
+                        Path homeDir = wContext.userHomeDir;
+                        Path path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + pic.binDataID + ".png");
+                        URL url = path.toFile().toURI().toURL();
+                        String urlString = url.toExternalForm();
+                        pv[0] = new PropertyValue();
+                        pv[0].Name = "URL";
+                        pv[0].Value = urlString;
+                        pv[1] = new PropertyValue();
+                        pv[1].Name = "MimeType";
+                        pv[1].Value = "image/png";
+                        xGraphicProvider.storeGraphic(graphic, pv);
+                        
+                        BufferedImage originalImage = ImageIO.read(path.toFile());
+                        Files.delete(path);
+                        
+                        int orgWidth = pic.iniPicWidth==0 ? pic.iniWidth : pic.iniPicWidth;
+                        int imgWidth = originalImage.getWidth();
+                        int imgHeight = originalImage.getHeight();
+                        float hwp2pixelRatio = (float)imgWidth / orgWidth;
+                        int cropLeftPixel = (int)(pic.cropLeft*hwp2pixelRatio);
+                        int cropTopPixel = (int)(pic.cropTop*hwp2pixelRatio);
+                        int cropWidthPixel = (int)((pic.cropRight-pic.cropLeft)*hwp2pixelRatio);
+                        int cropHeightPixel = (int)((pic.cropBottom-pic.cropTop)*hwp2pixelRatio);
+                        int subLeft = cropLeftPixel>imgWidth ? 0 : cropLeftPixel;
+                        int subTop = cropTopPixel>imgHeight ? 0 : cropTopPixel;
+                        int subWidth = cropWidthPixel-subLeft > imgWidth ? imgWidth-subLeft : cropWidthPixel;
+                        int subHeight = cropHeightPixel-subTop > imgHeight ? imgHeight-subTop : cropHeightPixel;
+                        BufferedImage subImgage = originalImage.getSubimage(subLeft,
+                                                                            subTop,
+                                                                            subWidth,
+                                                                            subHeight);
+                        
+                        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                            ImageIO.write(subImgage, "png", baos);
+                            imageAsByteArray = baos.toByteArray();
+                            imageType = "png";
+                            pv[0] = new PropertyValue();
+                            pv[0].Name = "InputStream";
+                            pv[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+                            pv[1] = new PropertyValue();
+                            pv[1].Name = "MimeType";
+                            pv[1].Value = "image/png";
+                            graphic = xGraphicProvider.queryGraphic(pv);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
                 xPropSet.setPropertyValue("Graphic", graphic);
             }
-            // image ByteArray로 그림 그리기
 
             if (hasCaption) {
                 try {
@@ -253,8 +315,9 @@ public class ConvGraphics {
             } else {
                 double xScale = pic.matrixSeq == null ? 1.0 : pic.matrixSeq[0];
                 double yScale = pic.matrixSeq == null ? 1.0 : pic.matrixSeq[4];
-                setPosition(xPropSet, pic, (int) (pic.nGrp > 0 ? pic.xGrpOffset * xScale : 0),
-                        (int) (pic.nGrp > 0 ? pic.yGrpOffset * yScale : 0));
+                setPosition(xPropSet, pic,
+                            (int) (pic.nGrp>0 ? (pic.vertRelTo==null?0:pic.xGrpOffset*xScale) : 0),
+                            (int) (pic.nGrp>0 ? (pic.horzRelTo==null?0:pic.yGrpOffset*yScale) : 0));
             }
             setWrapStyle(xPropSet, pic);
 
@@ -2719,14 +2782,14 @@ public class ConvGraphics {
 
     public static void transform(XPropertySet xPropsSet, Ctrl_GeneralShape shape)
             throws UnknownPropertyException, WrappedTargetException, IllegalArgumentException, PropertyVetoException {
-    	// transform 방식 변경 (2024.01.28)
+        // transform 방식 변경 (2024.01.28)
         // 화면에 크기(0,0)로 그린 후, getProperty하지 않고, transformation값 연산, 이후 setProperty로 설정
         // HomogenMatrix3 aHomogenMatrix3 = (HomogenMatrix3) xPropsSet.getPropertyValue("Transformation");
         HomogenMatrix3 aHomogenMatrix3 = new HomogenMatrix3();
         aHomogenMatrix3.Line1.Column1 = shape.iniWidth;
-		aHomogenMatrix3.Line2.Column2 = shape.iniHeight;
-		aHomogenMatrix3.Line3.Column3 = 1;
-		
+        aHomogenMatrix3.Line2.Column2 = shape.iniHeight;
+        aHomogenMatrix3.Line3.Column3 = 1;
+
         AffineTransform prevMatrix = 
                 new AffineTransform(aHomogenMatrix3.Line1.Column1, aHomogenMatrix3.Line2.Column1,
                                     aHomogenMatrix3.Line1.Column2, aHomogenMatrix3.Line2.Column2,
