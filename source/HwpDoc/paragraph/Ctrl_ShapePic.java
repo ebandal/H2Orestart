@@ -236,6 +236,13 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             case "hp:renderingInfo":
                 break;
             case "hp:imgDim":
+                {
+                    NamedNodeMap childAttrs = child.getAttributes();
+                    numStr = childAttrs.getNamedItem("dimwidth").getNodeValue();   // 원본 그림의 너비
+                    iniPicWidth = Integer.parseInt(numStr);
+                    numStr = childAttrs.getNamedItem("dimheight").getNodeValue();  // 원본 그림의 높이
+                    iniPicHeight = Integer.parseInt(numStr);
+                }
                 break;
             case "hp:sz":
                 break;
