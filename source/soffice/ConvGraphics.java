@@ -275,8 +275,8 @@ public class ConvGraphics {
                         int cropHeightPixel = (int)((pic.cropBottom-pic.cropTop)*hwp2pixelRatio);
                         int subLeft = cropLeftPixel>imgWidth ? 0 : cropLeftPixel;
                         int subTop = cropTopPixel>imgHeight ? 0 : cropTopPixel;
-                        int subWidth = cropWidthPixel-subLeft > imgWidth ? imgWidth-subLeft : cropWidthPixel;
-                        int subHeight = cropHeightPixel-subTop > imgHeight ? imgHeight-subTop : cropHeightPixel;
+                        int subWidth = Math.min(cropWidthPixel, imgWidth-subLeft);
+                        int subHeight = Math.min(cropHeightPixel, imgHeight-subTop);
                         BufferedImage subImgage = originalImage.getSubimage(subLeft,
                                                                             subTop,
                                                                             subWidth,
