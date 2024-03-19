@@ -340,9 +340,6 @@ public class ConvPara {
                         break;
                     }
                     switch(tab.leader) {
-                    case NONE:
-                        tss[i].FillChar = 32;
-                        break;
                     case SOLID:
                     case DASH:
                     case DOT:
@@ -355,7 +352,7 @@ public class ConvPara {
                         tss[i].FillChar = 45;
                         break;
                     }
-                    tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 150)*100;	// 15cm
+                    tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 145)*100;	// 15cm
                 }
             } else {
                 if ((tabDef.attr&0x2)==0x2) {       // 문단 오른쪽 끝 자동 탭
@@ -516,9 +513,6 @@ public class ConvPara {
                         break;
                     }
                     switch(tab.leader) {
-                    case NONE:
-                        tss[i].FillChar = 32;
-                        break;
                     case SOLID:
                     case DASH:
                     case DOT:
