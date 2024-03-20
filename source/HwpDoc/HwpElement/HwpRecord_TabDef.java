@@ -30,71 +30,71 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineStyle1;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 
 public class HwpRecord_TabDef extends HwpRecord {
-	private static final Logger log = Logger.getLogger(HwpRecord_TabDef.class.getName());
-	private HwpDocInfo	parent;
-	
-	public int 	 		attr;
-	public int 			count;
-	public List<Tab>	tabs;
-	
-	HwpRecord_TabDef(int tagNum, int level, int size) {
-		super(tagNum, level, size);
-	}
-	
-	public HwpRecord_TabDef(HwpDocInfo docInfo, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
-		this(tagNum, level, size);
-		this.parent = docInfo;
+    private static final Logger log = Logger.getLogger(HwpRecord_TabDef.class.getName());
+    private HwpDocInfo  parent;
 
-		int offset = off;
-		attr = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-		offset += 4;
-		count = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-		offset += 4;          
+    public int          attr;
+    public int          count;
+    public List<Tab>    tabs;
 
-		if (size-(offset-off)!=count*8) {
-			throw new HwpParseException();
-		}
-		tabs = new ArrayList<Tab>();
+    HwpRecord_TabDef(int tagNum, int level, int size) {
+        super(tagNum, level, size);
+    }
 
-		for (int i=0; i<count; i++) {
-			// LibreOffice에서는 ParaTabStops 로 정의하며, 아래와 같은 형식을 가진다. 필요한 경우 활용하자. 
-	  		// com.sun.star.style.TabStop[] tss = new com.sun.star.style.TabStop[1];
-	  		// tss[0] = new com.sun.star.style.TabStop();
-			// tss[0].Position = 1251;
-			// tss[0].Alignment = TabAlign.DEFAULT;
-			// tss[0].DecimalChar = 46; // .
-			// tss[0].FillChar = 32; // Space
-			// paraProps.setPropertyValue("ParaTabStops", tss);
-			
-			Tab tab = new Tab();
-			tab.pos		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-			offset += 4;
-			tab.type 	= Tab.Type.from(buf[offset++]);
-			tab.leader	= LineStyle1.from(buf[offset++]);
-			// reserved 2 bytes for align
-			offset += 2;
-			tabs.add(tab);
-		}
-		
-		log.fine("                                                  "
-				+"ID="+(parent.tabDefList.size())
-				+",갯수="+count
-				+",속성="+String.format("0x%X", attr)
-				+(count>0?",탭[0]="+tabs.get(0).pos+":"+tabs.get(0).type.toString()+":"+tabs.get(0).leader:"")
-				+(count>1?",탭[1]="+tabs.get(1).pos+":"+tabs.get(1).type.toString()+":"+tabs.get(1).leader:"")
-				+(count>2?",탭[2]="+tabs.get(2).pos+":"+tabs.get(2).type.toString()+":"+tabs.get(2).leader:"")
-				+",왼쪽끝자동="+(attr&0x1)+",오른쪽끝자동="+(attr&0x2)
-		 	);
+    public HwpRecord_TabDef(HwpDocInfo docInfo, int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
+        this(tagNum, level, size);
+        this.parent = docInfo;
 
-		if (offset-off-size!=0) {
-			throw new HwpParseException();
-		}
-	}
+        int offset = off;
+        attr = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        offset += 4;
+        count = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        offset += 4;
+
+        if (size-(offset-off)!=count*8) {
+            throw new HwpParseException();
+        }
+        tabs = new ArrayList<Tab>();
+
+        for (int i=0; i<count; i++) {
+            // LibreOffice에서는 ParaTabStops 로 정의하며, 아래와 같은 형식을 가진다. 필요한 경우 활용하자. 
+            // com.sun.star.style.TabStop[] tss = new com.sun.star.style.TabStop[1];
+            // tss[0] = new com.sun.star.style.TabStop();
+            // tss[0].Position = 1251;
+            // tss[0].Alignment = TabAlign.DEFAULT;
+            // tss[0].DecimalChar = 46; // .
+            // tss[0].FillChar = 32; // Space
+            // paraProps.setPropertyValue("ParaTabStops", tss);
+
+            Tab tab = new Tab();
+            tab.pos		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            offset += 4;
+            tab.type 	= Tab.Type.from(buf[offset++]);
+            tab.leader	= LineStyle2.from(buf[offset++]);
+            // reserved 2 bytes for align
+            offset += 2;
+            tabs.add(tab);
+        }
+
+        log.fine("                                                  "
+                +"ID="+(parent.tabDefList.size())
+                +",갯수="+count
+                +",속성="+String.format("0x%X", attr)
+                +(count>0?",탭[0]="+tabs.get(0).pos+":"+tabs.get(0).type.toString()+":"+tabs.get(0).leader:"")
+                +(count>1?",탭[1]="+tabs.get(1).pos+":"+tabs.get(1).type.toString()+":"+tabs.get(1).leader:"")
+                +(count>2?",탭[2]="+tabs.get(2).pos+":"+tabs.get(2).type.toString()+":"+tabs.get(2).leader:"")
+                +",왼쪽끝자동="+(attr&0x1)+",오른쪽끝자동="+(attr&0x2)
+            );
+
+        if (offset-off-size!=0) {
+            throw new HwpParseException();
+        }
+    }
 	
-	public HwpRecord_TabDef(HwpDocInfo docInfo, Node node, int version) {
+    public HwpRecord_TabDef(HwpDocInfo docInfo, Node node, int version) {
         super(HwpTag.HWPTAG_TAB_DEF, 0, 0);
         this.parent = docInfo;
         
@@ -129,49 +129,78 @@ public class HwpRecord_TabDef extends HwpRecord {
             Node child = nodeList.item(i);
             
             switch(child.getNodeName()) {
-            case "hh:tabItem":
+            case "hp:switch":
                 {
-                    Tab tabItem = new Tab();
                     NamedNodeMap childAttrs = child.getAttributes();
-                    
-                    numStr = childAttrs.getNamedItem("pos").getNodeValue();
-                    tabItem.pos = Integer.parseInt(numStr);
-                    tabItem.type = Tab.Type.valueOf(childAttrs.getNamedItem("type").getNodeValue());
-                    tabItem.leader = LineStyle1.valueOf(childAttrs.getNamedItem("leader").getNodeValue());
-
-                    tabs.add(tabItem);
+                    NodeList childNodeList = child.getChildNodes();
+                    for (int j=0; j<childNodeList.getLength(); j++) {
+                        Node grandChild = childNodeList.item(j);
+                        
+                        switch(grandChild.getNodeName()) {
+                        case "hp:case":
+                            break;
+                            
+                        case "hp:default":
+                            Tab tabItem = getTabItem(grandChild, version);
+                            tabs.add(tabItem);
+                            break;
+                        }
+                    }
                 }
+                break;
             }
         }
+        count = tabs.size();
+    }
+	
+    private Tab getTabItem(Node node, int version) {
+        Tab tabItem = new Tab();
+        
+        NodeList nodeList = node.getChildNodes();
+        for (int j=0; j<nodeList.getLength(); j++) {
+            Node child = nodeList.item(j);
+            
+            switch(child.getNodeName()) {
+            case "hh:tabItem":
+                NamedNodeMap childAttrs = child.getAttributes();
+                String numStr = childAttrs.getNamedItem("pos").getNodeValue();
+                tabItem.pos = Integer.parseInt(numStr);
+                tabItem.type = Tab.Type.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+                tabItem.leader = LineStyle2.valueOf(childAttrs.getNamedItem("leader").getNodeValue());
+                break;
+            }
+        }
+
+        return tabItem;
     }
 
     public static class Tab {
-		public int 			pos;
-		public Type			type;
-		public LineStyle1	leader;
-		
-		public static enum Type {
-			LEFT		(0),
-			RIGHT		(1),
-			CENTER		(2),
-			DECIMAL		(3);
-	
-			private int type;
-			
-		    private Type(int type) { 
-		    	this.type = type;
-		    }
-	
-		    public static Type from(int type) {
-		    	for (Type typeNum: values()) {
-		    		if (typeNum.type == type)
-		    			return typeNum;
-		    	}
-		    	return null;
-		    }
-		}
-		
-	}
+        public int          pos;
+        public Type         type;
+        public LineStyle2   leader;
+
+        public static enum Type {
+            LEFT        (0),
+            RIGHT       (1),
+            CENTER      (2),
+            DECIMAL     (3);
+
+            private int type;
+
+            private Type(int type) { 
+                this.type = type;
+            }
+
+            public static Type from(int type) {
+                for (Type typeNum: values()) {
+                    if (typeNum.type == type)
+                        return typeNum;
+                }
+                return null;
+            }
+        }
+        
+    }
 
 
 }
