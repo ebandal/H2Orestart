@@ -36,12 +36,12 @@ import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
 public class HwpParagraph {
     private static final Logger log = Logger.getLogger(HwpParagraph.class.getName());
     
-    public short			paraShapeID;	// HWPTAG_PARA_HEADER
-    public short			paraStyleID;	// HWPTAG_PARA_HEADER
-    public byte 			breakType;		// HWPTAG_PARA_HEADER
-    // public List<CharShape>	charShapes;		// HWPTAG_PARA_CHAR_SHAPE
-    public LineSeg			lineSegs;		// HWPTAG_PARA_LINE_SEG
-    public List<RangeTag>	rangeTags;		// HWPTAG_PARA_RANGE_TAG
+    public short            paraShapeID;    // HWPTAG_PARA_HEADER
+    public short            paraStyleID;    // HWPTAG_PARA_HEADER
+    public byte             breakType;      // HWPTAG_PARA_HEADER
+    // public List<CharShape>   charShapes;   // HWPTAG_PARA_CHAR_SHAPE
+    public LineSeg          lineSegs;       // HWPTAG_PARA_LINE_SEG
+    public List<RangeTag>   rangeTags;      // HWPTAG_PARA_RANGE_TAG
     
     public LinkedList<Ctrl> p;              // HWPTAG_PARA_TEXT + List<Ctrl>  V2
     
@@ -83,10 +83,10 @@ public class HwpParagraph {
             }
             break;
         }
-        
+
         // attributes.getNamedItem("merged").getNodeValue();
         // attributes.getNamedItem("paraTcId").getNodeValue();
-        
+
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
@@ -95,14 +95,14 @@ public class HwpParagraph {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     CharShape charShape = new CharShape();
-                    
+
                     numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
                     charShape.charShapeID = Integer.parseInt(numStr);
                     if (childAttrs.getNamedItem("charTcId")!=null) {
                         numStr = childAttrs.getNamedItem("charTcId").getNodeValue();
                         charShape.start = Integer.parseInt(numStr);
                     }
-                    
+
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
@@ -111,17 +111,17 @@ public class HwpParagraph {
                 }
                 break;
             case "hp:linesegarray":
-	            {
+                {
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
                         case "hp:lineseg":	
                             lineSegs = new LineSeg(grandChild, version);
-                        	break;
+                            break;
                         }
                     }
-	            }
+                }
                 break;
             default:
                 if (log.isLoggable(Level.FINE)) {
@@ -130,22 +130,27 @@ public class HwpParagraph {
                 break;
             }
         }
-        
-        // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
-        if (p!=null && p.size()>0 && !(p.getLast() instanceof Ctrl_Character)) {
+
+        // hp:t 없이 paragraph 끝난다면 
+        if (p==null) {
+            p = new LinkedList<Ctrl>();
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
         }
-	}
-	
-	private void parseHwpParagraph(Node node, int charShapeId, int version) throws NotImplementedException {
-	    
+        // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
+        if (!(p.getLast() instanceof Ctrl_Character)) {
+            p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
+        }
+    }
+
+    private void parseHwpParagraph(Node node, int charShapeId, int version) throws NotImplementedException {
+
         if (p == null) {
             p = new LinkedList<Ctrl>();
         }
-        
+
         String numStr;
         Ctrl ctrl;
-        
+
         switch(node.getNodeName()) {
         case "hp:secPr":
             {
@@ -281,9 +286,9 @@ public class HwpParagraph {
             }
             break;
         }
-	}
-	
-	public static HwpParagraph parse(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
+    }
+
+    public static HwpParagraph parse(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         HwpParagraph para = new HwpParagraph();
