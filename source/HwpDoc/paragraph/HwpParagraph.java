@@ -195,6 +195,7 @@ public class HwpParagraph {
                         break;
                     case "hp:markpenBegin":    // 134 page
                     case "hp:markpenEnd":
+                        break;
                     case "hp:titleMark":
                     case "hp:insertBegin":
                     case "hp:insertEnd":
