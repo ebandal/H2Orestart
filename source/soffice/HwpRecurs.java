@@ -30,6 +30,7 @@ import com.sun.star.text.XTextCursor;
 import com.sun.star.text.XTextRange;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.HwpElement.HwpRecord_Style;
@@ -329,7 +330,8 @@ public class HwpRecurs {
                 }
 
                 if (charShape!=null) {
-                    ConvPara.setCharacterProperties(paraProps, charShape, step);
+                    HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+                    ConvPara.setCharacterProperties(paraProps, charShape, borderFill, step);
                 }
 
             } catch (Exception e) {
@@ -380,7 +382,8 @@ public class HwpRecurs {
                 }
 
                 if (charShape!=null) {
-                    ConvPara.setCharacterProperties(paraProps, charShape, step);
+                    HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+                    ConvPara.setCharacterProperties(paraProps, charShape, borderFill, step);
                 }
                 
             } catch (Exception e) {

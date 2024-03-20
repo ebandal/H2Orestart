@@ -117,7 +117,8 @@ public class ConvPara {
                 setParagraphProperties(xStyleProps, paraShape, wContext.getDocInfo().compatibleDoc, PARA_SPACING);
             }
             if (charShape!=null) {
-                setCharacterProperties(xStyleProps, charShape, -1);
+                HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+                setCharacterProperties(xStyleProps, charShape, borderFill, -1);
             }
             
             // NumberingRules 속성을 설정해야  Style이 변경된다. 
@@ -145,7 +146,8 @@ public class ConvPara {
             XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xFamily.getByName(hwpStyleName));
             
             if (charShape!=null) {
-                setCharacterProperties(xStyleProps, charShape, -1);
+                HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+                setCharacterProperties(xStyleProps, charShape, borderFill, -1);
             }
             
             // NumberingRules 속성을 설정해야  Style이 변경된다. 
@@ -352,7 +354,7 @@ public class ConvPara {
                         tss[i].FillChar = 45;
                         break;
                     }
-                    tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 145)*100;	// 15cm
+                    tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 145)*100;	// 14.5cm
                 }
             } else {
                 if ((tabDef.attr&0x2)==0x2) {       // 문단 오른쪽 끝 자동 탭
@@ -525,7 +527,7 @@ public class ConvPara {
                         tss[i].FillChar = 45;
                         break;
                     }
-                    tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 150)*100;	// 15cm
+                    tss[i].Position = Math.min(Transform.translateHwp2Office(tab.pos/200), 145)*100;	// 14.5cm
                 }
             } else {
                 if ((tabDef.attr&0x2)==0x2) {       // 문단 오른쪽 끝 자동 탭
@@ -557,7 +559,8 @@ public class ConvPara {
         }
     }
     
-    static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, int step) {
+    static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, 
+                                        HwpRecord_BorderFill borderFill, int step) {
         try {
             xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
             // paraProps.setPropertyValue("CharFontStyleName", faceName.faceName);
@@ -700,12 +703,18 @@ public class ConvPara {
             //charShape.useKerning;                 // kerning여부                 // uk?
             //charShape.textColor;                  // 글자 색                      //
             xStyleProps.setPropertyValue("CharColor", charShape.textColor);
-            
-            //charShape.shadeColor;                 // 음영 색
-            if (charShape.shadeColor != 0xFFFFFFFF) {
-                xStyleProps.setPropertyValue("CharBackColor", charShape.shadeColor);
-            }
 
+         // shadeColor보다 fill.faceColor가 우선한다.
+            if (borderFill.fill.isColorFill()) {
+                if (borderFill.fill.faceColor==0xFFFFFFFF) {
+                    //charShape.shadeColor;                 // 음영 색
+                    if (charShape.shadeColor != 0xFFFFFFFF) {
+                        xStyleProps.setPropertyValue("CharBackColor", charShape.shadeColor);
+                    }
+                } else {
+                    xStyleProps.setPropertyValue("CharBackColor", borderFill.fill.faceColor);
+                }
+            }
             
             //	charShape.shadow;                   // 그림자 종류                    // 
             //	charShape.shadowSpacing;            // 그림자 간격, -100%~100%

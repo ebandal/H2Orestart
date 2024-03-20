@@ -83,6 +83,7 @@ import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
+import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.Fill;
 import HwpDoc.HwpElement.HwpRecord_BorderFill.ImageFillType;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
@@ -1842,7 +1843,8 @@ public class ConvGraphics {
         try {
             paraProps.setPropertyValue("ParaStyleName", styleName);
             ConvPara.setParagraphProperties(paraProps, captionParaShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
-            ConvPara.setCharacterProperties(paraProps, captionCharShape, step);
+            HwpRecord_BorderFill borderFill = wContext.getBorderFill(captionCharShape.borderFillIDRef);
+            ConvPara.setCharacterProperties(paraProps, captionCharShape, borderFill, step);
             paraProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(shape.captionSpacing));
             for (String cap : capStr) {
                 xFrameText.insertString(xFrameCursor, cap, false);
