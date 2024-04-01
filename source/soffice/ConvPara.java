@@ -705,7 +705,7 @@ public class ConvPara {
             xStyleProps.setPropertyValue("CharColor", charShape.textColor);
 
          // shadeColor보다 fill.faceColor가 우선한다.
-            if (borderFill.fill.isColorFill()) {
+            if (borderFill!=null && borderFill.fill.isColorFill()) {
                 if (borderFill.fill.faceColor==0xFFFFFFFF) {
                     //charShape.shadeColor;                 // 음영 색
                     if (charShape.shadeColor != 0xFFFFFFFF) {
@@ -713,6 +713,10 @@ public class ConvPara {
                     }
                 } else {
                     xStyleProps.setPropertyValue("CharBackColor", borderFill.fill.faceColor);
+                }
+            } else {
+                if (charShape.shadeColor != 0xFFFFFFFF) {
+                    xStyleProps.setPropertyValue("CharBackColor", charShape.shadeColor);
                 }
             }
             
