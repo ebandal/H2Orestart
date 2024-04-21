@@ -178,6 +178,11 @@ public class HwpRecord_ParaShape extends HwpRecord {
         
         NamedNodeMap attributes = node.getAttributes();
         
+        // 초기값
+        headingType = HeadingType.NONE;
+        align       = HorizontalAlign.JUSTIFY;
+        vertAlign   = VerticalAlign.BASELINE;
+        
         // id값은 처리하지 않는다. List<HwpRecord_ParaShape>에 순차적으로 추가한다.
         // String id = attributes.getNamedItem("id").getNodeValue();
         

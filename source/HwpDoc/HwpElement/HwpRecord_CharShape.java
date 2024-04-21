@@ -173,6 +173,14 @@ public class HwpRecord_CharShape extends HwpRecord {
         
         NamedNodeMap attributes = node.getAttributes();
         
+        // 초기값. 속성이 없을 경우, null 방지
+        underline       = Underline.NONE;
+        underlineShape  = LineStyle1.DASH;
+        outline         = Outline.NONE;
+        shadow          = Shadow.NONE;
+        symMark         = Accent.NONE;
+        strikeOutShape  = LineStyle2.NONE;
+        
         // id값은 처리하지 않는다. List<HwpRecord_CharShape>에 순차적으로 추가한다.
         // String id = attributes.getNamedItem("height").getNodeValue();
         
@@ -212,7 +220,6 @@ public class HwpRecord_CharShape extends HwpRecord {
             useKerning = true;    break;
         }
         
-        symMark = Accent.NONE;
         switch(attributes.getNamedItem("symMark").getNodeValue()) {
         case "NONE":
             symMark = Accent.NONE;      break;

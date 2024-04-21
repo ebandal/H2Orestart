@@ -105,6 +105,9 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
     
     public Ctrl_GeneralShape(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId, node, version);
+
+        // 초기값
+        lineStyle = LineStyle2.NONE;
         
         String numStr;
         

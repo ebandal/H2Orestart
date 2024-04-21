@@ -381,22 +381,6 @@ public class HwpRecord_BorderFill extends HwpRecord {
             fill.hatchStyle = ColorFillPattern.NONE;
         } else {
             fill.hatchStyle = ColorFillPattern.valueOf(childAttrs.getNamedItem("hatchStyle").getNodeValue());
-            /*
-            switch(childAttrs.getNamedItem("hatchStyle").getNodeValue()) {
-            case "HORIZONTAL":
-                fill.hatchStyle = ColorFillPattern.HORIZONTAL;  break;
-            case "VERTICAL":
-                fill.hatchStyle = ColorFillPattern.VERTICAL;    break;
-            case "BACK_SLASH":
-                fill.hatchStyle = ColorFillPattern.BACK_SLASH;  break;
-            case "SLASH":
-                fill.hatchStyle = ColorFillPattern.SLASH;       break;
-            case "CROSS":
-                fill.hatchStyle = ColorFillPattern.CROSS;       break;
-            case "CROSS_DIAGONAL":
-                fill.hatchStyle = ColorFillPattern.CROSS_DIAGONAL;  break;
-            }
-            */
         }
             
         colorStr = childAttrs.getNamedItem("alpha").getNodeValue();

@@ -98,6 +98,9 @@ public class Ctrl_ColumnDef extends Ctrl {
 	public Ctrl_ColumnDef(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId);
         
+        // 초기값
+        colLineStyle = LineStyle2.NONE;
+        
         NamedNodeMap attributes = node.getAttributes();
         
         switch(attributes.getNamedItem("type").getNodeValue()) {
