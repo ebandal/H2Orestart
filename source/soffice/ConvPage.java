@@ -20,8 +20,10 @@
  */
 package soffice;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -69,6 +71,8 @@ public class ConvPage {
 
     private static Map<Integer, String> pageStyleNameMap = new HashMap<Integer, String>();
     private static Map<Integer, Ctrl_SectionDef> pageMap = new HashMap<Integer, Ctrl_SectionDef>();
+    private static List<Integer> headerDone = new ArrayList<>();    // Header 중복을 
+    private static List<Integer> footerDone = new ArrayList<>();
     private static int customIndex = 0;
     private static int secdIndex = 0;
     private static final String PAGE_STYLE_PREFIX = "HWP ";
@@ -87,6 +91,8 @@ public class ConvPage {
 
     public static void reset(WriterContext wContext) {
         deleteAllCustomPageStyle(wContext);
+        headerDone.clear();
+        footerDone.clear();
         secdIndex = 0;
         customIndex = 0;
     }
@@ -585,68 +591,77 @@ public class ConvPage {
                 XText headerTextBoth = UnoRuntime.queryInterface(XText.class,
                         xStyleProps.getPropertyValue((hf.isHeader == true ? "HeaderText" : "FooterText")));
                 XTextCursor headerCursorBoth = headerTextBoth.createTextCursor();
-                headerCursorBoth.gotoEnd(false);
-                headerCursorBoth.gotoStart(true);
-                headerCursorBoth.setString("");
-                headerCursorBoth.gotoEnd(false);
-
-                context2.mText = headerTextBoth;
-                context2.mTextCursor = headerCursorBoth;
-
-                HwpCallback callbackBoth = new HwpCallback() {
-                    @Override
-                    public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {
-                        String paraStyleName = ConvPara.getStyleName(paraStyleID);
-                        HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
-                        try {
-                            XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, headerCursorBoth);
-                            paraProps.setPropertyValue("ParaStyleName", paraStyleName);
-                            ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
-                            // ConvPara.setCharacterProperties(paraProps, charShape);
-                            XTextField numField;
-                            XPropertySet numFieldProp;
-                            switch (autoNumber.numType) {
-                            case PAGE:
-                            default:
-                                numField = UnoRuntime.queryInterface(XTextField.class, wContext.mMSF.createInstance("com.sun.star.text.textfield.PageNumber"));
-                                numFieldProp = UnoRuntime.queryInterface(XPropertySet.class, numField);
-                                numFieldProp.setPropertyValue("NumberingType", NumberingType.ARABIC);
-                                numFieldProp.setPropertyValue("SubType", PageNumberType.CURRENT);
-                                break;
-                            case TOTAL_PAGE:
-                                numField = UnoRuntime.queryInterface(XTextField.class, wContext.mMSF.createInstance("com.sun.star.text.textfield.PageCount"));
-                                numFieldProp = UnoRuntime.queryInterface(XPropertySet.class, numField);
-                                numFieldProp.setPropertyValue("NumberingType", NumberingType.ARABIC);
-                                break;
+                if ((hf.isHeader==true && headerDone.contains(secdIndex)==false) || 
+                    (hf.isHeader==false && footerDone.contains(secdIndex)==false)) {    // Header 중복 생성 방지
+                    headerCursorBoth.gotoEnd(false);
+                    headerCursorBoth.gotoStart(true);
+                    headerCursorBoth.setString("");
+                    headerCursorBoth.gotoEnd(false);
+                    
+                    context2.mText = headerTextBoth;
+                    context2.mTextCursor = headerCursorBoth;
+    
+                    HwpCallback callbackBoth = new HwpCallback() {
+                        @Override
+                        public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {
+                            String paraStyleName = ConvPara.getStyleName(paraStyleID);
+                            HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
+                            try {
+                                XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, headerCursorBoth);
+                                paraProps.setPropertyValue("ParaStyleName", paraStyleName);
+                                ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
+                                // ConvPara.setCharacterProperties(paraProps, charShape);
+                                XTextField numField;
+                                XPropertySet numFieldProp;
+                                switch (autoNumber.numType) {
+                                case PAGE:
+                                default:
+                                    numField = UnoRuntime.queryInterface(XTextField.class, wContext.mMSF.createInstance("com.sun.star.text.textfield.PageNumber"));
+                                    numFieldProp = UnoRuntime.queryInterface(XPropertySet.class, numField);
+                                    numFieldProp.setPropertyValue("NumberingType", NumberingType.ARABIC);
+                                    numFieldProp.setPropertyValue("SubType", PageNumberType.CURRENT);
+                                    break;
+                                case TOTAL_PAGE:
+                                    numField = UnoRuntime.queryInterface(XTextField.class, wContext.mMSF.createInstance("com.sun.star.text.textfield.PageCount"));
+                                    numFieldProp = UnoRuntime.queryInterface(XPropertySet.class, numField);
+                                    numFieldProp.setPropertyValue("NumberingType", NumberingType.ARABIC);
+                                    break;
+                                }
+                                headerTextBoth.insertTextContent(headerCursorBoth, numField, false);
+                                headerCursorBoth.gotoEnd(false);
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                            headerTextBoth.insertTextContent(headerCursorBoth, numField, false);
-                            headerCursorBoth.gotoEnd(false);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        };
+    
+                        @Override
+                        public boolean onTab(String info) {
+                            return false;
+                        };
+    
+                        @Override
+                        public boolean onText(String content, int charShapeId, int charPos, boolean append) {
+                            return false;
+                        }
+    
+                        @Override
+                        public boolean onParaBreak() {
+                            return false;
                         }
                     };
-
-                    @Override
-                    public boolean onTab(String info) {
-                        return false;
-                    };
-
-                    @Override
-                    public boolean onText(String content, int charShapeId, int charPos, boolean append) {
-                        return false;
+                    if (hf.paras != null) {
+                        for (HwpParagraph para : hf.paras) {
+                            HwpRecurs.printParaRecurs(context2, wContext, para, callbackBoth, 2);
+                        }
+                        // REMOVE last PARA_BREAK
+                        HwpRecurs.removeLastParaBreak(context2.mTextCursor);
                     }
-
-                    @Override
-                    public boolean onParaBreak() {
-                        return false;
+                    if (hf.isHeader==true) {
+                        headerDone.add(secdIndex);
                     }
-                };
-                if (hf.paras != null) {
-                    for (HwpParagraph para : hf.paras) {
-                        HwpRecurs.printParaRecurs(context2, wContext, para, callbackBoth, 2);
+                    if (hf.isHeader==false) {
+                        footerDone.add(secdIndex);
                     }
-                    // REMOVE last PARA_BREAK
-                    HwpRecurs.removeLastParaBreak(context2.mTextCursor);
                 }
                 break;
             }
