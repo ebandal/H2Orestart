@@ -202,7 +202,7 @@ public class HwpComparer {
         return matches;
     }
     
-    private List<String> compare(List<ParaNode> controlList, List<ParaNode> testList) {
+    public List<String> compare(List<ParaNode> controlList, List<ParaNode> testList) {
         List<String> ret = new ArrayList<String>();
         
         LinkedList<Pair<ParaNode, ParaNode>> matched = getMatched(controlList, testList);
