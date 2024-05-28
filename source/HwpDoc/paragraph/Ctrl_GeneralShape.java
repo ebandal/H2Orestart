@@ -257,7 +257,11 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("lastWidth").getNodeValue();   // 텍스트 문자열의 최대 폭
-                    maxTxtWidth = Integer.parseInt(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        maxTxtWidth = (int)Double.parseDouble(numStr);
+                    } else {
+                        maxTxtWidth = Integer.parseInt(numStr);
+                    }
                     /*
                     childAttrs.getNamedItem("width").getNodeValue();  // 글 상자 이름
                     childAttrs.getNamedItem("style").getNodeValue()); // 편집 가능 여부
@@ -280,11 +284,13 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                         case "hp:subList":
                             do_subList(grandChild, version);
                             break;
+                        case "#text":
+                            break;
                         default:
-                        	if (log.isLoggable(Level.FINE)) {
-                        		throw new NotImplementedException("Ctrl_GeneralShape");
-                        	}
-                        	break;
+                            if (log.isLoggable(Level.FINE)) {
+                                throw new NotImplementedException("Ctrl_GeneralShape");
+                            }
+                            break;
                         }
                     }
                     node.removeChild(child);
@@ -342,11 +348,13 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
             case "hp:shapeComment":
                 node.removeChild(child);
                 break;
+            case "#text":
+                break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		log.fine(child.getNodeName() + "=" + child.getNodeValue());
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                }
+                break;
             }
         }
     }

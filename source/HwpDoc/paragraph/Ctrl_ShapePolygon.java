@@ -72,6 +72,8 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
                 points[i].y = Integer.parseInt(numStr);
                 node.removeChild(child);
                 break;
+            case "#text":
+                break;
             default:
                 log.fine(child.getNodeName() + "=" + child.getNodeValue());
                 if (log.isLoggable(Level.FINE)) {

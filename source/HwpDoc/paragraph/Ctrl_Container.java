@@ -106,6 +106,8 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
                 ctrl = new Ctrl_ShapeOle("elo$", child, version);
                 list.add(ctrl);
                 break;
+            case "#text":
+                break;
             default:
                 if (log.isLoggable(Level.FINE)) {
                     throw new NotImplementedException("Ctrl_Container");

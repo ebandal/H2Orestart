@@ -76,6 +76,8 @@ public abstract class Ctrl {
         case "hp:indexmark":
         case "hp:hiddenComment":
             break;
+        case "#text":
+            break;
         default:
         	if (log.isLoggable(Level.FINE)) {
         		throw new NotImplementedException("Ctrl");

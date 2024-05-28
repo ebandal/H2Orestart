@@ -149,61 +149,61 @@ public class HwpRecord_Numbering extends HwpRecord {
         start = (short) Integer.parseInt(numStr);
         
         NodeList nodeList = node.getChildNodes();
-        for (int i=0; i<nodeList.getLength(); i++) {
+        for (int i=0,j=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
-            numbering[i] = new Numbering();
-            
             switch(child.getNodeName()) {
             case "hh:paraHead":
             case "paraHead":
                 {
+                    numbering[j] = new Numbering();
+                    
                     NamedNodeMap childAttrs = child.getAttributes();
                     if (childAttrs.getNamedItem("align")!=null) {
                         switch(childAttrs.getNamedItem("align").getNodeValue()) {
                         case "LEFT":
-                            numbering[i].align = 0;
+                            numbering[j].align = 0;
                             break;
                         case "RIGHT":
-                            numbering[i].align = 2;
+                            numbering[j].align = 2;
                             break;
                         case "CENTER":
-                            numbering[i].align = 1;
+                            numbering[j].align = 1;
                             break;
                         }
                     }
 
                     switch(childAttrs.getNamedItem("useInstWidth").getNodeValue()) {
                     case "0":
-                        numbering[i].useInstWidth = false;
+                        numbering[j].useInstWidth = false;
                         break;
                     case "1":
-                        numbering[i].useInstWidth = true;
+                        numbering[j].useInstWidth = true;
                         break;
                     }
                     
                     switch(childAttrs.getNamedItem("autoIndent").getNodeValue()) {
                     case "0":
-                        numbering[i].autoIndent = false;
+                        numbering[j].autoIndent = false;
                         break;
                     case "1":
-                        numbering[i].autoIndent = true;
+                        numbering[j].autoIndent = true;
                         break;
                     }
                     
                     numStr = childAttrs.getNamedItem("widthAdjust").getNodeValue();
-                    numbering[i].widthAdjust = (short)Integer.parseInt(numStr);
+                    numbering[j].widthAdjust = (short)Integer.parseInt(numStr);
 
                     switch(childAttrs.getNamedItem("textOffsetType").getNodeValue()) {
                     case "PERCENT":
-                        numbering[i].textOffsetType = 0;
+                        numbering[j].textOffsetType = 0;
                         break;
                     case "HWPUNIT":
-                        numbering[i].textOffsetType = 1;
+                        numbering[j].textOffsetType = 1;
                         break;
                     }
                     
                     numStr = childAttrs.getNamedItem("textOffset").getNodeValue();
-                    numbering[i].textOffset = Short.parseShort(numStr);
+                    numbering[j].textOffset = Short.parseShort(numStr);
 
                     // level은 1수준~7수준을 의미
                     numStr = childAttrs.getNamedItem("level").getNodeValue();
@@ -213,25 +213,34 @@ public class HwpRecord_Numbering extends HwpRecord {
                     case "DIGIT":
                         switch(level) {
                         case 1:
-                            numbering[i].numFormat = "^1.";
+                            numbering[j].numFormat = "^1.";
                             break;
                         case 2:
-                            numbering[i].numFormat = "^2.";
+                            numbering[j].numFormat = "^2.";
                             break;
                         case 3:
-                            numbering[i].numFormat = "^3.";
+                            numbering[j].numFormat = "^3.";
                             break;
                         case 4:
-                            numbering[i].numFormat = "^4.";
+                            numbering[j].numFormat = "^4.";
                             break;
                         case 5:
-                            numbering[i].numFormat = "^5.";
+                            numbering[j].numFormat = "^5.";
                             break;
                         case 6:
-                            numbering[i].numFormat = "^6.";
+                            numbering[j].numFormat = "^6.";
                             break;
                         case 7:
-                            numbering[i].numFormat = "^7.";
+                            numbering[j].numFormat = "^7.";
+                            break;
+                        case 8:
+                            numbering[j].numFormat = "^8.";
+                            break;
+                        case 9:
+                            numbering[j].numFormat = "^9.";
+                            break;
+                        case 10:
+                            numbering[j].numFormat = "^10.";
                             break;
                         }
                         break;
@@ -239,75 +248,170 @@ public class HwpRecord_Numbering extends HwpRecord {
                     case "HANGUL_JAMO":
                         switch(level) {
                         case 1:
-                            numbering[i].numFormat = "^가.";
+                            numbering[j].numFormat = "^가.";
                             break;
                         case 2:
-                            numbering[i].numFormat = "^나.";
+                            numbering[j].numFormat = "^나.";
                             break;
                         case 3:
-                            numbering[i].numFormat = "^다.";
+                            numbering[j].numFormat = "^다.";
                             break;
                         case 4:
-                            numbering[i].numFormat = "^라.";
+                            numbering[j].numFormat = "^라.";
                             break;
                         case 5:
-                            numbering[i].numFormat = "^마.";
+                            numbering[j].numFormat = "^마.";
                             break;
                         case 6:
-                            numbering[i].numFormat = "^바.";
+                            numbering[j].numFormat = "^바.";
                             break;
                         case 7:
-                            numbering[i].numFormat = "^사.";
+                            numbering[j].numFormat = "^사.";
+                            break;
+                        case 8:
+                            numbering[j].numFormat = "^아.";
+                            break;
+                        case 9:
+                            numbering[j].numFormat = "^자.";
+                            break;
+                        case 10:
+                            numbering[j].numFormat = "^차.";
                             break;
                         }
                         break;
                     case "CIRCLED_DIGIT":
                         switch(level) {
                         case 1:
-                            numbering[i].numFormat = "^\u2460.";
+                            numbering[j].numFormat = "^\u2460.";
                             break;
                         case 2:
-                            numbering[i].numFormat = "^\u2461.";
+                            numbering[j].numFormat = "^\u2461.";
                             break;
                         case 3:
-                            numbering[i].numFormat = "^\u2462.";
+                            numbering[j].numFormat = "^\u2462.";
                             break;
                         case 4:
-                            numbering[i].numFormat = "^\u2463.";
+                            numbering[j].numFormat = "^\u2463.";
                             break;
                         case 5:
-                            numbering[i].numFormat = "^\u2464.";
+                            numbering[j].numFormat = "^\u2464.";
                             break;
                         case 6:
-                            numbering[i].numFormat = "^\u2465.";
+                            numbering[j].numFormat = "^\u2465.";
                             break;
                         case 7:
-                            numbering[i].numFormat = "^\u2466.";
+                            numbering[j].numFormat = "^\u2466.";
+                            break;
+                        case 8:
+                            numbering[j].numFormat = "^\u2467.";
+                            break;
+                        case 9:
+                            numbering[j].numFormat = "^\u2468.";
+                            break;
+                        case 10:
+                            numbering[j].numFormat = "^\u2469.";
                             break;
                         }
                         break;
                     case "LATIN_SMALL":
                         switch(level) {
                         case 1:
-                            numbering[i].numFormat = "^a.";
+                            numbering[j].numFormat = "^a.";
                             break;
                         case 2:
-                            numbering[i].numFormat = "^b.";
+                            numbering[j].numFormat = "^b.";
                             break;
                         case 3:
-                            numbering[i].numFormat = "^c.";
+                            numbering[j].numFormat = "^c.";
                             break;
                         case 4:
-                            numbering[i].numFormat = "^d.";
+                            numbering[j].numFormat = "^d.";
                             break;
                         case 5:
-                            numbering[i].numFormat = "^e.";
+                            numbering[j].numFormat = "^e.";
                             break;
                         case 6:
-                            numbering[i].numFormat = "^f.";
+                            numbering[j].numFormat = "^f.";
                             break;
                         case 7:
-                            numbering[i].numFormat = "^g.";
+                            numbering[j].numFormat = "^g.";
+                            break;
+                        case 8:
+                            numbering[j].numFormat = "^h.";
+                            break;
+                        case 9:
+                            numbering[j].numFormat = "^i.";
+                            break;
+                        case 10:
+                            numbering[j].numFormat = "^j.";
+                            break;
+                        }
+                        break;
+                    case "CIRCLED_HANGUL_SYLLABLE":
+                        switch(level) {
+                        case 1:
+                            numbering[j].numFormat = "^\u326E.";
+                            break;
+                        case 2:
+                            numbering[j].numFormat = "^\u326F.";
+                            break;
+                        case 3:
+                            numbering[j].numFormat = "^\u3270.";
+                            break;
+                        case 4:
+                            numbering[j].numFormat = "^\u3271.";
+                            break;
+                        case 5:
+                            numbering[j].numFormat = "^\u3272.";
+                            break;
+                        case 6:
+                            numbering[j].numFormat = "^\u3273.";
+                            break;
+                        case 7:
+                            numbering[j].numFormat = "^\u3274.";
+                            break;
+                        case 8:
+                            numbering[j].numFormat = "^\u3275.";
+                            break;
+                        case 9:
+                            numbering[j].numFormat = "^\u3276.";
+                            break;
+                        case 10:
+                            numbering[j].numFormat = "^\u3277.";
+                            break;
+                        }
+                        break;
+                    case "ROMAN_SMALL":
+                        switch(level) {
+                        case 1:
+                            numbering[j].numFormat = "^\u2170.";
+                            break;
+                        case 2:
+                            numbering[j].numFormat = "^\u2171.";
+                            break;
+                        case 3:
+                            numbering[j].numFormat = "^\u2172.";
+                            break;
+                        case 4:
+                            numbering[j].numFormat = "^\u2173.";
+                            break;
+                        case 5:
+                            numbering[j].numFormat = "^\u2174.";
+                            break;
+                        case 6:
+                            numbering[j].numFormat = "^\u2175.";
+                            break;
+                        case 7:
+                            numbering[j].numFormat = "^\u2176.";
+                            break;
+                        case 8:
+                            numbering[j].numFormat = "^\u2177.";
+                            break;
+                        case 9:
+                            numbering[j].numFormat = "^\u2178.";
+                            break;
+                        case 10:
+                            numbering[j].numFormat = "^\u2179.";
                             break;
                         }
                         break;
@@ -319,10 +423,11 @@ public class HwpRecord_Numbering extends HwpRecord {
                     }
 
                     numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
-                    numbering[i].charShape = (short)Integer.parseUnsignedInt(numStr);
+                    numbering[j].charShape = (short)Integer.parseUnsignedInt(numStr);
 
                     numStr = childAttrs.getNamedItem("start").getNodeValue();
-                    numbering[i].startNumber = (short)Integer.parseInt(numStr);
+                    numbering[j].startNumber = (short)Integer.parseInt(numStr);
+                    j++;
                 }
             }
         }

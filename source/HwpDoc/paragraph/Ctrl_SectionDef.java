@@ -326,6 +326,8 @@ public class Ctrl_SectionDef extends Ctrl {
             case "hp:parameterset":
             case "hp:lineNumberShape":
                 break;
+            case "#text":
+                break;
             default:
             	log.fine("Not implmented:" + child.getNodeName());
             	if (log.isLoggable(Level.FINE)) {

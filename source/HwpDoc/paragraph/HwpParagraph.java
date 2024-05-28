@@ -95,12 +95,13 @@ public class HwpParagraph {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     CharShape charShape = new CharShape();
-
-                    numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
-                    charShape.charShapeID = Integer.parseInt(numStr);
-                    if (childAttrs.getNamedItem("charTcId")!=null) {
-                        numStr = childAttrs.getNamedItem("charTcId").getNodeValue();
-                        charShape.start = Integer.parseInt(numStr);
+                    if (childAttrs.getNamedItem("charPrIDRef")!=null) {
+                        numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
+                        charShape.charShapeID = Integer.parseInt(numStr);
+                        if (childAttrs.getNamedItem("charTcId")!=null) {
+                            numStr = childAttrs.getNamedItem("charTcId").getNodeValue();
+                            charShape.start = Integer.parseInt(numStr);
+                        }
                     }
 
                     NodeList childNodeList = child.getChildNodes();
@@ -123,6 +124,8 @@ public class HwpParagraph {
                     }
                 }
                 break;
+            case "#text":
+                break;
             default:
                 if (log.isLoggable(Level.FINE)) {
                     throw new NotImplementedException("HwpParagraph");
@@ -137,7 +140,7 @@ public class HwpParagraph {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
         }
         // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
-        if (!(p.getLast() instanceof Ctrl_Character)) {
+        if (p.size()==0 || !(p.getLast() instanceof Ctrl_Character)) {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
         }
     }
@@ -279,6 +282,22 @@ public class HwpParagraph {
         case "hp:edit":
         case "hp:listBox":
         case "hp:scrollBar":
+            break;
+        case "hp:switch":
+            {
+                NodeList nodeList = node.getChildNodes();
+                for (int j=0; j<nodeList.getLength(); j++) {
+                    Node child = nodeList.item(j);
+                    switch(child.getNodeName()) {
+                    case "hp:case":
+                        break;
+                    case "hp:default":
+                        break;
+                    }
+                }
+            }
+            break;
+        case "#text":
             break;
         default:
             if (log.isLoggable(Level.FINE)) {

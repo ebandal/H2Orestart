@@ -257,11 +257,13 @@ public class HwpRecord_BorderFill extends HwpRecord {
                 diagonal = getBorder(child); break;
             case "hc:fillBrush":
                 fill = readFillBrush(child); break;
+            case "#text":
+                break;
             default:
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("HwpRecord_BorderFill");
-            	}
-            	break;
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("HwpRecord_BorderFill");
+                }
+                break;
             }
         }
     }
@@ -275,7 +277,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
         // [color="none", type="NONE", width="0.1 mm"]
         
         border.style = LineStyle2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
-        String colorStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("^#([0-9A-F]+)$", "$1");
+        String colorStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("^#([0-9A-Fa-f]+)$", "$1");
         if (!colorStr.equals("none")) {
         	border.color = Integer.parseUnsignedInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
         }
@@ -350,6 +352,8 @@ public class HwpRecord_BorderFill extends HwpRecord {
             case "hc:imgBrush":
                 readImgBrush(grandChild, fill);
                 fill.fillType = fill.fillType | 0x02;
+                break;
+            case "#text":
                 break;
             default:
             	if (log.isLoggable(Level.FINE)) {

@@ -360,8 +360,12 @@ public class ConvPara {
                 if ((tabDef.attr&0x2)==0x2) {       // 문단 오른쪽 끝 자동 탭
                     tss = new TabStop[1];
                     tss[0] = new TabStop();
-                    HwpDoc.section.Page page = ConvPage.getCurrentPage().page;
-                    tss[0].Position = Transform.translateHwp2Office(page.width-page.marginLeft-page.marginRight); // 150*100;
+                    if (ConvPage.getCurrentPage()!=null) {
+                        HwpDoc.section.Page page = ConvPage.getCurrentPage().page;
+                        tss[0].Position = Transform.translateHwp2Office(page.width-page.marginLeft-page.marginRight); // 150*100;
+                    } else {
+                        tss[0].Position = 0;
+                    }
                     tss[0].Alignment = TabAlign.RIGHT;
                     tss[0].FillChar = 32;
                 } else if ((tabDef.attr&0x1)==0x1) {// 내어쓰기용 자동 탭

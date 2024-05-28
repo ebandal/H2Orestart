@@ -303,8 +303,16 @@ public class Ctrl_Common extends Ctrl {
                         }
                     }
                     
-                    vertRelTo = VRelTo.valueOf(childAttrs.getNamedItem("vertRelTo").getNodeValue());
-                    horzRelTo = HRelTo.valueOf(childAttrs.getNamedItem("horzRelTo").getNodeValue());
+                    if (childAttrs.getNamedItem("vertRelTo")==null) {
+                        vertRelTo = VRelTo.PAPER;
+                    } else {
+                        vertRelTo = VRelTo.valueOf(childAttrs.getNamedItem("vertRelTo").getNodeValue());
+                    }
+                    if (childAttrs.getNamedItem("horzRelTo")==null) {
+                        horzRelTo = HRelTo.PAPER;
+                    } else {
+                        horzRelTo = HRelTo.valueOf(childAttrs.getNamedItem("horzRelTo").getNodeValue());
+                    }
                     
                     if (vertRelTo==VRelTo.PARA) {
                         switch(childAttrs.getNamedItem("flowWithText").getNodeValue()) {

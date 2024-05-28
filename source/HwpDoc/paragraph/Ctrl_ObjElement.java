@@ -116,9 +116,17 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("x").getNodeValue();
-                    xGrpOffset = (int) Long.parseLong(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        xGrpOffset = (int) Double.parseDouble(numStr);
+                    } else {
+                        xGrpOffset = (int) Long.parseLong(numStr);
+                    }
                     numStr = childAttrs.getNamedItem("y").getNodeValue();
-                    yGrpOffset = (int) Long.parseLong(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        yGrpOffset = (int) Double.parseDouble(numStr);
+                    } else {
+                        yGrpOffset = (int) Long.parseLong(numStr);
+                    }
                 }
                 node.removeChild(child);
                 break;
@@ -126,9 +134,17 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("width").getNodeValue();
-                    iniWidth = Integer.parseInt(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        iniWidth = (int)Double.parseDouble(numStr);
+                    } else {
+                        iniWidth = Integer.parseInt(numStr);
+                    }
                     numStr = childAttrs.getNamedItem("height").getNodeValue();
-                    iniHeight = Integer.parseInt(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        iniHeight = (int)Double.parseDouble(numStr);
+                    } else {
+                        iniHeight = Integer.parseInt(numStr);
+                    }
                 }
                 node.removeChild(child);
                 break;
@@ -136,9 +152,17 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("width").getNodeValue();
-                    curWidth = Integer.parseInt(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        curWidth = (int)Double.parseDouble(numStr);
+                    } else {
+                        curWidth = Integer.parseUnsignedInt(numStr);
+                    }
                     numStr = childAttrs.getNamedItem("height").getNodeValue();
-                    curHeight = Integer.parseUnsignedInt(numStr);
+                    if (numStr.matches("\\d+\\.\\d+")) {
+                        curHeight = (int)Double.parseDouble(numStr);;
+                    } else {
+                        curHeight = Integer.parseUnsignedInt(numStr);
+                    }
                 }
                 node.removeChild(child);
                 break;
@@ -204,6 +228,8 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                                 rotMatCnt++;
                             }
                             break;
+                        case "#text":
+                            break;
                         default:
                         	if (log.isLoggable(Level.FINE)) {
                         		throw new NotImplementedException("Ctrl_ObjElement");
@@ -247,9 +273,15 @@ public class Ctrl_ObjElement extends Ctrl_Common {
             case "hp:shapeComment":
                 break;
             case "hp:script":
-            	break;
+                break;
+            case "#text":
+                break;
             default:
                 log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ObjElement");
+                }
+                break;
             }
         }
     }

@@ -138,7 +138,7 @@ public class Ctrl_ColumnDef extends Ctrl {
         // attributes.getNamedItem("sameGap").getNodeValue()
         if (!sameSz) {
             colSzWidths = new short[colCount];
-            colSzGaps = new short[colCount-1];
+            colSzGaps = new short[colCount];
         }
         
         int colSzIdx = 0;
@@ -211,7 +211,7 @@ public class Ctrl_ColumnDef extends Ctrl {
                     }
                 }
                 break;
-            case "colSz":
+            case "hp:colSz":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
                     
@@ -225,11 +225,11 @@ public class Ctrl_ColumnDef extends Ctrl {
                 }
                 break;
             default:
-        		log.fine(child.getNodeName() + "," + child.getNodeValue());
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ColumnDef");
-            	}
-            	break;
+                log.fine(child.getNodeName() + "," + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ColumnDef");
+                }
+                break;
             }
         }
         this.fullfilled = true;

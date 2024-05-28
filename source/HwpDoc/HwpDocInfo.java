@@ -192,8 +192,15 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_BinData(childNode, version);
-                        binDataList.put(record.itemId, record);
+                        switch(childNode.getNodeName()) {
+                        case "opf:item":
+                            record = new HwpRecord_BinData(childNode, version);
+                            binDataList.put(record.itemId, record);
+                            break;
+                        // case "#text":
+                        default:
+                            break;
+                        }
                     }
                 }
                 break;
@@ -250,15 +257,22 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        
-                        NamedNodeMap attributes = childNode.getAttributes();
-                        String lang = attributes.getNamedItem("lang").getNodeValue();   // [fontCnt="6", lang="HANGUL"]
-                        
-                        NodeList childNodeList = childNode.getChildNodes();
-                        for (int k=0; k<childNodeList.getLength(); k++) {
-                            Node grandChild = childNodeList.item(k);
-                            record = new HwpRecord_FaceName(this, grandChild, version);
-                            faceNameList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:fontface":
+                            NamedNodeMap attributes = childNode.getAttributes();
+                            String lang = attributes.getNamedItem("lang").getNodeValue();   // [fontCnt="6", lang="HANGUL"]
+                            
+                            NodeList childNodeList = childNode.getChildNodes();
+                            for (int k=0; k<childNodeList.getLength(); k++) {
+                                Node grandChild = childNodeList.item(k);
+                                switch(grandChild.getNodeName()) {
+                                case "hh:font":
+                                    record = new HwpRecord_FaceName(this, grandChild, version);
+                                    faceNameList.add(record);
+                                    break;
+                                }
+                            }
+                            break;
                         }
                     }
                 }
@@ -268,8 +282,12 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_BorderFill(this, childNode, version);
-                        borderFillList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:borderFill":
+                            record = new HwpRecord_BorderFill(this, childNode, version);
+                            borderFillList.add(record);
+                            break;
+                        }
                     }
                 }
                 break;
@@ -278,8 +296,12 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_CharShape(this, childNode, version);
-                        charShapeList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:charPr":
+                            record = new HwpRecord_CharShape(this, childNode, version);
+                            charShapeList.add(record);
+                            break;
+                        }
                     }
                 }
                 break;
@@ -288,8 +310,12 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_TabDef(this, childNode, version);
-                        tabDefList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:tabPr":
+                            record = new HwpRecord_TabDef(this, childNode, version);
+                            tabDefList.add(record);
+                            break;
+                        }
                     }
                 }
                 break;
@@ -298,8 +324,12 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_Numbering(this, childNode, version);
-                        numberingList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:numbering":
+                            record = new HwpRecord_Numbering(this, childNode, version);
+                            numberingList.add(record);
+                            break;
+                        }
                     }
                 }
                 break;
@@ -318,8 +348,12 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_ParaShape(this, childNode, version);
-                        paraShapeList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:paraPr":
+                            record = new HwpRecord_ParaShape(this, childNode, version);
+                            paraShapeList.add(record);
+                            break;
+                        }
                     }
                 }
                 break;
@@ -328,8 +362,12 @@ public class HwpDocInfo {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
                         Node childNode = children.item(j);
-                        record = new HwpRecord_Style(this, childNode, version);
-                        styleList.add(record);
+                        switch(childNode.getNodeName()) {
+                        case "hh:style":
+                            record = new HwpRecord_Style(this, childNode, version);
+                            styleList.add(record);
+                            break;
+                        }
                     }
                 }
                 break;
