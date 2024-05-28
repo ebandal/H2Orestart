@@ -148,21 +148,25 @@ public class HwpRecurs {
                 }
                 break;
             case "dces":
-                if (secdDone==false) {
-                    ConvPage.setupPage(wContext, ((Ctrl_SectionDef)ctrl).page);
-                    secdDone = true;
-                }
-                break;
-            case "dloc":
-                if (secdDone == false) {
-                    Ctrl_SectionDef ctrlSecd = para.p.stream().filter(c -> (c instanceof Ctrl_SectionDef))
-                                                    .map(c -> (Ctrl_SectionDef)c).findAny().orElse(null);
-                    if (ctrlSecd!=null) {
-                        ConvPage.setupPage(wContext, ctrlSecd.page);
+                if (step==1) { // 1depth에서만 처리
+                    if (secdDone==false) {
+                        ConvPage.setupPage(wContext, ((Ctrl_SectionDef)ctrl).page);
                         secdDone = true;
                     }
                 }
-                ConvPage.setColumn(wContext, (Ctrl_ColumnDef)ctrl);
+                break;
+            case "dloc":
+                if (step==1) { // 1depth에서만 처리
+                    if (secdDone == false) {
+                        Ctrl_SectionDef ctrlSecd = para.p.stream().filter(c -> (c instanceof Ctrl_SectionDef))
+                                                        .map(c -> (Ctrl_SectionDef)c).findAny().orElse(null);
+                        if (ctrlSecd!=null) {
+                            ConvPage.setupPage(wContext, ctrlSecd.page);
+                            secdDone = true;
+                        }
+                    }
+                    ConvPage.setColumn(wContext, (Ctrl_ColumnDef)ctrl);
+                }
                 break;
             case "daeh":    // 머리말
             case "toof":    // 꼬리말
@@ -280,6 +284,7 @@ public class HwpRecurs {
             case "em%%":    // FIELD_MEMO
             case "rpc%":    // FIELD_PRIVATE_INFO_SECURITY
             default:
+                break;
             }
         }
     }
