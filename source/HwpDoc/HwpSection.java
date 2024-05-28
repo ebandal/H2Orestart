@@ -481,6 +481,8 @@ public class HwpSection {
                         offset += parseCtrlRecurse(ctrl, level, buf, offset, version);
                     }
                     break;
+                case HWPTAG_CTRL_HEADER:    // [2024.05.27]
+                    return offset - off;
                 case HWPTAG_PARA_RANGE_TAG:
                 case HWPTAG_CTRL_DATA:
                 case HWPTAG_FORM_OBJECT:
@@ -639,7 +641,11 @@ public class HwpSection {
                         // replace Ctrl with newCtrl
                         HwpParagraph parentPara = ((Ctrl_GeneralShape) ctrl).getParent();
                         int ctrlIndex = parentPara.p.indexOf(ctrl);
-                        parentPara.p.set(ctrlIndex, newCtrl);
+                        if (ctrlIndex>=0) {
+                            parentPara.p.set(ctrlIndex, newCtrl);
+                        } else {
+                            parentPara.p.add(newCtrl);
+                        }
                         ctrl = newCtrl;
                         offset += size;
                     }
