@@ -30,18 +30,18 @@ import HwpDoc.Exception.NotImplementedException;
 public abstract class Ctrl {
     private static final Logger log = Logger.getLogger(Ctrl.class.getName());
 
-	public String ctrlId;
-	public boolean fullfilled;     // 파싱이 완료되었는지를 나타냄
+    public String ctrlId;
+    public boolean fullfilled;     // 파싱이 완료되었는지를 나타냄
 
-	public Ctrl() {
-	}
+    public Ctrl() {
+    }
 
-	public Ctrl(String ctrlId) {
-		this.ctrlId = ctrlId;
-	}
-	
+    public Ctrl(String ctrlId) {
+        this.ctrlId = ctrlId;
+    }
+    
     public abstract int getSize();
-	
+    
     public static Ctrl getCtrl(Node node, int version) throws NotImplementedException {
         Ctrl ctrl = null;
         switch(node.getNodeName()) {
@@ -79,11 +79,11 @@ public abstract class Ctrl {
         case "#text":
             break;
         default:
-        	if (log.isLoggable(Level.FINE)) {
-        		throw new NotImplementedException("Ctrl");
-        	}
+            if (log.isLoggable(Level.FINE)) {
+                throw new NotImplementedException("Ctrl");
+            }
         }
-            
+        
         return ctrl;
     }
 

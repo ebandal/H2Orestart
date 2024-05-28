@@ -329,36 +329,36 @@ public class Ctrl_SectionDef extends Ctrl {
             case "#text":
                 break;
             default:
-            	log.fine("Not implmented:" + child.getNodeName());
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_SectionDef");
-            	}
-            	break;
+                log.fine("Not implmented:" + child.getNodeName());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_SectionDef");
+                }
+                break;
             }
         }
         this.fullfilled = true;
-	}
+    }
 
-	public String toString(int attr) {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=속성:"+Integer.toBinaryString(attr))
-			.append(",머리글:"+(hideHeader?"감추기":"보이기"))
-			.append(",꼬리글:"+(hideFooter?"감추기":"보이기"))
-			.append(",단사이간격:"+spaceColumns)
-			.append(",세로줄맞춤:"+lineGrid)
-			.append(",가로줄맞춤:"+charGrid)
-			.append(",기본탭간격:"+tabStop)
-			.append(",개요-번호문단모양ID:"+outlineNumberingID)
-			.append(",쪽번호:"+page)
-			.append(",그림번호:"+figure)
-			.append(",표번호:"+table)
-			.append(",수식번호:"+equation)
-			.append(",언어:"+lang);
-		return strb.toString();
-	}
-	
-	public int getSize() {
-		return size;
-	}
+    public String toString(int attr) {
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=속성:"+Integer.toBinaryString(attr))
+            .append(",머리글:"+(hideHeader?"감추기":"보이기"))
+            .append(",꼬리글:"+(hideFooter?"감추기":"보이기"))
+            .append(",단사이간격:"+spaceColumns)
+            .append(",세로줄맞춤:"+lineGrid)
+            .append(",가로줄맞춤:"+charGrid)
+            .append(",기본탭간격:"+tabStop)
+            .append(",개요-번호문단모양ID:"+outlineNumberingID)
+            .append(",쪽번호:"+page)
+            .append(",그림번호:"+figure)
+            .append(",표번호:"+table)
+            .append(",수식번호:"+equation)
+            .append(",언어:"+lang);
+        return strb.toString();
+    }
+    
+    public int getSize() {
+        return size;
+    }
 }
