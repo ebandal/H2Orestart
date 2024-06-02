@@ -566,10 +566,14 @@ public class ConvPara {
     static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, 
                                         HwpRecord_BorderFill borderFill, int step) {
         try {
-            xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
-            // paraProps.setPropertyValue("CharFontStyleName", faceName.faceName);
-            xStyleProps.setPropertyValue("CharFontNameAsian", charShape.fontName[0]);
-            // paraProps.setPropertyValue("CharFontStyleNameAsian", faceName.faceName);
+            if (charShape.fontName[1]!=null) {
+                xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
+                // paraProps.setPropertyValue("CharFontStyleName", faceName.faceName);
+            }
+            if (charShape.fontName[0]!=null) {
+                xStyleProps.setPropertyValue("CharFontNameAsian", charShape.fontName[0]);
+                // paraProps.setPropertyValue("CharFontStyleNameAsian", faceName.faceName);
+            }
             
             // charShape.fontID[0];                 // 언어별 글꼴ID(FaceID)         // f#
             // charShape.ratio[0];                  // 언어별 장평, 50%~200%         // r#

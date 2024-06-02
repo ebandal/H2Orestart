@@ -139,7 +139,7 @@ public class ConvPage {
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {
                 HwpRecord_CharShape font = (HwpRecord_CharShape) wContext.getDocInfo().charShapeList.get(i);
 
-                if (namesSet.contains(font.fontName[0]) == false) {
+                if (font.fontName[0]!=null && namesSet.contains(font.fontName[0])==false) {
                     String replaceFontName = null;
 
                     // 한컴 전용폰트이므로, 대체폰트로 교체.
