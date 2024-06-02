@@ -1282,7 +1282,9 @@ public class ConvGraphics {
         XTextFrame xFrame = null;
         XText xFrameText = null;
         XTextCursor xFrameCursor = null;
-        XPropertySet paraProps = null;
+        
+        XTextContent xTextContentShape = null; 
+        XPropertySet xPropSet = null;
 
         try {
             if (hasParas || hasCaption) {
@@ -1290,23 +1292,26 @@ public class ConvGraphics {
                 // Frame 내부 Cursor 생성
                 xFrameText = xFrame.getText();
                 xFrameCursor = xFrameText.createTextCursor();
+                xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xFrame);
+            } else {
+                Object xObj = wContext.mMSF.createInstance("com.sun.star.drawing.PolyPolygonShape");
+                xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
+                XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
+    
+                int sizeWidth = shapeWidth <= 0 ? pol.curWidth : shapeWidth;
+                int sizeHeight = shapeHeight <= 0 ? pol.curHeight : shapeHeight;
+    
+                // 그릴 위치
+                Point aPos = new Point(0, 0);
+                Size aSize = new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight));
+                xShape.setPosition(aPos);
+                xShape.setSize(aSize);
+                xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xShape);
             }
 
-            Object xObj = wContext.mMSF.createInstance("com.sun.star.drawing.PolyPolygonShape");
-            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
-            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
-
-            int sizeWidth = shapeWidth <= 0 ? pol.curWidth : shapeWidth;
-            int sizeHeight = shapeHeight <= 0 ? pol.curHeight : shapeHeight;
-
-            // 그릴 위치
-            Point aPos = new Point(0, 0);
-            Size aSize = new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight));
-            xShape.setPosition(aPos);
-            xShape.setSize(aSize);
-            XPropertySet xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xShape);
-
             if (hasParas || hasCaption) {
+                setLineStyle(xPropSet, pol);
+
                 try {
                     xPropSet.setPropertyValue("AnchorType", TextContentAnchorType.AS_CHARACTER);
                 } catch (UnknownPropertyException | PropertyVetoException | IllegalArgumentException
@@ -1320,36 +1325,35 @@ public class ConvGraphics {
                 // 투명하게 해야 도형이 보인다.
                 // xPropSet.setPropertyValue("BackTransparent", RelOrientation.PRINT_AREA); //
                 // 1:paragraph text area
-                xPropSet.setPropertyValue("FillStyle", FillStyle.NONE);
-                xPropSet.setPropertyValue("FillTransparence", 100);
+                
+                // xPropSet.setPropertyValue("FillStyle", FillStyle.NONE);
+                setFillStyle(wContext, xPropSet, pol.fill);
+
+                // xPropSet.setPropertyValue("FillTransparence", 100);
             } else {
                 setPosition(xPropSet, pol, pol.nGrp > 0 ? pol.xGrpOffset : 0, pol.nGrp > 0 ? pol.yGrpOffset : 0);
-            }
-            setWrapStyle(xPropSet, pol);
-            setLineStyle(xPropSet, pol);
+                setWrapStyle(xPropSet, pol);
+                setLineStyle(xPropSet, pol);
 
-            PolyPolygonBezierCoords aCoords = new PolyPolygonBezierCoords();
-            int nPointCount = pol.nPoints;
-            aCoords.Coordinates = new Point[1][];
-            aCoords.Flags = new PolygonFlags[1][];
-            Point[] pPolyPoints = new Point[nPointCount];
-            PolygonFlags[] pPolyFlags = new PolygonFlags[nPointCount];
-            for (int n = 0; n < nPointCount; n++) {
-                pPolyPoints[n] = new Point();
-                pPolyPoints[n].X = Transform.translateHwp2Office(pol.points[n].x);
-                pPolyPoints[n].Y = Transform.translateHwp2Office(pol.points[n].y);
-                pPolyFlags[n] = PolygonFlags.NORMAL;
-            }
-            aCoords.Coordinates[0] = pPolyPoints;
-            aCoords.Flags[0] = pPolyFlags;
-            xPropSet.setPropertyValue("PolyPolygonBezier", aCoords);
+                PolyPolygonBezierCoords aCoords = new PolyPolygonBezierCoords();
+                int nPointCount = pol.nPoints;
+                aCoords.Coordinates = new Point[1][];
+                aCoords.Flags = new PolygonFlags[1][];
+                Point[] pPolyPoints = new Point[nPointCount];
+                PolygonFlags[] pPolyFlags = new PolygonFlags[nPointCount];
+                for (int n = 0; n < nPointCount; n++) {
+                    pPolyPoints[n] = new Point();
+                    pPolyPoints[n].X = Transform.translateHwp2Office(pol.points.get(n).x);
+                    pPolyPoints[n].Y = Transform.translateHwp2Office(pol.points.get(n).y);
+                    pPolyFlags[n] = PolygonFlags.NORMAL;
+                }
+                aCoords.Coordinates[0] = pPolyPoints;
+                aCoords.Flags[0] = pPolyFlags;
+                xPropSet.setPropertyValue("PolyPolygonBezier", aCoords);
 
-            setFillStyle(wContext, xPropSet, pol.fill);
+                setFillStyle(wContext, xPropSet, pol.fill);
 
-            if (hasParas || hasCaption) {
-                XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
-                // 투명하게 해야 도형이 보인다.
-                frameProps.setPropertyValue("FillTransparence", 100);
+                wContext.mText.insertTextContent(wContext.mTextCursor, xTextContentShape, false);
             }
 
             if (wContext.version >= 72) {
@@ -1774,9 +1778,9 @@ public class ConvGraphics {
             }
         }
 
-        // Transparency 100%로 설정한다.
         frameProps.setPropertyValue("FillStyle", FillStyle.NONE);
-        frameProps.setPropertyValue("FillTransparence", 100);
+        // Transparency 100%로 설정한다. Transparency는 외부에서 조절
+        // frameProps.setPropertyValue("FillTransparence", 100);
 
         // TextFrame을 그린 후에 automaticHeight를 조정해야..
         if (fixedSize) {

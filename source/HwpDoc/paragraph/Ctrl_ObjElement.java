@@ -244,12 +244,10 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 break;
             case "hp:drawText":
                 break;
+            case "hc:pt":
             case "hc:pt0":
-                break;
             case "hc:pt1":
-                break;
             case "hc:pt2":
-                break;
             case "hc:pt3":
                 break;
             case "hp:sz":
@@ -278,9 +276,6 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                 break;
             default:
                 log.fine(child.getNodeName() + "=" + child.getNodeValue());
-                if (log.isLoggable(Level.FINE)) {
-                    throw new NotImplementedException("Ctrl_ObjElement");
-                }
                 break;
             }
         }

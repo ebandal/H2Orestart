@@ -21,6 +21,7 @@
 package HwpDoc.paragraph;
 
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,8 +38,7 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
     
     // 타원 개체 속성
     public int      nPoints;    // count of points
-    public Point[]  points;     // x,y 좌표 * n
-    
+    public LinkedList<Point>  points;     // x,y 좌표 * n
     
     public Ctrl_ShapePolygon(String ctrlId, int size, byte[] buf, int off, int version) {
         super(ctrlId, size, buf, off, version);
@@ -59,17 +59,20 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
         String numStr;
         
         NodeList nodeList = node.getChildNodes();
-        points = new Point[nodeList.getLength()];
+        points = new LinkedList<Point>();
         for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
             NamedNodeMap childAttrs = child.getAttributes();
             switch(child.getNodeName()) {
             case "hc:pt":   // 다각형 좌표
-                points[i] = new Point();
-                numStr = childAttrs.getNamedItem("x").getNodeValue();
-                points[i].x = Integer.parseInt(numStr);
-                numStr = childAttrs.getNamedItem("y").getNodeValue();
-                points[i].y = Integer.parseInt(numStr);
+                {
+                    Point pt = new Point();
+                    numStr = childAttrs.getNamedItem("x").getNodeValue();
+                    pt.x = Integer.parseInt(numStr);
+                    numStr = childAttrs.getNamedItem("y").getNodeValue();
+                    pt.y = Integer.parseInt(numStr);
+                    points.add(0,pt);
+                }
                 node.removeChild(child);
                 break;
             case "#text":
@@ -82,6 +85,7 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
                 break;
             }
         }
+        nPoints = points.size();
     }
 
 	public static int parseElement(Ctrl_ShapePolygon obj, int size, byte[] buf, int off, int version) throws HwpParseException {
@@ -91,13 +95,14 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
         offset += 4;
         
         if (obj.nPoints > 0) {
-            obj.points = new Point[obj.nPoints];
+            obj.points = new LinkedList<Point>(); // [obj.nPoints];
             for (int i=0; i<obj.nPoints; i++) {
-                obj.points[i] = new Point();
-                obj.points[i].x = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+                Point pt = new Point();
+                pt.x = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
                 offset += 4;
-                obj.points[i].y = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+                pt.y = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
                 offset += 4;
+                obj.points.push(pt);
             }
         }
 
