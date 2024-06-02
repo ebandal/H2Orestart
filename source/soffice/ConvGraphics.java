@@ -2869,6 +2869,7 @@ public class ConvGraphics {
                     v[1].Value = "image/x-wmf";
                     break;
                 case "jpg":
+                case "jpeg":
                     v[1].Value = "image/jpeg";
                     break;
                 case "gif":
