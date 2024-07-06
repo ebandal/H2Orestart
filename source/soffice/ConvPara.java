@@ -731,7 +731,7 @@ public class ConvPara {
             //	charShape.shadow;                   // 그림자 종류                    // 
             //	charShape.shadowSpacing;            // 그림자 간격, -100%~100%
             //	charShape.shadowColor;              // 그림자 색
-            if (charShape.shadow!=Shadow.NONE) {
+            if (charShape.shadow!=Shadow.NONE && charShape.shadowColor!=0) {
                 ShadowFormat sf = new ShadowFormat();
                 sf.Location = ShadowLocation.BOTTOM_RIGHT;
                 sf.ShadowWidth = charShape.shadowOffsetX;
