@@ -180,9 +180,19 @@ public class ConvGraphics {
                 xFrameCursor = xFrameText.createTextCursor();
             }
 
-            /* transform을 거치지 않는 TextGrapicObject는 curWidth curHeight 로 크기 설정 */
-            int sizeWidth = shapeWidth <= 0 ? (pic.curWidth==0?pic.width:pic.curWidth) : shapeWidth;
-            int sizeHeight = shapeHeight <= 0 ? (pic.curHeight==0?pic.height:pic.curHeight) : shapeHeight;
+            int sizeWidth = 0, sizeHeight = 0;
+            if (shapeWidth <= 0 && shapeHeight <= 0) {
+                /* transform을 거치지 않는 TextGrapicObject는 curWidth curHeight 로 크기 설정 */
+                sizeWidth = Math.abs(pic.curWidth);
+                sizeHeight = Math.abs(pic.curHeight);
+                if (sizeWidth==0 || sizeHeight==0) {
+                    sizeWidth = Math.abs(pic.width);
+                    sizeHeight = Math.abs(pic.height);
+                }
+            } else {
+                sizeWidth = shapeWidth;
+                sizeHeight = shapeHeight;
+            }
 
             // 그림그리기
             Object textGraphicObject = wContext.mMSF.createInstance("com.sun.star.text.TextGraphicObject");
@@ -380,8 +390,19 @@ public class ConvGraphics {
                 xFrameCursor = xFrameText.createTextCursor();
             }
 
-            int sizeWidth = shapeWidth <= 0 ? vid.width : shapeWidth;
-            int sizeHeight = shapeHeight <= 0 ? vid.height : shapeHeight;
+            int sizeWidth = 0, sizeHeight = 0;
+            if (shapeWidth <= 0 && shapeHeight <= 0) {
+                /* transform을 거치지 않는 TextGrapicObject는 curWidth curHeight 로 크기 설정 */
+                sizeWidth = Math.abs(vid.width);
+                sizeHeight = Math.abs(vid.height);
+                if (sizeWidth==0 || sizeHeight==0) {
+                    sizeWidth = Math.abs(vid.width);
+                    sizeHeight = Math.abs(vid.height);
+                }
+            } else {
+                sizeWidth = shapeWidth;
+                sizeHeight = shapeHeight;
+            }
 
             // 그림그리기
             Object textGraphicObject = wContext.mMSF.createInstance("com.sun.star.text.TextGraphicObject");
@@ -687,8 +708,12 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = shape.curWidth == 0 ? shape.width : shape.curWidth;
-                sizeHeight = shape.curHeight == 0 ? shape.height : shape.curHeight;
+                sizeWidth = Math.abs(shape.curWidth);
+                sizeHeight = Math.abs(shape.curHeight);
+                if (sizeWidth==0 || sizeHeight==0) {
+                    sizeWidth = Math.abs(shape.width);
+                    sizeHeight = Math.abs(shape.height);
+                }
                 if (shape.rotat != 0) {
                     Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                     Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -699,7 +724,7 @@ public class ConvGraphics {
                 sizeWidth = shapeWidth;
                 sizeHeight = shapeHeight;
             }
-
+            
             XShape tfShape = UnoRuntime.queryInterface(XShape.class, xInternalFrame);
             tfShape.setSize(
                     new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight)));
@@ -813,8 +838,12 @@ public class ConvGraphics {
             if (shape.nGrp == 0) {
                 int sizeWidth = 0, sizeHeight = 0;
                 if (shapeWidth <= 0 && shapeHeight <= 0) {
-                    sizeWidth = shape.width == 0 ? shape.curWidth : shape.width;
-                    sizeHeight = shape.height == 0 ? shape.curHeight : shape.height;
+                    sizeWidth = Math.abs(shape.curWidth);
+                    sizeHeight = Math.abs(shape.curHeight);
+                    if (sizeWidth==0 || sizeHeight==0) {
+                        sizeWidth = Math.abs(shape.width);
+                        sizeHeight = Math.abs(shape.height);
+                    }
                     if (shape.rotat != 0) {
                         Point2D ptSrc = new Point2D.Double(shape.curWidth, shape.curHeight);
                         Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -828,8 +857,8 @@ public class ConvGraphics {
                 xShape.setSize(
                         new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight)));
             } else {
-            	// transform 방식 변경 (2024.01.28)
-                xShape.setSize(new Size(shape.width, shape.height));
+                // transform 방식으로 변경 (2024.01.28)
+                // xShape.setSize(new Size(shape.width, shape.height));
             }
 
             // anchor the text frame
@@ -900,30 +929,30 @@ public class ConvGraphics {
                     log.fine("Cannot get OptionalInt either maxCtrlWidth or maxCtrlHeight. " + e.getLocalizedMessage());
                 }
                 for (int i=0; i<shape.paras.size(); i++) {
-                	HwpParagraph para = shape.paras.get(i);
-                	if (para.p!=null) {
-	                    // 테이블은 Frame 크기를 넘지 못하므로, 테이블 크기만큼 내부 Frame을 다시 만들어야 한다.
-	                    // 다만, 큰 테이블이라도 보이는건 외부 Frame 만큼 보이도록 한다.
-	                    HwpCallback callback = new HwpCallback(TableFrame.MAKE);
-	                    if (shape.curWidth < maxCtrlWidth || shape.curHeight < maxCtrlHeight) {
-	                        callback = new HwpCallback(TableFrame.MAKE_PART);
-	                    }
-	                    int charShapeId = 0;
-	                    for (int j=0; j<para.p.size(); j++) {
-	                    	Ctrl c = para.p.get(j);
-	                    	ParaText paraText = null;
-	                        if (c instanceof ParaText) {
-	                            paraText = (ParaText) c;
-	        		            charShapeId = ((ParaText)c).charShapeId;
-	                        	HwpRecurs.insertDrawingString(innerContext, paraText.text, para.paraStyleID, para.paraShapeID, (short)charShapeId, false, step);
-	                        } else if (c instanceof Ctrl_Character) {
-	                            // last PARA_BREAK은 쓰지 않는다.
-	                        	if (i<shape.paras.size()-1 || j<para.p.size()-1) {
-	                        		innerContext.mText.insertControlCharacter(innerContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
-	                        	}
-	                        }
-	                    }
-                	}
+                    HwpParagraph para = shape.paras.get(i);
+                    if (para.p!=null) {
+                        // 테이블은 Frame 크기를 넘지 못하므로, 테이블 크기만큼 내부 Frame을 다시 만들어야 한다.
+                        // 다만, 큰 테이블이라도 보이는건 외부 Frame 만큼 보이도록 한다.
+                        HwpCallback callback = new HwpCallback(TableFrame.MAKE);
+                        if (shape.curWidth < maxCtrlWidth || shape.curHeight < maxCtrlHeight) {
+                            callback = new HwpCallback(TableFrame.MAKE_PART);
+                        }
+                        int charShapeId = 0;
+                        for (int j=0; j<para.p.size(); j++) {
+                            Ctrl c = para.p.get(j);
+                            ParaText paraText = null;
+                            if (c instanceof ParaText) {
+                                paraText = (ParaText) c;
+                                charShapeId = ((ParaText)c).charShapeId;
+                                HwpRecurs.insertDrawingString(innerContext, paraText.text, para.paraStyleID, para.paraShapeID, (short)charShapeId, false, step);
+                            } else if (c instanceof Ctrl_Character) {
+                                // last PARA_BREAK은 쓰지 않는다.
+                                if (i<shape.paras.size()-1 || j<para.p.size()-1) {
+                                    innerContext.mText.insertControlCharacter(innerContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
+                                }
+                            }
+                        }
+                    }
                 }
                 if (shape.nGrp == 0) {
                     ++autoNum;
@@ -936,8 +965,7 @@ public class ConvGraphics {
         }
     }
     
-    private static void insertPictureRECTAGLE(WriterContext wOuterContext, Ctrl_ShapePic pic, 
-    											int step, int shapeWidth, int shapeHeight) {
+    private static void insertPictureRECTAGLE(WriterContext wOuterContext, Ctrl_ShapePic pic, int step, int shapeWidth, int shapeHeight) {
         boolean hasCaption = pic.caption == null ? false : pic.caption.size() == 0 ? false : true;
 
         XTextFrame xFrame = null;
@@ -973,8 +1001,12 @@ public class ConvGraphics {
                 if (pic.nGrp == 0) {
                     int sizeWidth = 0, sizeHeight = 0;
                     if (shapeWidth <= 0 && shapeHeight <= 0) {
-                        sizeWidth = pic.width == 0 ? pic.curWidth : pic.width;
-                        sizeHeight = pic.height == 0 ? pic.curHeight : pic.height;
+                        sizeWidth = Math.abs(pic.curWidth);
+                        sizeHeight = Math.abs(pic.curHeight);
+                        if (sizeWidth==0 || sizeHeight==0) {
+                            sizeWidth = Math.abs(pic.width);
+                            sizeHeight = Math.abs(pic.height);
+                        }
                         if (pic.rotat != 0) {
                             Point2D ptSrc = new Point2D.Double(pic.curWidth, pic.curHeight);
                             Point2D ptDst = Transform.rotateValue(pic.rotat, ptSrc);
@@ -988,8 +1020,8 @@ public class ConvGraphics {
                     xShape.setSize(
                             new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight)));
                 } else {
-                	// transform 방식 변경 (2024.01.28)
-                    xShape.setSize(new Size(pic.width, pic.height));
+                    // transform 방식으로 변경 (2024.01.28)
+                    // xShape.setSize(new Size(pic.width, pic.height));
                 }
 
                 if (pic.nGrp > 0) {
@@ -1006,7 +1038,7 @@ public class ConvGraphics {
                 xFrameText.insertTextContent(xFrameCursor, xTextContent, true);
                 xFrameText.insertControlCharacter(xFrameCursor, ControlCharacter.PARAGRAPH_BREAK, false);
             } else {
-            	wOuterContext.mText.insertTextContent(wOuterContext.mTextCursor, xTextContent, true);
+                wOuterContext.mText.insertTextContent(wOuterContext.mTextCursor, xTextContent, true);
                 if (wOuterContext.version >= 72) {
                     TextContentAnchorType anchorType = (TextContentAnchorType) xPropsSet.getPropertyValue("AnchorType");
                     if (anchorType == TextContentAnchorType.AT_PARAGRAPH) {
@@ -1202,8 +1234,18 @@ public class ConvGraphics {
             XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
             XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
 
-            int sizeWidth = shapeWidth <= 0 ? (ell.width == 0 ? ell.curWidth : ell.width) : shapeWidth;
-            int sizeHeight = shapeHeight <= 0 ? (ell.height == 0 ? ell.curHeight : ell.height) : shapeHeight;
+            int sizeWidth = 0, sizeHeight = 0;
+            if (shapeWidth <= 0 && shapeHeight <= 0) {
+                sizeWidth = Math.abs(ell.curWidth);
+                sizeHeight = Math.abs(ell.curHeight);
+                if (sizeWidth==0 || sizeHeight==0) {
+                    sizeWidth = Math.abs(ell.width);
+                    sizeHeight = Math.abs(ell.height);
+                }
+            } else {
+                sizeWidth = shapeWidth;
+                sizeHeight = shapeHeight;
+            }
 
             // 그릴 위치
             Point aPos = new Point(0, 0);
@@ -1298,8 +1340,18 @@ public class ConvGraphics {
                 xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
                 XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
     
-                int sizeWidth = shapeWidth <= 0 ? pol.curWidth : shapeWidth;
-                int sizeHeight = shapeHeight <= 0 ? pol.curHeight : shapeHeight;
+                int sizeWidth = 0, sizeHeight = 0;
+                if (shapeWidth <= 0 && shapeHeight <= 0) {
+                    sizeWidth = Math.abs(pol.curWidth);
+                    sizeHeight = Math.abs(pol.curHeight);
+                    if (sizeWidth==0 || sizeHeight==0) {
+                        sizeWidth = Math.abs(pol.width);
+                        sizeHeight = Math.abs(pol.height);
+                    }
+                } else {
+                    sizeWidth = shapeWidth;
+                    sizeHeight = shapeHeight;
+                }
     
                 // 그릴 위치
                 Point aPos = new Point(0, 0);
@@ -1420,13 +1472,20 @@ public class ConvGraphics {
                 xFrameCursor = xFrameText.createTextCursor();
             }
 
+            int sizeWidth = 0, sizeHeight = 0;
+            sizeWidth = Math.abs(cur.curWidth);
+            sizeHeight = Math.abs(cur.curHeight);
+            if (sizeWidth==0 || sizeHeight==0) {
+                sizeWidth = Math.abs(cur.width);
+                sizeHeight = Math.abs(cur.height);
+            }
+
             Object xObj = wContext.mMSF.createInstance(shapeString);
             XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
             XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
             // 그릴 위치
             Point aPos = new Point(0, 0);
-            Size aSize = new Size(Transform.translateHwp2Office(cur.curWidth),
-                    Transform.translateHwp2Office(cur.curHeight));
+            Size aSize = new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight));
             xShape.setPosition(aPos);
             xShape.setSize(aSize);
             XPropertySet xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xShape);
@@ -1605,8 +1664,18 @@ public class ConvGraphics {
             XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
             XPropertySet xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xShape);
 
-            int sizeWidth = shapeWidth <= 0 ? arc.curWidth : shapeWidth;
-            int sizeHeight = shapeHeight <= 0 ? arc.curHeight : shapeHeight;
+            int sizeWidth = 0, sizeHeight = 0;
+            if (shapeWidth <= 0 && shapeHeight <= 0) {
+                sizeWidth = Math.abs(arc.curWidth);
+                sizeHeight = Math.abs(arc.curHeight);
+                if (sizeWidth==0 || sizeHeight==0) {
+                    sizeWidth = Math.abs(arc.width);
+                    sizeHeight = Math.abs(arc.height);
+                }
+            } else {
+                sizeWidth = shapeWidth;
+                sizeHeight = shapeHeight;
+            }
 
             double atan1 = Math.atan2(arc.centerY - arc.axixY1, arc.axixX1 - arc.centerX);
             int angle1 = (int) (atan1 * 180 / Math.PI);
