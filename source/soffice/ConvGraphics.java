@@ -331,6 +331,7 @@ public class ConvGraphics {
                             (int) (pic.nGrp>0 ? (pic.horzRelTo==null?0:pic.yGrpOffset*yScale) : 0));
             }
             setWrapStyle(xPropSet, pic);
+            setLineStyle(xPropSet, pic);
 
             // 위치를 잡은 후에 크기를 조정한다.
             xPropSet.setPropertyValue("Width", Transform.translateHwp2Office(sizeWidth));
