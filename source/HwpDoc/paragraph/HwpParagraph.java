@@ -86,6 +86,7 @@ public class HwpParagraph {
 
         // attributes.getNamedItem("merged").getNodeValue();
         // attributes.getNamedItem("paraTcId").getNodeValue();
+        int charShapeID = 0;
 
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
@@ -94,20 +95,18 @@ public class HwpParagraph {
             case "hp:run":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    CharShape charShape = new CharShape();
                     if (childAttrs.getNamedItem("charPrIDRef")!=null) {
                         numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
-                        charShape.charShapeID = Integer.parseInt(numStr);
+                        charShapeID = Integer.parseInt(numStr);
                         if (childAttrs.getNamedItem("charTcId")!=null) {
                             numStr = childAttrs.getNamedItem("charTcId").getNodeValue();
-                            charShape.start = Integer.parseInt(numStr);
                         }
                     }
 
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
-                        parseHwpParagraph(grandChild, charShape.charShapeID, version);
+                        parseHwpParagraph(grandChild, charShapeID, version);
                     }
                 }
                 break;
@@ -137,11 +136,11 @@ public class HwpParagraph {
         // hp:t 없이 paragraph 끝난다면 
         if (p==null) {
             p = new LinkedList<Ctrl>();
-            p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
+            p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK, charShapeID));
         }
         // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
         if (p.size()==0 || !(p.getLast() instanceof Ctrl_Character)) {
-            p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
+            p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK, charShapeID));
         }
     }
 

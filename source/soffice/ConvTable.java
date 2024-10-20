@@ -35,6 +35,7 @@ import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
+import HwpDoc.paragraph.Ctrl_Character;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.ParaText;
@@ -1103,9 +1104,14 @@ public class ConvTable {
 
             short[] charShapeID = new short[1];
             if (para.p != null) {
-                Optional<Ctrl> ctrlOp = para.p.stream().filter(c -> (c instanceof ParaText)).findFirst();
+            	Optional<Ctrl> ctrlOp = para.p.stream().findFirst();
                 if (ctrlOp.isPresent()) {
-                    charShapeID[0] = (short) ((ParaText) ctrlOp.get()).charShapeId;
+                	Ctrl ctrl = ctrlOp.get();
+                	if (ctrl instanceof ParaText) {
+                        charShapeID[0] = (short) ((ParaText) ctrlOp.get()).charShapeId;
+                	} else if (ctrl instanceof Ctrl_Character) {
+                		charShapeID[0] = (short) ((Ctrl_Character) ctrlOp.get()).charShapeId;
+                	}
                 }
             }
             HwpRecord_Style paraStyle = wContext.getParaStyle(para.paraStyleID);

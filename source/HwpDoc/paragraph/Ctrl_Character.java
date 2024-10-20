@@ -28,7 +28,13 @@ public class Ctrl_Character extends Ctrl {
         super(ctrlId);
         this.ctrlChar = ctrlChar;
     }
-    
+
+    public Ctrl_Character(String ctrlId, CtrlCharType ctrlChar, int charShapeId) {
+        super(ctrlId);
+        this.ctrlChar = ctrlChar;
+        this.charShapeId = charShapeId;
+    }
+
     @Override
     public int getSize() {
         return 1;

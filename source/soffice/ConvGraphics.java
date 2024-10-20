@@ -1876,7 +1876,11 @@ public class ConvGraphics {
         short[] charShapeID = new short[1];
         Optional<Ctrl> ctrlOp = shape.caption.stream().filter(c -> c.p != null).flatMap(c -> c.p.stream()).findFirst();
         if (ctrlOp.isPresent()) {
-            charShapeID[0] = (short) ((ParaText) ctrlOp.get()).charShapeId;
+        	if (ctrlOp.get() instanceof ParaText) {
+        		charShapeID[0] = (short) ((ParaText) ctrlOp.get()).charShapeId;
+        	} else if (ctrlOp.get() instanceof Ctrl_Character) {
+        		charShapeID[0] = (short) ((Ctrl_Character) ctrlOp.get()).charShapeId;
+        	}
         }
         HwpCallback callback = new HwpCallback() {
             @Override
