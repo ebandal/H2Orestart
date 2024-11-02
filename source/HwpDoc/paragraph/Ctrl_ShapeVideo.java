@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -52,8 +53,8 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_ShapeVideo(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+    public Ctrl_ShapeVideo(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
+        super(hwpx, ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         

@@ -26,6 +26,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -53,8 +54,8 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_ShapeLine(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+    public Ctrl_ShapeLine(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
+        super(hwpx, ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         // 처음 생성 시 수직선 또는 수평선일때, 선의 방향이 언제나 오른쪽(위쪽)으로 잡힘으로 인한 현상때문에 방향을 바로 잡아주기 위한 속성

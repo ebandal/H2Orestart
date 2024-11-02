@@ -20,15 +20,23 @@
  */
 package HwpDoc.paragraph;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.DataFormatException;
 
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import HwpDoc.HwpxFile;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.section.NoteShape;
 import HwpDoc.section.Page;
@@ -134,7 +142,7 @@ public class Ctrl_SectionDef extends Ctrl {
 		this.fullfilled = true;
 	}
 	
-	public Ctrl_SectionDef(String ctrlId, Node node, int version) throws NotImplementedException {
+	public Ctrl_SectionDef(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
 	    super(ctrlId);
 	    
         NamedNodeMap attributes = node.getAttributes();
@@ -317,9 +325,55 @@ public class Ctrl_SectionDef extends Ctrl {
                     borderFills.add(borderFill);
                 }
                 break;
-            case "hp:masterPage":
+            case "hp:masterPage":  //  바탕쪽. hwp에서 읽는 것과 동일한 구조를 갖도록 처리
                 {
-                    // childAttrs.getNamedItem("idRef").getNodeValue()
+                    NamedNodeMap childAttrs = child.getAttributes();
+                    String pageName = childAttrs.getNamedItem("idRef").getNodeValue();
+                    try {
+						Document masterDoc = hwpx.getDocument("Contents/" + pageName + ".xml");
+						if (masterDoc!=null) {
+					        Element element = masterDoc.getDocumentElement();
+					        if (this.paras==null)
+					        	this.paras = new ArrayList<HwpParagraph>();
+					        
+					        NodeList masterNodeList = element.getChildNodes();
+					        for (int masterNodeNum = 0; masterNodeNum < masterNodeList.getLength(); masterNodeNum++) {
+					            Node masterNode = masterNodeList.item(masterNodeNum);
+					            switch(masterNode.getNodeName()) {
+					            case "hp:subList":
+						            {
+						                // NamedNodeMap masterAttrs = masterNode.getAttributes();
+					                    // String attrValue = masterAttrs.getNamedItem("textDirection").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("textDirection").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("lineWrap").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("vertAlign").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("linkListIDRef").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("textWidth").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("textHeight").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("hasTextRef").getNodeValue();
+					                    // attrValue = masterAttrs.getNamedItem("hasNumRef").getNodeValue();
+						                
+						                NodeList subMasterNodeList = masterNode.getChildNodes();
+						                for (int j=0; j<subMasterNodeList.getLength(); j++) {
+						                    Node subMasterchild = subMasterNodeList.item(j);
+						                    switch(subMasterchild.getNodeName()) {
+						                    case "hp:p":
+									            HwpParagraph para = new HwpParagraph(hwpx, subMasterchild, version);
+								                this.paras.add(para);
+						                        break;
+						                    }
+						                }
+						            }
+						            break;
+					            default:
+					            	break;
+					            }
+					        }
+						}
+					} catch (IOException|DataFormatException|SAXException|ParserConfigurationException e) {
+						e.printStackTrace();
+					}
+                    
                 }
                 break;
             case "hp:presentation":

@@ -32,6 +32,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpFile;
+import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
@@ -77,8 +78,8 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_ShapePic(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+    public Ctrl_ShapePic(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
+        super(hwpx, ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         // attributes.getNamedItem("reverse").getNodeValue();

@@ -28,6 +28,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.HwpxFile;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_Note extends Ctrl {
@@ -56,7 +57,7 @@ public class Ctrl_Note extends Ctrl {
 
 	}
 	
-	public Ctrl_Note(String ctrlId, Node node, int version) throws NotImplementedException {
+	public Ctrl_Note(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId);
         
         // id는 처리하지 않는다. List<Ctrl_Note>에 순차적으로 추가한다.
@@ -76,7 +77,7 @@ public class Ctrl_Note extends Ctrl {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
                         case "p":
-                            HwpParagraph cellP = new HwpParagraph(grandChild, version);
+                            HwpParagraph cellP = new HwpParagraph(hwpx, grandChild, version);
                             paras.add(cellP);
                             break;
                         default:

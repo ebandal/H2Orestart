@@ -102,7 +102,7 @@ public class HwpSection {
             HwpParagraph para = null;
             switch(node.getNodeName()) {
             case "hp:p":
-                para = new HwpParagraph(node, version);
+                para = new HwpParagraph(parentHwpx, node, version);
                 paraList.add(para);
                 break;
             }
