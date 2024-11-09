@@ -332,45 +332,47 @@ public class Ctrl_SectionDef extends Ctrl {
                     String pageName = childAttrs.getNamedItem("idRef").getNodeValue();
                     try {
 		            	HwpxFile hwpx = WriterContext.getHwpx();
-						Document masterDoc = hwpx.getDocument("Contents/" + pageName + ".xml");
-						if (masterDoc!=null) {
-					        Element element = masterDoc.getDocumentElement();
-					        if (this.paras==null)
-					        	this.paras = new ArrayList<HwpParagraph>();
-					        
-					        NodeList masterNodeList = element.getChildNodes();
-					        for (int masterNodeNum = 0; masterNodeNum < masterNodeList.getLength(); masterNodeNum++) {
-					            Node masterNode = masterNodeList.item(masterNodeNum);
-					            switch(masterNode.getNodeName()) {
-					            case "hp:subList":
-						            {
-						                // NamedNodeMap masterAttrs = masterNode.getAttributes();
-					                    // String attrValue = masterAttrs.getNamedItem("textDirection").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("textDirection").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("lineWrap").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("vertAlign").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("linkListIDRef").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("textWidth").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("textHeight").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("hasTextRef").getNodeValue();
-					                    // attrValue = masterAttrs.getNamedItem("hasNumRef").getNodeValue();
-						            	
-						                NodeList subMasterNodeList = masterNode.getChildNodes();
-						                for (int j=0; j<subMasterNodeList.getLength(); j++) {
-						                    Node subMasterchild = subMasterNodeList.item(j);
-						                    switch(subMasterchild.getNodeName()) {
-						                    case "hp:p":
-									            HwpParagraph para = new HwpParagraph(subMasterchild, version);
-								                this.paras.add(para);
-						                        break;
-						                    }
-						                }
+		            	if (hwpx!=null) {
+							Document masterDoc = hwpx.getDocument("Contents/" + pageName + ".xml");
+							if (masterDoc!=null) {
+						        Element element = masterDoc.getDocumentElement();
+						        if (this.paras==null)
+						        	this.paras = new ArrayList<HwpParagraph>();
+						        
+						        NodeList masterNodeList = element.getChildNodes();
+						        for (int masterNodeNum = 0; masterNodeNum < masterNodeList.getLength(); masterNodeNum++) {
+						            Node masterNode = masterNodeList.item(masterNodeNum);
+						            switch(masterNode.getNodeName()) {
+						            case "hp:subList":
+							            {
+							                // NamedNodeMap masterAttrs = masterNode.getAttributes();
+						                    // String attrValue = masterAttrs.getNamedItem("textDirection").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("textDirection").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("lineWrap").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("vertAlign").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("linkListIDRef").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("textWidth").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("textHeight").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("hasTextRef").getNodeValue();
+						                    // attrValue = masterAttrs.getNamedItem("hasNumRef").getNodeValue();
+							            	
+							                NodeList subMasterNodeList = masterNode.getChildNodes();
+							                for (int j=0; j<subMasterNodeList.getLength(); j++) {
+							                    Node subMasterchild = subMasterNodeList.item(j);
+							                    switch(subMasterchild.getNodeName()) {
+							                    case "hp:p":
+										            HwpParagraph para = new HwpParagraph(subMasterchild, version);
+									                this.paras.add(para);
+							                        break;
+							                    }
+							                }
+							            }
+							            break;
+						            default:
+						            	break;
 						            }
-						            break;
-					            default:
-					            	break;
-					            }
-					        }
+						        }
+							}
 						}
 					} catch (IOException|DataFormatException|SAXException|ParserConfigurationException e) {
 						e.printStackTrace();
