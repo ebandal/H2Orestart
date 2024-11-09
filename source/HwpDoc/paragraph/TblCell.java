@@ -30,7 +30,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
 import HwpDoc.paragraph.Ctrl_Common.VertAlign;
@@ -86,7 +85,7 @@ public class TblCell {
 		this.size = size;
 	}
 	
-	public TblCell(HwpxFile hwpx, Node node, int version) throws NotImplementedException {
+	public TblCell(Node node, int version) throws NotImplementedException {
         NamedNodeMap attrs = node.getAttributes();
         
         // attrs.getNamedItem("name").getNodeValue();
@@ -167,7 +166,7 @@ public class TblCell {
                         switch(grandChild.getNodeName()) {
                         case "hp:p":
                             // HwpRecord.dumpNode(grandChild, 1);
-                            CellParagraph cellP = new CellParagraph(hwpx, grandChild, version);
+                            CellParagraph cellP = new CellParagraph(grandChild, version);
                             paras.add(cellP);
                             lastCtrl = (cellP.p==null||cellP.p.size()==0 ? null : cellP.p.getLast());
                             break;
@@ -179,7 +178,7 @@ public class TblCell {
                         
                         // ParaBreak를 subList 중간에 하나씩 강제로 넣는다. Paragraph 단위로 다음줄에 써지도록
                         if (lastCtrl!=null && lastCtrl instanceof ParaText && j<nodeListNum-1) {
-                            CellParagraph breakP = new CellParagraph(hwpx, grandChild, version);
+                            CellParagraph breakP = new CellParagraph(grandChild, version);
                             if (breakP.p!=null) {
                                 breakP.p.clear();
                             } else {
