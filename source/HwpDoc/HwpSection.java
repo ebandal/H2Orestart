@@ -77,18 +77,14 @@ import HwpDoc.section.PageBorderFill;
 
 public class HwpSection {
     private static final Logger log = Logger.getLogger(HwpSection.class.getName());
-    private HwpFile             parentHwp;
-    private HwpxFile            parentHwpx;
     
     public	List<HwpParagraph>	paraList;
     
     public HwpSection(HwpFile hwp) {
-        this.parentHwp = hwp;
         paraList = new ArrayList<HwpParagraph>();
     }
     
     public HwpSection(HwpxFile hwpx) {
-        this.parentHwpx = hwpx;
         paraList = new ArrayList<HwpParagraph>();
     }
     
@@ -102,7 +98,7 @@ public class HwpSection {
             HwpParagraph para = null;
             switch(node.getNodeName()) {
             case "hp:p":
-                para = new HwpParagraph(parentHwpx, node, version);
+                para = new HwpParagraph(node, version);
                 paraList.add(para);
                 break;
             }
@@ -652,7 +648,7 @@ public class HwpSection {
                     break;
                 case HWPTAG_SHAPE_COMPONENT_PICTURE:
                     if (ctrl instanceof Ctrl_ShapePic) {
-                        Ctrl_ShapePic.parseElement((Ctrl_ShapePic) ctrl, size, buf, offset, version, parentHwp);
+                        Ctrl_ShapePic.parseElement((Ctrl_ShapePic) ctrl, size, buf, offset, version);
                     }
                     offset += size;
                     break;
@@ -779,7 +775,7 @@ public class HwpSection {
                         ctrl = new Ctrl_ShapePic(new Ctrl_GeneralShape());
                         container.list.add(ctrl);
                     }
-                    offset += Ctrl_ShapePic.parseElement((Ctrl_ShapePic) ctrl, size, buf, offset, version, parentHwp);
+                    offset += Ctrl_ShapePic.parseElement((Ctrl_ShapePic) ctrl, size, buf, offset, version);
                 }
                     break;
                 case HWPTAG_SHAPE_COMPONENT_LINE: {

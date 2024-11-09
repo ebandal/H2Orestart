@@ -32,7 +32,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpFile;
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
@@ -78,8 +77,8 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_ShapePic(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
-        super(hwpx, ctrlId, node, version);
+    public Ctrl_ShapePic(String ctrlId, Node node, int version) throws NotImplementedException {
+        super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         // attributes.getNamedItem("reverse").getNodeValue();
@@ -280,7 +279,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         }
     }
 
-	public static int parseElement(Ctrl_ShapePic obj, int size, byte[] buf, int off, int version, HwpFile hwp) throws HwpParseException {
+	public static int parseElement(Ctrl_ShapePic obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
         obj.borderColor     = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;

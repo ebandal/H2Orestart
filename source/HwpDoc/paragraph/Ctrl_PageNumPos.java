@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 
 
@@ -67,7 +66,7 @@ public class Ctrl_PageNumPos extends Ctrl {
 		this.size = offset-off;
 	}
 	
-	public Ctrl_PageNumPos(HwpxFile hwpx, String ctrlId, Node node, int version) {
+	public Ctrl_PageNumPos(String ctrlId, Node node, int version) {
 	    super(ctrlId);
 	    
         NamedNodeMap attributes = node.getAttributes();

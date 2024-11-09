@@ -22,14 +22,13 @@ package HwpDoc.paragraph;
 
 import org.w3c.dom.Node;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.NotImplementedException;
 
 public class CellParagraph extends HwpParagraph {
     
 	public CellParagraph() { super(); }
 
-    public CellParagraph(HwpxFile hwpx, Node node, int version) throws NotImplementedException {
-        super(hwpx, node, version);
+    public CellParagraph(Node node, int version) throws NotImplementedException {
+        super(node, version);
     }
 }

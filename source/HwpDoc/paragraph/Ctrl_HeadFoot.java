@@ -29,7 +29,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -99,7 +98,7 @@ public class Ctrl_HeadFoot extends Ctrl {
         return offset-off;
     }
     
-    public Ctrl_HeadFoot(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
+    public Ctrl_HeadFoot(String ctrlId, Node node, int version) throws NotImplementedException {
         super(ctrlId);
         
         if (ctrlId.equals("daeh")) {
@@ -176,7 +175,7 @@ public class Ctrl_HeadFoot extends Ctrl {
                             if (paras==null) {
                                 paras = new ArrayList<HwpParagraph>();
                             }
-                            HwpParagraph p = new HwpParagraph(hwpx, grandChild, version);
+                            HwpParagraph p = new HwpParagraph(grandChild, version);
                             paras.add(p);
                             break;
                         default:

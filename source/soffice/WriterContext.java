@@ -296,18 +296,22 @@ public class WriterContext {
     }
 
     public String getBinFilename(String id) {
+        HwpRecord_BinData binData = null;
         String retString = "";
         HwpDocInfo docInfo = null;
         switch (hType) {
         case HWP:
             docInfo = hwp.getDocInfo();
+            ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
+            String key = keyList.get(Integer.parseInt(id));
+            binData = (HwpRecord_BinData) docInfo.binDataList.get(key);
             break;
         case HWPX:
             docInfo = hwpx.getDocInfo();
+            binData = (HwpRecord_BinData) docInfo.binDataList.get(id);
             break;
         }
 
-        HwpRecord_BinData binData = (HwpRecord_BinData) docInfo.binDataList.get(id);
         retString = binData.aPath;
         /*
          * String compoundFileName = String.format("BIN%04X.%s", binData.binDataID,
@@ -396,6 +400,10 @@ public class WriterContext {
             break;
         }
         return (HwpRecord_TabDef) docInfo.tabDefList.get(id);
+    }
+    
+    public static HwpxFile getHwpx() {
+    	return hwpx;
     }
 
 }

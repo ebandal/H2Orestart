@@ -27,7 +27,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
@@ -51,8 +50,8 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
 		this.size = shape.getSize();
 	}
 	
-	public Ctrl_ShapeConnectLine(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
-	    super(hwpx, ctrlId, node, version);
+	public Ctrl_ShapeConnectLine(String ctrlId, Node node, int version) throws NotImplementedException {
+	    super(ctrlId, node, version);
 	    
         NamedNodeMap attributes = node.getAttributes();
         if (attributes.getNamedItem("type")!=null) {

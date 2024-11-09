@@ -2639,7 +2639,10 @@ public class ConvGraphics {
 	                break;
 	            }
 	            // xPropSet.setPropertyValue("LineDash", lineDash);
-	            xPropSet.setPropertyValue("LineColor", shape.lineColor);
+	            if (!(shape instanceof Ctrl_ShapePic)) {
+	            	// Picture not support LineColor
+            		xPropSet.setPropertyValue("LineColor", shape.lineColor);
+	            }
 	
 	            int convertedLineWidth = Transform.translateHwp2Office(shape.lineThick);
 	            log.finest("Line width=" + convertedLineWidth + " from " + shape.lineThick + " in HWP.");

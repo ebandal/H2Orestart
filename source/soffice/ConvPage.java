@@ -20,27 +20,41 @@
  */
 package soffice;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import javax.imageio.ImageIO;
 
 import com.sun.star.awt.FontDescriptor;
 import com.sun.star.awt.XDevice;
 import com.sun.star.awt.XToolkit;
+import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.PropertyVetoException;
 import com.sun.star.beans.UnknownPropertyException;
 import com.sun.star.beans.XPropertySet;
 import com.sun.star.container.NoSuchElementException;
 import com.sun.star.container.XNameAccess;
 import com.sun.star.container.XNameContainer;
+import com.sun.star.graphic.XGraphic;
+import com.sun.star.graphic.XGraphicProvider;
 import com.sun.star.lang.DisposedException;
 import com.sun.star.lang.IllegalArgumentException;
 import com.sun.star.lang.WrappedTargetException;
+import com.sun.star.lib.uno.adapter.ByteArrayToXInputStreamAdapter;
 import com.sun.star.style.BreakType;
+import com.sun.star.style.GraphicLocation;
 import com.sun.star.style.NumberingType;
 import com.sun.star.style.PageStyleLayout;
 import com.sun.star.style.VerticalAlignment;
@@ -63,6 +77,7 @@ import HwpDoc.paragraph.Ctrl_AutoNumber;
 import HwpDoc.paragraph.Ctrl_ColumnDef;
 import HwpDoc.paragraph.Ctrl_HeadFoot;
 import HwpDoc.paragraph.Ctrl_SectionDef;
+import HwpDoc.paragraph.Ctrl_ShapePic;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.section.Page;
 
@@ -216,11 +231,17 @@ public class ConvPage {
             if (xFamily.hasByName(styleName) == false) {
                 xFamily.insertByName(styleName, xPageStyle);
             }
-
+            
             XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xPageStyle);
+           
+            // DEBUG
+            XPropertySet propSet = UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
+            propSet.setPropertyValue("PageDescName", styleName);
+            // DEBUG
+            
             // Size,Width,Height,Hidden,TextVerticalAdjust,
             // LeftMargin,RightMargin,TopMargin,BottomMargin,
-
+            
             if (secd.page.landscape == false) {
                 xStyleProps.setPropertyValue("Width", Integer.valueOf(Transform.translateHwp2Office(secd.page.width)));
                 xStyleProps.setPropertyValue("Height",
@@ -235,7 +256,6 @@ public class ConvPage {
                     Integer.valueOf(Transform.translateHwp2Office(secd.page.marginRight)));
 
             // LeftBorder,RightBorder,TopBorder,BottomBorder,BorderDistance,LeftBorderDistance,RightBorderDistance,TopBorderDistance,BottomBorderDistance,
-            // BackColor,BackTransparent,BackGraphic,BackGraphicURL,BackGraphicFilter,BackGraphicLocation,
             // TextColumns,
             // UserDefinedAttributes,
             // StandardPageMode,
@@ -320,6 +340,32 @@ public class ConvPage {
                 xStyleProps.setPropertyValue("FooterIsOn", false);
             }
 
+            // BackColor,BackTransparent,
+            if (secd.paras!=null) {
+            	Optional<Ctrl_ShapePic> picOp = secd.paras.stream()
+			            							.filter(para -> para.p!=null)
+				            						.flatMap(para -> para.p.stream())
+				            						.filter(ctrl -> (ctrl!=null) && (ctrl instanceof Ctrl_ShapePic))
+				            						.map(ctrl -> (Ctrl_ShapePic)ctrl)
+				            						.findFirst();
+            	if (picOp.isPresent()) {
+                	// DEBUG
+                    // DEBUG
+
+	            	setBackGraphic(wContext, xStyleProps, picOp.get());
+                    xStyleProps.setPropertyValue("BackTransparent", false);
+                    xStyleProps.setPropertyValue("BackGraphicLocation", GraphicLocation.AREA);
+                    xStyleProps.setPropertyValue("BackgroundFullSize", false);
+                    
+                    xStyleProps.setPropertyValue("HeaderBackTransparent", false);
+                    xStyleProps.setPropertyValue("HeaderBackGraphicLocation", GraphicLocation.TILED);
+                    
+                    xStyleProps.setPropertyValue("FooterBackTransparent", true);
+                    xStyleProps.setPropertyValue("FooterBackGraphicLocation", GraphicLocation.RIGHT_BOTTOM);
+	            }
+            }
+            // BackGraphicURL,BackGraphicFilter,BackGraphicLocation,
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -330,7 +376,121 @@ public class ConvPage {
         return styleName;
     }
 
-    public static String makeCustomPageStyle(Ctrl_SectionDef secd) {
+    private static void setBackGraphic(WriterContext wContext, XPropertySet xStyleProps, Ctrl_ShapePic pic) throws Exception {
+        // image ByteArray로 그림 그리기
+        Object graphicProviderObject = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
+        XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
+
+        byte[] imageAsByteArray = null;
+        String imageType = "";
+
+        imageAsByteArray = wContext.getBinBytes(pic.binDataID);
+        imageType = wContext.getBinFormat(pic.binDataID);
+
+        if (imageAsByteArray == null || imageAsByteArray.length == 0) {
+            log.severe("Something Wrong!!!. skip drawing");
+            return;
+        }
+
+        PropertyValue[] v = new PropertyValue[2];
+        v[0] = new PropertyValue();
+        v[0].Name = "InputStream";
+        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+        v[1] = new PropertyValue();
+        v[1].Name = "MimeType";
+        switch (imageType.toLowerCase()) {
+        case "png":
+            v[1].Value = "image/png";
+            break;
+        case "bmp":
+            v[1].Value = "image/bmp";
+            break;
+        case "wmf":
+            v[1].Value = "image/x-wmf";
+            break;
+        case "jpg":
+            v[1].Value = "image/jpeg";
+            break;
+        case "gif":
+            v[1].Value = "image/gif";
+            break;
+        case "tif":
+            v[1].Value = "image/tiff";
+            break;
+        case "svg":
+            v[1].Value = "image/svg+xml";
+            break;
+        }
+
+        XGraphic graphic = xGraphicProvider.queryGraphic(v);
+
+        if (graphic == null) {
+            log.severe("Error loading the image");
+        } else {
+        	/*
+            if (pic.cropLeft>0 || pic.cropRight>0 || pic.cropTop>0 || pic.cropBottom>0) {
+                try {
+                    PropertyValue[] pv = new PropertyValue[2];
+                    Path homeDir = wContext.userHomeDir;
+                    Path path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + pic.binDataID + ".png");
+                    URL url = path.toFile().toURI().toURL();
+                    String urlString = url.toExternalForm();
+                    pv[0] = new PropertyValue();
+                    pv[0].Name = "URL";
+                    pv[0].Value = urlString;
+                    pv[1] = new PropertyValue();
+                    pv[1].Name = "MimeType";
+                    pv[1].Value = "image/png";
+                    xGraphicProvider.storeGraphic(graphic, pv);
+                    xStyleProps.setPropertyValue("BackGraphic", graphic);
+                    
+                    BufferedImage originalImage = ImageIO.read(path.toFile());
+                    Files.delete(path);
+                    
+                    int orgWidth = pic.iniPicWidth==0 ? pic.iniWidth : pic.iniPicWidth;
+                    int imgWidth = originalImage.getWidth();
+                    int imgHeight = originalImage.getHeight();
+                    float hwp2pixelRatio = (float)imgWidth / orgWidth;
+                    int cropLeftPixel = (int)(pic.cropLeft*hwp2pixelRatio);
+                    int cropTopPixel = (int)(pic.cropTop*hwp2pixelRatio);
+                    int cropWidthPixel = (int)((pic.cropRight-pic.cropLeft)*hwp2pixelRatio);
+                    int cropHeightPixel = (int)((pic.cropBottom-pic.cropTop)*hwp2pixelRatio);
+                    int subLeft = cropLeftPixel>imgWidth ? 0 : cropLeftPixel;
+                    int subTop = cropTopPixel>imgHeight ? 0 : cropTopPixel;
+                    int subWidth = Math.min(cropWidthPixel, imgWidth-subLeft);
+                    int subHeight = Math.min(cropHeightPixel, imgHeight-subTop);
+                    BufferedImage subImgage = originalImage.getSubimage(subLeft,
+                                                                        subTop,
+                                                                        subWidth,
+                                                                        subHeight);
+                    try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                        ImageIO.write(subImgage, "png", baos);
+                        imageAsByteArray = baos.toByteArray();
+                        pv[0] = new PropertyValue();
+                        pv[0].Name = "InputStream";
+                        pv[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+                        pv[1] = new PropertyValue();
+                        pv[1].Name = "MimeType";
+                        pv[1].Value = "image/png";
+                        XGraphic graphic2 = xGraphicProvider.queryGraphic(pv);
+                        xStyleProps.setPropertyValue("BackGraphic", graphic2);
+
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            */
+            xStyleProps.setPropertyValue("BackGraphic", graphic);
+            Object obj = xStyleProps.getPropertyValue("BackGraphic");
+            XGraphic xgraphicOut = (XGraphic) UnoRuntime.queryInterface(XGraphic.class, obj);
+            
+            xStyleProps.setPropertyValue("HeaderBackGraphic", xgraphicOut);
+            xStyleProps.setPropertyValue("FooterBackGraphic", graphic);
+        }
+	}
+
+	public static String makeCustomPageStyle(Ctrl_SectionDef secd) {
         String styleName = PAGE_STYLE_PREFIX + customIndex;
         pageStyleNameMap.put(customIndex, styleName);
         pageMap.put(customIndex, secd);

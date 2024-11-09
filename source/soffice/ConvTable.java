@@ -923,36 +923,67 @@ public class ConvTable {
                     break;
                 }
                 if (shape.treatAsChar == false) {
-                    xPropSet.setPropertyValue("SurroundContour", false);// contour는 THROUGH에서는 효과 없음
+                	try {
+                		xPropSet.setPropertyValue("SurroundContour", false);// contour는 THROUGH에서는 효과 없음
+                	} catch (UnknownPropertyException e) {
+                        e.printStackTrace();
+                	}
                 }
-                xPropSet.setPropertyValue("TextWrap", wrapText);
+            	try {
+            		xPropSet.setPropertyValue("TextWrap", wrapText);
+            	} catch (UnknownPropertyException e) {
+                    e.printStackTrace();
+            	}
                 break;
             case TOP_AND_BOTTOM: // 자리차지
                 xPropSet.setPropertyValue("Opaque", true);
                 if (shape.treatAsChar == false) {
-                    xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
+                	try {
+                		xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
+                	} catch (UnknownPropertyException e) {
+                        e.printStackTrace();
+                	}
                 }
-                xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
+                try {
+                	xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
+            	} catch (UnknownPropertyException e) {
+                    e.printStackTrace();
+            	}
                 break;
             case BEHIND_TEXT: // 글 뒤로
                 xPropSet.setPropertyValue("Opaque", false);
                 if (shape.treatAsChar == false) {
-                    xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
-                    xPropSet.setPropertyValue("IsAutomaticContour", false);
+                	try {
+	                    xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
+	                    xPropSet.setPropertyValue("IsAutomaticContour", false);
+                	} catch (UnknownPropertyException e) {
+                        e.printStackTrace();
+                	}
                 }
-                xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+                try {
+                	xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+            	} catch (UnknownPropertyException e) {
+                    e.printStackTrace();
+            	}
                 break;
             case IN_FRONT_OF_TEXT: // 글 앞으로
                 xPropSet.setPropertyValue("Opaque", true);
                 if (shape.treatAsChar == false) {
-                    xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
+                	try {
+                		xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
+                	} catch (UnknownPropertyException e) {
+                        e.printStackTrace();
+                	}
                 }
-                xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+                try {
+                	xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+            	} catch (UnknownPropertyException e) {
+                    e.printStackTrace();
+            	}
                 break;
             }
             // xPropSet.setPropertyValue("ZOrder", shape.zOrder);
-        } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
-                | WrappedTargetException e) {
+        } catch (UnknownPropertyException | PropertyVetoException  | WrappedTargetException e) {
             e.printStackTrace();
         }
     }

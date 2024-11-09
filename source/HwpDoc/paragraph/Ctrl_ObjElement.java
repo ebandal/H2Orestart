@@ -29,7 +29,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -90,8 +89,8 @@ public class Ctrl_ObjElement extends Ctrl_Common {
         this.matrixSeq  = element.matrixSeq;
     }
     
-    public Ctrl_ObjElement(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
-        super(hwpx, ctrlId, node, version);
+    public Ctrl_ObjElement(String ctrlId, Node node, int version) throws NotImplementedException {
+        super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         

@@ -31,7 +31,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -65,8 +64,8 @@ public class Ctrl_Table extends Ctrl_Common {
         log.fine("                                                  " + toString());
     }
     
-    public Ctrl_Table(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
-        super(hwpx, ctrlId, node, version);
+    public Ctrl_Table(String ctrlId, Node node, int version) throws NotImplementedException {
+        super(ctrlId, node, version);
         
         NamedNodeMap attributes = node.getAttributes();
         
@@ -169,7 +168,7 @@ public class Ctrl_Table extends Ctrl_Common {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
                         case "hp:tc":
-                            TblCell cell = new TblCell(hwpx, grandChild, version);
+                            TblCell cell = new TblCell(grandChild, version);
                             cells.add(cell);
                             break;
                         }

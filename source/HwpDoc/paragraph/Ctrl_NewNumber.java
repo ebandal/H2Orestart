@@ -27,7 +27,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import HwpDoc.HwpxFile;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 import HwpDoc.paragraph.Ctrl_AutoNumber.NumType;
@@ -59,7 +58,7 @@ public class Ctrl_NewNumber extends Ctrl {
 		this.fullfilled = true;
 	}
 	
-	public Ctrl_NewNumber(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
+	public Ctrl_NewNumber(String ctrlId, Node node, int version) throws NotImplementedException {
 	    super(ctrlId);
 	    
         NamedNodeMap attributes = node.getAttributes();

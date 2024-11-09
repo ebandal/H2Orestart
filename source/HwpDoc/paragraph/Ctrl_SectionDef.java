@@ -41,6 +41,7 @@ import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.section.NoteShape;
 import HwpDoc.section.Page;
 import HwpDoc.section.PageBorderFill;
+import soffice.WriterContext;
 
 public class Ctrl_SectionDef extends Ctrl {
 	private static final Logger log = Logger.getLogger(Ctrl_SectionDef.class.getName());
@@ -142,7 +143,7 @@ public class Ctrl_SectionDef extends Ctrl {
 		this.fullfilled = true;
 	}
 	
-	public Ctrl_SectionDef(HwpxFile hwpx, String ctrlId, Node node, int version) throws NotImplementedException {
+	public Ctrl_SectionDef(String ctrlId, Node node, int version) throws NotImplementedException {
 	    super(ctrlId);
 	    
         NamedNodeMap attributes = node.getAttributes();
@@ -330,6 +331,7 @@ public class Ctrl_SectionDef extends Ctrl {
                     NamedNodeMap childAttrs = child.getAttributes();
                     String pageName = childAttrs.getNamedItem("idRef").getNodeValue();
                     try {
+		            	HwpxFile hwpx = WriterContext.getHwpx();
 						Document masterDoc = hwpx.getDocument("Contents/" + pageName + ".xml");
 						if (masterDoc!=null) {
 					        Element element = masterDoc.getDocumentElement();
@@ -352,13 +354,13 @@ public class Ctrl_SectionDef extends Ctrl {
 					                    // attrValue = masterAttrs.getNamedItem("textHeight").getNodeValue();
 					                    // attrValue = masterAttrs.getNamedItem("hasTextRef").getNodeValue();
 					                    // attrValue = masterAttrs.getNamedItem("hasNumRef").getNodeValue();
-						                
+						            	
 						                NodeList subMasterNodeList = masterNode.getChildNodes();
 						                for (int j=0; j<subMasterNodeList.getLength(); j++) {
 						                    Node subMasterchild = subMasterNodeList.item(j);
 						                    switch(subMasterchild.getNodeName()) {
 						                    case "hp:p":
-									            HwpParagraph para = new HwpParagraph(hwpx, subMasterchild, version);
+									            HwpParagraph para = new HwpParagraph(subMasterchild, version);
 								                this.paras.add(para);
 						                        break;
 						                    }
