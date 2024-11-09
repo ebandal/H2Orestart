@@ -1135,7 +1135,7 @@ public class ConvTable {
 
             short[] charShapeID = new short[1];
             if (para.p != null) {
-            	Optional<Ctrl> ctrlOp = para.p.stream().findFirst();
+            	Optional<Ctrl> ctrlOp = para.p.stream().filter(ctrl -> ctrl!=null).findFirst();
                 if (ctrlOp.isPresent()) {
                 	Ctrl ctrl = ctrlOp.get();
                 	if (ctrl instanceof ParaText) {
