@@ -20,6 +20,7 @@
  */
 package soffice;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -1173,15 +1174,21 @@ public class ConvTable {
                 public boolean onText(String content, int charShapeId, int charPos, boolean append) {
                     String styleNameTemp = ConvPara.getStyleName((int) para.paraStyleID);
                     HwpRecord_Style paraStyleTemp = wContext.getParaStyle(para.paraStyleID);
-                    HwpRecord_ParaShape paraShapeTemp = wContext.getParaShape(para.paraShapeID);
-                    if (cell.paras.size()==1) {
-                    	// Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
-                    	paraShapeTemp.lineSpacing = 100;
-                    	paraShapeTemp.lineSpacingType = 0x3;
-                    }
+                    HwpRecord_ParaShape paraShape = wContext.getParaShape(para.paraShapeID);
+                    HwpRecord_ParaShape paraShapeTemp = null;
+                	try {
+						paraShapeTemp = HwpRecord_ParaShape.clone(paraShape);
+	                    if (cell.paras.size()==1) {
+	                    	// Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
+	                    	paraShapeTemp.lineSpacing = 100;
+	                    	paraShapeTemp.lineSpacingType = 0x3;
+	                    }
+					} catch (java.lang.ClassNotFoundException | IOException e) {
+						e.printStackTrace();
+					}
                     HwpRecord_CharShape charShapeTemp = wContext.getCharShape((short) charShapeId);
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
-                            paraShapeTemp, charShapeTemp, append, true, step);
+                            					paraShapeTemp, charShapeTemp, append, true, step);
                     return true;
                 }
 
