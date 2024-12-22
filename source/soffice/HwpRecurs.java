@@ -91,7 +91,8 @@ public class HwpRecurs {
         // Start of [Overcome Table discrepancy]
         // HWP table과  LibreOffice table 표현 방법이 다름을 극복하기 위한 방법
         // 다른 공통개체(그림으로 표시하는 개체)가 현재 문단내에 존재하는지 갯수를 가져온다.  단, 문자로 취급하지 않는 개체만 카운트한다.
-        long objCount = para.p.stream().filter(c -> ((c instanceof Ctrl_Common) && ((Ctrl_Common)c).treatAsChar==false))
+        long objCount = para.p.stream().filter(c -> ((c instanceof Ctrl_Common) && ((Ctrl_Common)c).treatAsChar==false) ||
+        											((c instanceof Ctrl_Table) && ((Ctrl_Common)c).treatAsChar==true))
                                             .collect(Collectors.counting());
         // 글자가 포함되어 있는지 가져온다.
         String remainChars = para.p.stream().filter(c -> (c instanceof ParaText))
@@ -119,7 +120,15 @@ public class HwpRecurs {
                     // CharShape[] charShapes = charShapeList.toArray(new CharShape[charShapeList.size()]);
                     int charShapeId = ((ParaText)ctrl).charShapeId;
                     if (callback==null || callback.onText(((ParaText)ctrl).text, charShapeId, startIndex, append)==false) {
-                        insertParaString(wContext, ((ParaText)ctrl).text, para.lineSegs, para.paraStyleID, para.paraShapeID, (short)charShapeId, append, step);
+                        insertParaString(wContext, 
+                        		         ((ParaText)ctrl).text, 
+                        		         para.lineSegs, 
+                        		         para.paraStyleID, 
+                        		         para.paraShapeID, 
+                        		         (short)charShapeId, 
+                        		         append, 
+                        		         callback==null?false:callback.firstParaAfterTable,
+                        		         step);
                         oldParaShapeID = para.paraShapeID;
                         oldCharShapeID = (short) charShapeId;
                     }
@@ -133,10 +142,20 @@ public class HwpRecurs {
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
                         break;
                     case PARAGRAPH_BREAK:
-                        if (callback==null || callback.onParaBreak()==false) {
-                            beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
-                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
-                        }
+                    	if (callback==null || oweParaBreak==false) {
+	                        if (callback==null || callback.onParaBreak()==false) {
+	                            beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
+	                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+	                        }
+                    		if (callback!=null) {
+                    			callback.onFirstAfterTable(false);
+                    		}
+                    	} else {
+                    		oweParaBreak = false;
+                    		if (callback!=null) {
+                    			callback.onFirstAfterTable(true);
+                    		}
+                    	}
                         break;
                     case HARD_HYPHEN:
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_HYPHEN, false);
@@ -179,13 +198,19 @@ public class HwpRecurs {
                 break;
             case " lbt":    // table
                 {
+                	// 이전에 table 이고, 이번에도 table이면 PARA_BREAK 추가한다.
+                	if (callback!=null && callback.firstParaAfterTable==true && ((Ctrl_Table)ctrl).treatAsChar==true) {
+                        wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+                	}
                     // 테이블을 그릴때는 문단에 한개의 테이블만 있는지(table + split속성), 다른 개체나 문장과 같이 있는지(table in textframe)에 따라 다르게 그린다.
                     boolean hasSibling = objCount>1?true:remainChars.length()>1?true:false; // 문단내에 1개 테이블외 다른것이 포함되어 있는지 나타냄
+                    TableFrame oldFrame = callback==null?TableFrame.NONE:callback.tableFrame;
+                    
                     if (hasSibling==true) {
                         if (callback==null) {
                             callback = new HwpCallback();
                         }
-                        if (callback.onTableWithFrame()!=TableFrame.MADE) {
+                        if (callback!=null && callback.onTableWithFrame()!=TableFrame.MADE) {
                             // (table이 여러 페이지에 걸쳐서 있는지 체크하기 위해) row 높이를 모두 더해서 페이지보다 큰지 체크한다.
                             Ctrl_Table table = (Ctrl_Table)ctrl;
                             int rowHeightSum = 0;
@@ -216,10 +241,11 @@ public class HwpRecurs {
                             }
                         }
                     } else {
-                        // table 다음 PARA_BREAK 1개를 생략한다.
+                    	// table 다음 PARA_BREAK 1개를 생략한다.
                         oweParaBreak = true;
                     }
                     ConvTable.insertTable(wContext, (Ctrl_Table) ctrl, para.paraShapeID, callback, step+1);
+                    callback.tableFrame = oldFrame;	// 원래 TableFrame 속성으로 복원
                 }
                 break;
             case "onta":    // 자동 번호
@@ -347,9 +373,10 @@ public class HwpRecurs {
     
     public static void insertParaString(WriterContext wContext, String content, LineSeg lineSeg, 
                                         short styleID, short paraShapeID, short charShapeID, 
-                                        boolean append, int step) {
+                                        boolean append, boolean firstParaAfterTable, int step) {
         HwpRecord_Style paraStyle = wContext.getParaStyle(styleID);
         HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
+        paraShape.firstAfterTable = firstParaAfterTable;
         HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);
         String paraStyleName = ConvPara.getStyleName((int)styleID);
         
