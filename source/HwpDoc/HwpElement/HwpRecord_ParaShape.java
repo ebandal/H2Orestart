@@ -20,6 +20,7 @@
  */
 package HwpDoc.HwpElement;
 
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -441,7 +442,48 @@ public class HwpRecord_ParaShape extends HwpRecord {
             break;
         }
 	}
+	
+	public static HwpRecord_ParaShape clone(HwpRecord_ParaShape source) throws IOException, ClassNotFoundException {
+		HwpRecord_ParaShape cloned = new HwpRecord_ParaShape(source.tag.ordinal(), source.level, source.size);
 
+		cloned.align             = source.align;
+		cloned.breakLatinWord    = source.breakLatinWord;
+		cloned.breakNonLatinWord = source.breakNonLatinWord;
+		cloned.snapToGrid        = source.snapToGrid;
+		cloned.condense          = source.condense;
+		cloned.widowOrphan       = source.widowOrphan;
+		cloned.keepWithNext      = source.keepWithNext;
+		cloned.pageBreakBefore   = source.pageBreakBefore;
+		cloned.vertAlign 	     = source.vertAlign;
+		cloned.fontLineHeight    = source.fontLineHeight;
+		cloned.headingType       = source.headingType;
+		cloned.headingLevel      = source.headingLevel;
+		cloned.connect           = source.connect;
+		cloned.ignoreMargin      = source.ignoreMargin;
+		cloned.paraTailShape     = source.paraTailShape;
+		
+		cloned.indent            = source.indent;
+		cloned.marginLeft        = source.marginLeft;
+		cloned.marginRight	     = source.marginRight;
+		cloned.marginPrev        = source.marginPrev;
+		cloned.marginNext        = source.marginNext;
+		cloned.lineSpacing       = source.lineSpacing;
+		cloned.tabDef            = source.tabDef;
+		cloned.headingIdRef      = source.headingIdRef;
+		cloned.borderFill        = source.borderFill;
+		cloned.offsetLeft        = source.offsetLeft;
+		cloned.offsetRight       = source.offsetRight;
+		cloned.offsetTop         = source.offsetTop;
+		cloned.offsetBottom      = source.offsetBottom;
+		cloned.lineWrap          = source.lineWrap;
+		cloned.autoSpaceEAsianEng = source.autoSpaceEAsianEng;
+		cloned.autoSpaceEAsianNum = source.autoSpaceEAsianNum;
+		cloned.lineSpacingType   = source.lineSpacingType;
+		
+		return cloned;
+	}
+	
+	
     public static enum HeadingType {
 		NONE		(0),	// 없음
 		OUTLINE		(1),	// 개요
