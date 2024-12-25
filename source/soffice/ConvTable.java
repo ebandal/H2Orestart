@@ -294,10 +294,12 @@ public class ConvTable {
                                 cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(cellBorderFill.top));
                                 cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(cellBorderFill.bottom));
                             }
-                            cellProps.setPropertyValue("LeftBorderDistance", 0 /*Transform.translateHwp2Office(table.inLSpace)*/);
-                            cellProps.setPropertyValue("RightBorderDistance", 0 /*Transform.translateHwp2Office(table.inRSpace)*/);
-                            cellProps.setPropertyValue("TopBorderDistance", 0 /*Transform.translateHwp2Office(table.inUSpace)*/);
-                            cellProps.setPropertyValue("BottomBorderDistance", 0 /*Transform.translateHwp2Office(table.inDSpace)*/);
+                            // 2024.12.25 안쪽여백 0에서 한컴값으로 재조정 
+                            cellProps.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(table.inLSpace));
+                            cellProps.setPropertyValue("RightBorderDistance", Transform.translateHwp2Office(table.inRSpace));
+                            cellProps.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(table.inUSpace));
+                            cellProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(table.inDSpace));
+                            
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
@@ -384,10 +386,9 @@ public class ConvTable {
             }
         }
 
-        // TextFrame을 그린 후에 automaticHeight를 조정해야..
-        frameProps.setPropertyValue("FrameIsAutomaticHeight", true);
-        // frameProps.setPropertyValue("WidthType", SizeType.VARIABLE);
-        frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.CENTER);
+        // 2024.12.25 테이블 이후 PARA_BRAEK 보이지 않도록 고정크기로 하기 위해 false로 변경하고, TOP align으로 변경
+        frameProps.setPropertyValue("FrameIsAutomaticHeight", false);
+        frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.TOP);
         wContext.mTextCursor.gotoEnd(false);
 
         return xFrame;

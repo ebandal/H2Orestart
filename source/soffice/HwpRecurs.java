@@ -20,6 +20,7 @@
  */
 package soffice;
 
+import java.util.ListIterator;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -91,9 +92,10 @@ public class HwpRecurs {
         // Start of [Overcome Table discrepancy]
         // HWP table과  LibreOffice table 표현 방법이 다름을 극복하기 위한 방법
         // 다른 공통개체(그림으로 표시하는 개체)가 현재 문단내에 존재하는지 갯수를 가져온다.  단, 문자로 취급하지 않는 개체만 카운트한다.
-        long objCount = para.p.stream().filter(c -> ((c instanceof Ctrl_Common) && ((Ctrl_Common)c).treatAsChar==false) ||
-        											((c instanceof Ctrl_Table) && ((Ctrl_Common)c).treatAsChar==true))
-                                            .collect(Collectors.counting());
+        long objCount = para.p.stream().filter(c -> ((c instanceof Ctrl_Common) && ((Ctrl_Common)c).treatAsChar==false)
+        										 || ((c instanceof Ctrl_Table) && ((Ctrl_Common)c).treatAsChar==true)
+                                               )
+                                       .collect(Collectors.counting());
         // 글자가 포함되어 있는지 가져온다.
         String remainChars = para.p.stream().filter(c -> (c instanceof ParaText))
                                             .map(c -> (ParaText)c)
@@ -107,7 +109,9 @@ public class HwpRecurs {
         
         boolean append = false;
 
-        for (Ctrl ctrl : para.p) {
+        for (int ctrlIndex=0; ctrlIndex<para.p.size(); ctrlIndex++) {
+            Ctrl ctrl = para.p.get(ctrlIndex);
+            
             if (ctrl==null) {
                 continue;
             }
@@ -198,10 +202,18 @@ public class HwpRecurs {
                 break;
             case " lbt":    // table
                 {
-                	// 이전에 table 이고, 이번에도 table이면 PARA_BREAK 추가한다.
-                	if (callback!=null && callback.firstParaAfterTable==true && ((Ctrl_Table)ctrl).treatAsChar==true) {
+                    if (callback!=null && callback.firstParaAfterTable==true && ((Ctrl_Table)ctrl).treatAsChar==true) {
+                        beforeParaBreak(wContext, null, null, false, true, step);
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
                 	}
+                	// 이전에 table 이고, 이번에도 table이면 공백을 추가한다.
+                    else if (ctrlIndex > 0) {
+                        Ctrl previous = para.p.get(ctrlIndex-1);
+                        if (previous instanceof Ctrl_Table && ((Ctrl_Table)previous).treatAsChar==true) {
+                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_SPACE, false);
+                            
+                        }
+                    } 
                     // 테이블을 그릴때는 문단에 한개의 테이블만 있는지(table + split속성), 다른 개체나 문장과 같이 있는지(table in textframe)에 따라 다르게 그린다.
                     boolean hasSibling = objCount>1?true:remainChars.length()>1?true:false; // 문단내에 1개 테이블외 다른것이 포함되어 있는지 나타냄
                     TableFrame oldFrame = callback==null?TableFrame.NONE:callback.tableFrame;
@@ -358,6 +370,8 @@ public class HwpRecurs {
 
                 if (paraShape!=null) {
                     ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARABREAK_SPACING);
+                } else {
+                    ConvPara.setMinimumParagraphProperties(paraProps);
                 }
 
                 if (charShape!=null) {

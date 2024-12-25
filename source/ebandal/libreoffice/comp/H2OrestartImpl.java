@@ -333,16 +333,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 HwpSection section = sections.get(i);
                 ConvPage.setSectionIndex(secIndex++);
                 
-            	HwpCallback callback = new HwpCallback() {
-                    @Override
-					public void onFirstAfterTable(boolean isFirst) {
-                    	if (isFirst) {
-                    		firstParaAfterTable = true;
-                    	} else {
-                    		firstParaAfterTable = false;
-                    	}
-                    }
-            	};
+            	HwpCallback callback = new HwpCallback();
 
                 for (HwpParagraph para: section.paraList) {
                     HwpRecurs.printParaRecurs(writerContext, writerContext, para, callback, 1);

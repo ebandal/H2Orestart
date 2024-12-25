@@ -234,7 +234,7 @@ public class ConvPara {
             short vertAlign = ParagraphVertAlign.CENTER;
             switch(paraShape.vertAlign) {
             case BASELINE:
-                vertAlign = ParagraphVertAlign.BASELINE;
+                vertAlign = ParagraphVertAlign.BOTTOM; // 한컴의 글꼴기준은 LibreOffice의 BOTTOM
                 break;
             case TOP:
                 vertAlign = ParagraphVertAlign.TOP;
@@ -243,7 +243,7 @@ public class ConvPara {
                 vertAlign = ParagraphVertAlign.CENTER;
                 break;
             case BOTTOM:
-                vertAlign = ParagraphVertAlign.BOTTOM;
+                vertAlign = ParagraphVertAlign.BOTTOM; // 한컴의 BOTTOM은 LibreOffice의 BOTTOM보다 더 아래, BOTTOM이 그나마 가장 유사
                 break;
             }
             xStyleProps.setPropertyValue("ParaVertAlignment", vertAlign);
@@ -569,7 +569,28 @@ public class ConvPara {
             e.printStackTrace();
         }
     }
-    
+
+    static void setMinimumParagraphProperties(XPropertySet xStyleProps) {
+        try {
+            xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
+            xStyleProps.setPropertyValue("ParaVertAlignment", ParagraphVertAlign.CENTER);
+            xStyleProps.setPropertyValue("ParaIsAutoFirstLineIndent", false);
+            xStyleProps.setPropertyValue("ParaTopMargin", 0);
+            xStyleProps.setPropertyValue("ParaBottomMargin", 0);
+            LineSpacing lineSpacing = new LineSpacing();
+            lineSpacing.Mode = LineSpacingMode.PROP;
+            lineSpacing.Height = 100; // 비례 100%
+            xStyleProps.setPropertyValue("ParaLineSpacing", lineSpacing);
+            xStyleProps.setPropertyValue("LeftBorderDistance", 0);
+            xStyleProps.setPropertyValue("RightBorderDistance", 0);
+            xStyleProps.setPropertyValue("TopBorderDistance", 0);
+            xStyleProps.setPropertyValue("BottomBorderDistance", 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, 
                                         HwpRecord_BorderFill borderFill, int step) {
         try {

@@ -35,7 +35,13 @@ public class HwpCallback {
 	public boolean onParaBreak() { return false; }
 	public TableFrame onTableWithFrame() { return tableFrame; }
 	public void changeTableFrame(TableFrame tableFrame) { this.tableFrame = tableFrame; }
-	public void onFirstAfterTable(boolean isFirst) {};
+	public void onFirstAfterTable(boolean isFirst) {
+    	if (isFirst) {
+    		firstParaAfterTable = true;
+    	} else {
+    		firstParaAfterTable = false;
+    	}
+    }
 	
 	public static enum TableFrame {
 	    NONE      (0),
