@@ -125,14 +125,14 @@ public class HwpRecurs {
                     int charShapeId = ((ParaText)ctrl).charShapeId;
                     if (callback==null || callback.onText(((ParaText)ctrl).text, charShapeId, startIndex, append)==false) {
                         insertParaString(wContext, 
-                        		         ((ParaText)ctrl).text, 
-                        		         para.lineSegs, 
-                        		         para.paraStyleID, 
-                        		         para.paraShapeID, 
-                        		         (short)charShapeId, 
-                        		         append, 
-                        		         callback==null?false:callback.firstParaAfterTable,
-                        		         step);
+                                         ((ParaText)ctrl).text, 
+                                         para.lineSegs, 
+                                         para.paraStyleID, 
+                                         para.paraShapeID, 
+                                         (short)charShapeId, 
+                                         append, 
+                                         callback==null?false:callback.firstParaAfterTable,
+                                         step);
                         oldParaShapeID = para.paraShapeID;
                         oldCharShapeID = (short) charShapeId;
                     }
@@ -146,20 +146,20 @@ public class HwpRecurs {
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.LINE_BREAK, false);
                         break;
                     case PARAGRAPH_BREAK:
-                    	if (callback==null || oweParaBreak==false) {
-	                        if (callback==null || callback.onParaBreak()==false) {
-	                            beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
-	                            wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
-	                        }
-                    		if (callback!=null) {
-                    			callback.onFirstAfterTable(false);
-                    		}
-                    	} else {
-                    		oweParaBreak = false;
-                    		if (callback!=null) {
-                    			callback.onFirstAfterTable(true);
-                    		}
-                    	}
+                         if (callback==null || oweParaBreak==false) {
+                            if (callback==null || callback.onParaBreak()==false) {
+                                beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
+                                wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+                            }
+                            if (callback!=null) {
+                                callback.onFirstAfterTable(false);
+                            }
+                        } else {
+                            oweParaBreak = false;
+                            if (callback!=null) {
+                                callback.onFirstAfterTable(true);
+                            }
+                        }
                         break;
                     case HARD_HYPHEN:
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_HYPHEN, false);
@@ -205,8 +205,8 @@ public class HwpRecurs {
                     if (callback!=null && callback.firstParaAfterTable==true && ((Ctrl_Table)ctrl).treatAsChar==true) {
                         beforeParaBreak(wContext, null, null, false, true, step);
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
-                	}
-                	// 이전에 table 이고, 이번에도 table이면 공백을 추가한다.
+                    }
+                    // 이전에 table 이고, 이번에도 table이면 공백을 추가한다.
                     else if (ctrlIndex > 0) {
                         Ctrl previous = para.p.get(ctrlIndex-1);
                         if (previous instanceof Ctrl_Table && ((Ctrl_Table)previous).treatAsChar==true) {

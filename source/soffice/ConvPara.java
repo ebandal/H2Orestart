@@ -403,9 +403,10 @@ public class ConvPara {
 
             // 테이블 이후 첫문단의 테이블과의 간격을 임의로 조정
             if (paraShape.firstAfterTable) {
-            	xStyleProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(paraShape.marginPrev/2) + (lineSpacing.Height-100)*10);
-            	log.finest("ParaTopMargin="+ ((lineSpacing.Height-100)*10));
-            	// xStyleProps.setPropertyValue("ParaContextMargin", true);
+                xStyleProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(paraShape.marginPrev/2) 
+                                                            + Math.max(0, lineSpacing.Height-100)*10);
+                log.finest("ParaTopMargin="+ ((lineSpacing.Height-100)*10));
+                // xStyleProps.setPropertyValue("ParaContextMargin", true);
             }
             
             //	https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1ParagraphProperties.html
