@@ -20,11 +20,20 @@
  */
 package soffice;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import com.sun.star.awt.FontDescriptor;
 import com.sun.star.awt.FontSlant;
@@ -428,6 +437,8 @@ public class ConvNumbering {
                         break;
                     }
                 }
+                Path path = null;
+                
                 if (i==0) {
                     if (bullet.bulletImage==0) {	// 글머리표
                         newProps[newProps.length-3] = new PropertyValue();
@@ -444,21 +455,39 @@ public class ConvNumbering {
                                                                                0.0f, false, false, (short)0);				// Kerning,WordLineMode,Type
                     } else {
                         // GraphicBitmap 전달하는 것이 동작하지 않는다. 해결될때까지 GraphicURL 전달하는 방식으로 유지한다.
-                        String imageExtractPath = wContext.getBinFilename(bullet.binItemRefID);
-                        String m_sGraphicFileURL = ConvUtil.convertToURL(wContext, "", imageExtractPath);
+                        byte[] imageAsByteArray = wContext.getBinBytes(bullet.binItemRefID);
+                        try (ByteArrayInputStream bis = new ByteArrayInputStream(imageAsByteArray)) {
+                            BufferedImage originalImage = ImageIO.read(bis);
+                            int imgWidth = originalImage.getWidth();
+                            int imgHeight = originalImage.getHeight();
+                            
+                            String imageExtractPath = wContext.getBinFilename(bullet.binItemRefID);
+                            Path homeDir = wContext.userHomeDir;
+                            path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + imageExtractPath);
+                            URL url = path.toFile().toURI().toURL();
+                            String urlString = url.toExternalForm();
+                            ImageIO.write(originalImage, "png", path.toFile());
 
-                        newProps[newProps.length-3] = new PropertyValue();
-                        newProps[newProps.length-3].Name = "GraphicSize";
-                        newProps[newProps.length-3].Value = new Size(300, 300);
-                        newProps[newProps.length-2] = new PropertyValue();
-                        newProps[newProps.length-2].Name = "GraphicURL";			// "GraphicBitmap"
-                        newProps[newProps.length-2].Value = m_sGraphicFileURL;		// myBitmap;
-                        newProps[newProps.length-1] = new PropertyValue();
-                        newProps[newProps.length-1].Name = "VertOrient";
-                        newProps[newProps.length-1].Value = VertOrientation.LINE_CENTER;
+                            newProps[newProps.length-3] = new PropertyValue();
+                            newProps[newProps.length-3].Name = "GraphicSize";
+                            newProps[newProps.length-3].Value = new Size(imgWidth*10, imgHeight*10);
+                            newProps[newProps.length-2] = new PropertyValue();
+                            newProps[newProps.length-2].Name = "GraphicURL";	// "GraphicBitmap"
+                            newProps[newProps.length-2].Value = urlString;		// myBitmap;
+                            newProps[newProps.length-1] = new PropertyValue();
+                            newProps[newProps.length-1].Name = "VertOrient";
+                            newProps[newProps.length-1].Value = VertOrientation.LINE_CENTER;
+                        } catch (IOException e) {
+                        }
                     }
                 }
                 xReplace.replaceByIndex(i, newProps);
+                if (path!=null) {
+                    try {
+                        Files.delete(path);
+                    } catch (IOException e) {
+                    }
+                }
             }
             // NumberingRules 속성을 설정해야  Style이 변경된다. 
             XPropertySet xCursorProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
