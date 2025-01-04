@@ -234,7 +234,7 @@ public class ConvPara {
             short vertAlign = ParagraphVertAlign.CENTER;
             switch(paraShape.vertAlign) {
             case BASELINE:
-                vertAlign = ParagraphVertAlign.BASELINE;
+                vertAlign = ParagraphVertAlign.BOTTOM; // 한컴의 글꼴기준은 LibreOffice의 BOTTOM
                 break;
             case TOP:
                 vertAlign = ParagraphVertAlign.TOP;
@@ -243,7 +243,7 @@ public class ConvPara {
                 vertAlign = ParagraphVertAlign.CENTER;
                 break;
             case BOTTOM:
-                vertAlign = ParagraphVertAlign.BOTTOM;
+                vertAlign = ParagraphVertAlign.BOTTOM; // 한컴의 BOTTOM은 LibreOffice의 BOTTOM보다 더 아래, BOTTOM이 그나마 가장 유사
                 break;
             }
             xStyleProps.setPropertyValue("ParaVertAlignment", vertAlign);
@@ -388,18 +388,26 @@ public class ConvPara {
                     xStyleProps.setPropertyValue("ParaBackColor", borders.fill.faceColor);
                 }
             }
-            // offsetLeft                           // 문단 테두리 왼쪽 간격
+            // offsetLeft                           // 문단 테두리 왼쪽 간격 (borders-padding-left)
             xStyleProps.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(paraShape.offsetLeft));
-            // offsetRight                          // 문단 테두리 오른쪽 간격
+            // offsetRight                          // 문단 테두리 오른쪽 간격 (borders-padding-right)
             xStyleProps.setPropertyValue("RightBorderDistance", Transform.translateHwp2Office(paraShape.offsetRight));
-            // offsetTop                            // 문단 테두리 위쪽 간격
+            // offsetTop                            // 문단 테두리 위쪽 간격 (borders-padding-top)
             xStyleProps.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(paraShape.offsetTop));
-            // offsetBottom                         // 문단 테두리 아래쪽 간격
+            // offsetBottom                         // 문단 테두리 아래쪽 간격 (borders-padding-bottom)
             xStyleProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(paraShape.offsetBottom));
             // 속성2 (5.0.1.7 버전 이상)
             // lineWrap;                            //  한줄로 입력
             // autoSpaceEAsianEng;                  //  한글과 영어 간격을 자동 조절
             // autoSpaceEAsianNum;                  //  한글과 숫자 간격을 자동 조절
+
+            // 테이블 이후 첫문단의 테이블과의 간격을 임의로 조정
+            if (paraShape.firstAfterTable) {
+                xStyleProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(paraShape.marginPrev/2) 
+                                                            + Math.max(0, lineSpacing.Height-100)*10);
+                log.finest("ParaTopMargin="+ ((lineSpacing.Height-100)*10));
+                // xStyleProps.setPropertyValue("ParaContextMargin", true);
+            }
             
             //	https://api.libreoffice.org/docs/idl/ref/servicecom_1_1sun_1_1star_1_1style_1_1ParagraphProperties.html
             //	ParaAdjust,ParaLineSpacing,ParaBackColor,ParaBackTransparent,ParaBackGraphicURL,ParaBackGraphicFilter,ParaBackGraphicLocation,
@@ -562,7 +570,28 @@ public class ConvPara {
             e.printStackTrace();
         }
     }
-    
+
+    static void setMinimumParagraphProperties(XPropertySet xStyleProps) {
+        try {
+            xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
+            xStyleProps.setPropertyValue("ParaVertAlignment", ParagraphVertAlign.CENTER);
+            xStyleProps.setPropertyValue("ParaIsAutoFirstLineIndent", false);
+            xStyleProps.setPropertyValue("ParaTopMargin", 0);
+            xStyleProps.setPropertyValue("ParaBottomMargin", 0);
+            LineSpacing lineSpacing = new LineSpacing();
+            lineSpacing.Mode = LineSpacingMode.PROP;
+            lineSpacing.Height = 100; // 비례 100%
+            xStyleProps.setPropertyValue("ParaLineSpacing", lineSpacing);
+            xStyleProps.setPropertyValue("LeftBorderDistance", 0);
+            xStyleProps.setPropertyValue("RightBorderDistance", 0);
+            xStyleProps.setPropertyValue("TopBorderDistance", 0);
+            xStyleProps.setPropertyValue("BottomBorderDistance", 0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, 
                                         HwpRecord_BorderFill borderFill, int step) {
         try {

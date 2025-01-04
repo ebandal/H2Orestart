@@ -100,7 +100,7 @@ public class HwpRecord_Bullet extends HwpRecord {
 				// +"ID="+(parent.bulletList.size())
 				+"문단머리정보속성="+String.format("0x%08X", headerInfo.align)
 				+(headerInfo.charShape!=-1?",글자모양="+((HwpRecord_CharShape)(parent.charShapeList.get(headerInfo.charShape))).fontName[0]:"")
-				+",글머리표문자="+String.format("%c", bulletChar)
+				+",글머리표문자="+String.format("%c", bulletChar)+"("+(short)bulletChar+")"
 				+",글머리표="+(bulletImage==0?"글머리표":"이미지글머리표("+String.valueOf(bulletImage)+")")
 				+(bulletImage==0?"":",이미지ID="+bulletImage)
 				+",밝기="+bright

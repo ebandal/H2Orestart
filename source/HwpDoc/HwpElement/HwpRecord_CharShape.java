@@ -439,6 +439,47 @@ public class HwpRecord_CharShape extends HwpRecord {
         }
     }
 
+	public static HwpRecord_CharShape clone(HwpRecord_CharShape source) {
+		HwpRecord_CharShape cloned = new HwpRecord_CharShape(source.tag.ordinal(), source.level, source.size);
+		
+		cloned.fontName        = new String[source.fontName.length];
+		System.arraycopy(source.fontName, 0, cloned.fontName, 0, source.fontName.length);
+		cloned.ratio           = new short[source.ratio.length];
+		System.arraycopy(source.ratio, 0, cloned.ratio, 0, source.ratio.length);
+		cloned.spacing         = new short[source.spacing.length];
+		System.arraycopy(source.spacing, 0, cloned.spacing, 0, source.spacing.length);
+		cloned.relSize         = new short[source.relSize.length];
+		System.arraycopy(source.relSize, 0, cloned.relSize, 0, source.relSize.length);
+		cloned.charOffset      = new short[source.charOffset.length];
+		System.arraycopy(source.charOffset, 0, cloned.charOffset, 0, source.charOffset.length);
+		cloned.height          = source.height;
+		cloned.italic          = source.italic;
+		cloned.bold            = source.bold;
+		cloned.underline       = source.underline;
+		cloned.underlineShape  = source.underlineShape;
+		cloned.underlineColor  = source.underlineColor;
+		cloned.outline         = source.outline; 
+		cloned.shadow          = source.shadow;
+		cloned.emboss          = source.emboss;
+		cloned.engrave         = source.engrave;
+		cloned.superScript     = source.superScript;
+		cloned.subScript       = source.subScript;
+		cloned.strikeOut       = source.strikeOut;
+		cloned.symMark         = source.symMark;
+		cloned.useFontSpace    = source.useFontSpace;
+		cloned.strikeOutShape  = source.strikeOutShape;
+		cloned.useKerning      = source.useKerning;
+		cloned.shadowOffsetX   = source.shadowOffsetX;
+		cloned.shadowOffsetY   = source.shadowOffsetY;
+		cloned.textColor       = source.textColor;
+		cloned.shadeColor      = source.shadeColor;
+		cloned.shadowColor     = source.shadowColor;
+		cloned.borderFillIDRef = source.borderFillIDRef;
+		cloned.strikeOutColor  = source.strikeOutColor;
+		
+		return cloned;
+	}
+	
     public static enum Lang {
 		HANGUL		(0x0),
 		LATIN		(0x1),

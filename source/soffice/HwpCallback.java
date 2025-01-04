@@ -24,6 +24,7 @@ import HwpDoc.paragraph.Ctrl_AutoNumber;
 
 public class HwpCallback {
     TableFrame tableFrame;
+    public boolean firstParaAfterTable;
 	
     public HwpCallback() { this.tableFrame = TableFrame.NONE; }
     public HwpCallback(TableFrame tableFrame) { this.tableFrame = tableFrame; }
@@ -34,6 +35,13 @@ public class HwpCallback {
 	public boolean onParaBreak() { return false; }
 	public TableFrame onTableWithFrame() { return tableFrame; }
 	public void changeTableFrame(TableFrame tableFrame) { this.tableFrame = tableFrame; }
+	public void onFirstAfterTable(boolean isFirst) {
+    	if (isFirst) {
+    		firstParaAfterTable = true;
+    	} else {
+    		firstParaAfterTable = false;
+    	}
+    }
 	
 	public static enum TableFrame {
 	    NONE      (0),

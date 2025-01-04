@@ -48,6 +48,7 @@ import soffice.ConvPage;
 import soffice.ConvPara;
 import soffice.ConvTable;
 import soffice.ConvUtil;
+import soffice.HwpCallback;
 import soffice.HwpRecurs;
 import soffice.WriterContext;
 
@@ -331,9 +332,11 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 // context.mMyDocument.lockControllers();
                 HwpSection section = sections.get(i);
                 ConvPage.setSectionIndex(secIndex++);
+                
+            	HwpCallback callback = new HwpCallback();
 
                 for (HwpParagraph para: section.paraList) {
-                    HwpRecurs.printParaRecurs(writerContext, writerContext, para, null, 1);
+                    HwpRecurs.printParaRecurs(writerContext, writerContext, para, callback, 1);
                 }
                 // context.mMyDocument.unlockControllers();
             }

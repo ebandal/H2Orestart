@@ -75,6 +75,8 @@ public class HwpRecord_ParaShape extends HwpRecord {
 																// 속성3 (5.0.2.5 버전 이상)
 	public int			lineSpacingType;						// 		줄간격 종류(0:Percent,1:Fixed,2:BetweenLines,4:AtLeast)
 	
+	public boolean      firstAfterTable;                        // 테이블 다음에 첫문단인지 여부 (리브레오피스와 한컴오피스의 테이블 차이를 극복하기 위한 속성 정의
+
 	HwpRecord_ParaShape(int tagNum, int level, int size) {
 		super(tagNum, level, size);
 	}

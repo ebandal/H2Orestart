@@ -97,8 +97,7 @@ public class ConvTable {
         HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
-        ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc,
-                ConvPara.PARA_SPACING);
+        ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
 
         XTextFrame xFrame = null;
         XText xFrameText = null;
@@ -136,8 +135,7 @@ public class ConvTable {
                 xFrameText.insertTextContent(xFrameCursor, xTextTable, false);
                 if (wContext.version >= 72) {
                     XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
-                    TextContentAnchorType anchorType = (TextContentAnchorType) frameProps
-                            .getPropertyValue("AnchorType");
+                    TextContentAnchorType anchorType = (TextContentAnchorType) frameProps.getPropertyValue("AnchorType");
                     if (anchorType == TextContentAnchorType.AT_PARAGRAPH) {
                         xFrameText.insertString(xFrameCursor, " ", true);
                     }
@@ -147,8 +145,7 @@ public class ConvTable {
             } else {
                 wContext.mText.insertTextContent(wContext.mTextCursor, xTextTable, false);
                 if (wContext.version >= 72) {
-                    TextContentAnchorType anchorType = (TextContentAnchorType) tableProps
-                            .getPropertyValue("AnchorType");
+                    TextContentAnchorType anchorType = (TextContentAnchorType) tableProps.getPropertyValue("AnchorType");
 
                     // 한컴에서 AS_CHAR 가 아니면 PARA_BREAK가 추가되어 있을것임, libreoffice에서는 ANCHOR를 붙일수 없으니 마지막
                     // PARA_BREAK를 제거하자.
@@ -294,10 +291,12 @@ public class ConvTable {
                                 cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(cellBorderFill.top));
                                 cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(cellBorderFill.bottom));
                             }
-                            cellProps.setPropertyValue("LeftBorderDistance", 0 /*Transform.translateHwp2Office(table.inLSpace)*/);
-                            cellProps.setPropertyValue("RightBorderDistance", 0 /*Transform.translateHwp2Office(table.inRSpace)*/);
-                            cellProps.setPropertyValue("TopBorderDistance", 0 /*Transform.translateHwp2Office(table.inUSpace)*/);
-                            cellProps.setPropertyValue("BottomBorderDistance", 0 /*Transform.translateHwp2Office(table.inDSpace)*/);
+                            // 안쪽여백은 한컴값을 사용하지 않고, 0으로 임의조정한다. 가능한 Cell내 모든 문단을 보여주기 위해  
+                            cellProps.setPropertyValue("LeftBorderDistance", 0 /* Transform.translateHwp2Office(table.inLSpace) */);
+                            cellProps.setPropertyValue("RightBorderDistance", 0 /* Transform.translateHwp2Office(table.inRSpace) */);
+                            cellProps.setPropertyValue("TopBorderDistance", 0 /* Transform.translateHwp2Office(table.inUSpace) */);
+                            cellProps.setPropertyValue("BottomBorderDistance", 0 /* Transform.translateHwp2Office(table.inDSpace) */);
+                            
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
@@ -384,10 +383,14 @@ public class ConvTable {
             }
         }
 
-        // TextFrame을 그린 후에 automaticHeight를 조정해야..
-        frameProps.setPropertyValue("FrameIsAutomaticHeight", true);
-        // frameProps.setPropertyValue("WidthType", SizeType.VARIABLE);
-        frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.CENTER);
+        // 2024.12.25 테이블 이후 PARA_BRAEK 보이지 않도록 고정크기로 하기 위해 false로 변경하고, TOP align으로 변경
+        // 높이 고정시에 캡션이 보이지 않으므로, 캡션이 있으면 true로 하자. 
+        if (table.caption == null || table.caption.size()==0) {
+            frameProps.setPropertyValue("FrameIsAutomaticHeight", false);
+        } else {
+            frameProps.setPropertyValue("FrameIsAutomaticHeight", true);
+        }
+        frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.TOP);
         wContext.mTextCursor.gotoEnd(false);
 
         return xFrame;
@@ -1176,19 +1179,23 @@ public class ConvTable {
                     HwpRecord_Style paraStyleTemp = wContext.getParaStyle(para.paraStyleID);
                     HwpRecord_ParaShape paraShape = wContext.getParaShape(para.paraShapeID);
                     HwpRecord_ParaShape paraShapeTemp = null;
-                	try {
-						paraShapeTemp = HwpRecord_ParaShape.clone(paraShape);
-	                    if (cell.paras.size()==1) {
-	                    	// Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
-	                    	paraShapeTemp.lineSpacing = 100;
-	                    	paraShapeTemp.lineSpacingType = 0x3;
-	                    }
-					} catch (java.lang.ClassNotFoundException | IOException e) {
-						e.printStackTrace();
-					}
-                    HwpRecord_CharShape charShapeTemp = wContext.getCharShape((short) charShapeId);
+                    try {
+                        paraShapeTemp = HwpRecord_ParaShape.clone(paraShape);
+                        if (cell.paras.size()==1) {
+                            // Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
+                            paraShapeTemp.lineSpacing = 100;
+                            paraShapeTemp.lineSpacingType = 0x3;
+                        }
+                    } catch (java.lang.ClassNotFoundException | IOException e) {
+                        e.printStackTrace();
+                    }
+                    HwpRecord_CharShape charShapeTemp = HwpRecord_CharShape.clone(wContext.getCharShape((short) charShapeId));
+                    // 테이블내에서는 자간을 원래(-50%~50%)보다 작게(-60%~47%) 변경해서 쓴다. 육안으로 크게 차이가 나지 않는 범위내에서 테이블 셀에 가능한 모두 보이도록 하기 위함
+                    for (int i=0; i<charShapeTemp.spacing.length; i++) {
+                        charShapeTemp.spacing[i] -= ((100-charShapeTemp.spacing[i])/15);
+                    }
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
-                            					paraShapeTemp, charShapeTemp, append, true, step);
+                                               paraShapeTemp, charShapeTemp, append, true, step);
                     return true;
                 }
 
