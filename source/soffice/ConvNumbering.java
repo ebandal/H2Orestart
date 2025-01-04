@@ -455,13 +455,14 @@ public class ConvNumbering {
                                                                                0.0f, false, false, (short)0);				// Kerning,WordLineMode,Type
                     } else {
                         // GraphicBitmap 전달하는 것이 동작하지 않는다. 해결될때까지 GraphicURL 전달하는 방식으로 유지한다.
-                        byte[] imageAsByteArray = wContext.getBinBytes(bullet.binItemRefID);
+                    	int binId = Integer.parseInt(bullet.binItemRefID)-1;
+                        byte[] imageAsByteArray = wContext.getBinBytes(String.valueOf(binId));
                         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageAsByteArray)) {
                             BufferedImage originalImage = ImageIO.read(bis);
                             int imgWidth = originalImage.getWidth();
                             int imgHeight = originalImage.getHeight();
                             
-                            String imageExtractPath = wContext.getBinFilename(bullet.binItemRefID);
+                            String imageExtractPath = wContext.getBinFilename(String.valueOf(binId));
                             Path homeDir = wContext.userHomeDir;
                             path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + imageExtractPath);
                             URL url = path.toFile().toURI().toURL();
@@ -478,6 +479,7 @@ public class ConvNumbering {
                             newProps[newProps.length-1].Name = "VertOrient";
                             newProps[newProps.length-1].Value = VertOrientation.LINE_CENTER;
                         } catch (IOException e) {
+                        	e.printStackTrace();
                         }
                     }
                 }
