@@ -2124,7 +2124,7 @@ public class ConvGraphics {
                             } else {
                                 xProps.setPropertyValue("VertOrient", VertOrientation.NONE); // 0:NONE=From top
                                 // para상단으로부터 frame상단까지의 offset
-                                posY = Transform.translateHwp2Office(shape.vertOffset);
+                                posY = Math.max(0, Transform.translateHwp2Office(shape.vertOffset));
                                 if (/* posY+Transform.translateHwp2Office(page.marginTop)<0 || */
                                 posY + Transform.translateHwp2Office(shape.height) > Transform
                                         .translateHwp2Office(page.height)) {
