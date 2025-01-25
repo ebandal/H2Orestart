@@ -139,6 +139,20 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                     cropTop = Integer.parseInt(numStr);
                     numStr =  childAttrs.getNamedItem("bottom").getNodeValue();// 아래쪽에서 이미지를 자른 크기
                     cropBottom = Integer.parseInt(numStr);
+                    
+                    // 한컴 5.0.3.4 오류 체크 및 값 강제설정
+                    int minX = Math.min(Math.min(borderPoints[0].x, borderPoints[1].x), Math.min(borderPoints[2].x, borderPoints[3].x));
+                    int maxX = Math.max(Math.max(borderPoints[0].x, borderPoints[1].x), Math.max(borderPoints[2].x, borderPoints[3].x));
+                    int minY = Math.min(Math.min(borderPoints[0].y, borderPoints[1].y), Math.min(borderPoints[2].y, borderPoints[3].y));
+                    int maxY = Math.max(Math.max(borderPoints[0].y, borderPoints[1].y), Math.max(borderPoints[2].y, borderPoints[3].y));
+                    
+                    if ((cropLeft < minX || cropLeft > maxX) || (cropRight < minX || cropRight > maxX) || 
+                        (cropTop < minY || cropTop > maxY) || (cropBottom < minY || cropBottom > maxY)) {
+                        cropLeft = minX;
+                        cropRight = maxX;
+                        cropTop = minY;
+                        cropBottom = maxY;
+                    }
                 }
                 break;
             case "hp:effects":      // 이미지 효과 정보
