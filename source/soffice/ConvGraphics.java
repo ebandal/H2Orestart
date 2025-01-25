@@ -582,7 +582,11 @@ public class ConvGraphics {
                     insertELLIPSE(frameContext, ell, step + 1, sizeWidth, sizeHeight);
                 } else if (shape instanceof Ctrl_ShapeRect) {
                     Ctrl_ShapeRect rect = (Ctrl_ShapeRect) shape;
-                    insertRECTANGLE(frameContext, rect, step + 1, sizeWidth, sizeHeight);
+                    if (rect.paras == null || rect.paras.size() < 1) {
+                        insertRECTANGLE(frameContext, rect, step + 1, sizeWidth, sizeHeight);
+                    } else {
+                        insertTextFrame(frameContext, rect, step + 1, sizeWidth, sizeHeight);
+                    }
                 } else if (shape instanceof Ctrl_ShapePolygon) {
                     // Polygon 내부에 테이블이 있는 경우 LibreOffice에서는 틀(Frame)으로 변환한다. LibreOffice에서 테이블을 넣을수
                     // 있는 개체는 Frame뿐인듯 하다.
@@ -697,8 +701,11 @@ public class ConvGraphics {
 
     }
 
-    private static void insertTextFrame(WriterContext wOuterContext, Ctrl_GeneralShape shape, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertTextFrame(WriterContext wOuterContext, 
+                                        Ctrl_GeneralShape shape,
+                                        int step,
+                                        int shapeWidth,
+                                        int shapeHeight) {
         try {
             Object oFrame = wOuterContext.mMSF.createInstance("com.sun.star.text.TextFrame");
             XTextFrame xInternalFrame = (XTextFrame) UnoRuntime.queryInterface(XTextFrame.class, oFrame);
@@ -736,8 +743,14 @@ public class ConvGraphics {
 
             double xScale = shape.matrixSeq == null ? 1.0 : shape.matrixSeq[0];
             double yScale = shape.matrixSeq == null ? 1.0 : shape.matrixSeq[4];
-            setPosition(frameProps, shape, (int) (shape.nGrp > 0 ? shape.xGrpOffset * xScale : 0),
-                    (int) (shape.nGrp > 0 ? shape.yGrpOffset * yScale : 0));
+
+            if (shape.nGrp > 0) {
+                HomogenMatrix3 aHomogenMatrix3 = getTransformedMatrix(shape);
+
+                setPositionLO(frameProps, shape, (int)aHomogenMatrix3.Line1.Column3, (int)aHomogenMatrix3.Line2.Column3);
+            } else {
+                setPosition(frameProps, shape, 0, 0);
+            }
             setWrapStyle(frameProps, shape);
 
             // frameProps.setPropertyValue("ZOrder", shape.zOrder);
@@ -1932,10 +1945,16 @@ public class ConvGraphics {
 
     private static void setPosition(XPropertySet xProps, Ctrl_GeneralShape shape, int xGrpOffset, int yGrpOffset)
             throws SkipDrawingException {
-        int posX = 0;
-        int posY = 0;
         int xOffsetToAdd = Transform.translateHwp2Office(xGrpOffset);
         int yOffsetToAdd = Transform.translateHwp2Office(yGrpOffset);
+        
+        setPositionLO(xProps, shape, xOffsetToAdd, yOffsetToAdd);
+    }
+    
+    private static void setPositionLO(XPropertySet xProps, Ctrl_GeneralShape shape, int xOffsetToAdd, int yOffsetToAdd)
+            throws SkipDrawingException {
+        int posX = 0;
+        int posY = 0;
         Page page = ConvPage.getCurrentPage().page;
 
         try {
@@ -2863,6 +2882,16 @@ public class ConvGraphics {
 
     public static void transform(XPropertySet xPropsSet, Ctrl_GeneralShape shape)
             throws UnknownPropertyException, WrappedTargetException, IllegalArgumentException, PropertyVetoException {
+
+        HomogenMatrix3 aHomogenMatrix3 = getTransformedMatrix(shape);
+        xPropsSet.setPropertyValue("Transformation", aHomogenMatrix3);
+    }
+
+    public static HomogenMatrix3 getTransformedMatrix(Ctrl_GeneralShape shape)
+                                                        throws UnknownPropertyException, 
+                                                               WrappedTargetException,
+                                                               IllegalArgumentException,
+                                                               PropertyVetoException {
         // transform 방식 변경 (2024.01.28)
         // 화면에 크기(0,0)로 그린 후, getProperty하지 않고, transformation값 연산, 이후 setProperty로 설정
         // HomogenMatrix3 aHomogenMatrix3 = (HomogenMatrix3) xPropsSet.getPropertyValue("Transformation");
@@ -2914,9 +2943,10 @@ public class ConvGraphics {
         aHomogenMatrix3.Line2.Column2 = transformMatrix[3];
         aHomogenMatrix3.Line1.Column3 = transformMatrix[4];
         aHomogenMatrix3.Line2.Column3 = transformMatrix[5];
-        xPropsSet.setPropertyValue("Transformation", aHomogenMatrix3);
+        
+        return aHomogenMatrix3;
     }
-    
+
     public static void fillGraphic(WriterContext wContext, XPropertySet xPropSet, Fill fill) {
         try {
             Object graphicProviderObject 
