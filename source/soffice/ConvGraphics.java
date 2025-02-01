@@ -2843,6 +2843,8 @@ public class ConvGraphics {
                     com.sun.star.awt.Gradient gradient = new com.sun.star.awt.Gradient();
                     gradient.StartColor = fill.colors[0];
                     gradient.EndColor = fill.colors[1];
+                    gradient.StartIntensity = (short)100;
+                    gradient.EndIntensity = (short)100;
                     gradient.Angle = (short) (fill.angle * 10); // 1/10 degree로 맞춘다.
                     gradient.XOffset = (short) Transform.translateHwp2Office(fill.centerX);
                     gradient.YOffset = (short) Transform.translateHwp2Office(fill.centerY);
