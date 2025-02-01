@@ -606,11 +606,10 @@ public class ConvPara {
             
             // charShape.fontID[0];                 // 언어별 글꼴ID(FaceID)         // f#
             // charShape.ratio[0];                  // 언어별 장평, 50%~200%         // r#
-            log.finest("CharWidth="+charShape.ratio[0]);
-            xStyleProps.setPropertyValue("CharScaleWidth", charShape.ratio[0]);
+            xStyleProps.setPropertyValue("CharScaleWidth", (short)100);	// 리브레오피스에서 무조건 100%로 맞춘다. 100% 미만에서 폰트너비가 커지는 버그 존재
             // charShape.spacing[0];                // 언어별 자간, -50%~50%         // s#
-            // 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)*한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
-            double spacing = ((double)charShape.height)/100 * (charShape.spacing[0] / 100.0f) * 0.8 + 0.4; 
+            // 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)* 한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
+            double spacing = ((double)charShape.height)/100 * (charShape.spacing[0]/100.0f) * 0.8 + 0.4;
             // 1pt = 0.35278mm = 35.278 (1/100 mm)
             spacing *= 35.278;
             xStyleProps.setPropertyValue("CharKerning", (short)Math.round(spacing));
