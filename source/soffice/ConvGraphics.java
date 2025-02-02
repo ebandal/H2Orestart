@@ -1865,13 +1865,13 @@ public class ConvGraphics {
 
         // TextFrame을 그린 후에 automaticHeight를 조정해야..
         if (fixedSize) {
-            frameProps.setPropertyValue("FrameIsAutomaticHeight", false);
             frameProps.setPropertyValue("WidthType", SizeType.FIX);
             frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.BLOCK);
+            frameProps.setPropertyValue("FrameIsAutomaticHeight", false);
         } else {
-            frameProps.setPropertyValue("FrameIsAutomaticHeight", true);
             frameProps.setPropertyValue("WidthType", SizeType.FIX);
-            frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.CENTER);
+            frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.TOP);
+            frameProps.setPropertyValue("FrameIsAutomaticHeight", false);
         }
         wContext.mTextCursor.gotoEnd(false);
 
@@ -2587,7 +2587,11 @@ public class ConvGraphics {
                             }
                         }
                     }
-                    xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+                    if (shape instanceof Ctrl_ShapeRect || shape instanceof Ctrl_ShapePolygon) {
+                        xPropSet.setPropertyValue("TextWrap", WrapTextMode.DYNAMIC); // Optimal
+                    } else {
+                        xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+                    }
                     break;
                 }
                 // 한컴에 있는 ZOrder(317,318)를 set하고 나서 odf를 열었을때 ZOrder(1,0)가 반전되는 현상
