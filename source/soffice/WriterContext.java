@@ -25,7 +25,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.zip.DataFormatException;
 
@@ -69,6 +71,7 @@ public class WriterContext {
     public static HwpFile hwp = null;
     public static HwpxFile hwpx = null;
     public static int version;
+    public static Set<String> fontNameSet = new HashSet<String>();
 
     public XDesktop mDesktop = null;
     public XComponentContext mContext = null;
@@ -190,6 +193,7 @@ public class WriterContext {
                 throw new HwpDetectException();
             }
         }
+        fontNameSet.clear();
     }
 
     public HwpDocInfo getDocInfo() {

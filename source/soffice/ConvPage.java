@@ -138,15 +138,14 @@ public class ConvPage {
             XDevice device = xToolkit.createScreenCompatibleDevice(0, 0);
             FontDescriptor[] fds = device.getFontDescriptors();
 
-            Set<String> namesSet = new HashSet<String>();
             for (int i = 0; i < fds.length; i++) {
-                namesSet.add(fds[i].Name);
+                WriterContext.fontNameSet.add(fds[i].Name);
             }
 
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {
                 HwpRecord_CharShape font = (HwpRecord_CharShape) wContext.getDocInfo().charShapeList.get(i);
 
-                if (font.fontName[0]!=null && namesSet.contains(font.fontName[0])==false) {
+                if (font.fontName[0]!=null && WriterContext.fontNameSet.contains(font.fontName[0])==false) {
                     String replaceFontName = null;
 
                     // 한컴 전용폰트이므로, 대체폰트로 교체.
@@ -193,7 +192,7 @@ public class ConvPage {
                         replaceFontName = "나눔고딕";
                     }
                     for (int j = 0; j < font.fontName.length; j++) {
-                        if (namesSet.contains(replaceFontName)) {
+                        if (WriterContext.fontNameSet.contains(replaceFontName)) {
                             log.fine("Font[" + font.fontName[j] + "] does not exist. so replacing with basic Font["
                                     + replaceFontName + "]");
                             font.fontName[j] = replaceFontName;

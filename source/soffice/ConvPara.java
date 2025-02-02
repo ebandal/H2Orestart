@@ -597,16 +597,20 @@ public class ConvPara {
         try {
             if (charShape.fontName[1]!=null) {
                 xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
-                // paraProps.setPropertyValue("CharFontStyleName", faceName.faceName);
             }
             if (charShape.fontName[0]!=null) {
                 xStyleProps.setPropertyValue("CharFontNameAsian", charShape.fontName[0]);
-                // paraProps.setPropertyValue("CharFontStyleNameAsian", faceName.faceName);
             }
             
             // charShape.fontID[0];                 // 언어별 글꼴ID(FaceID)         // f#
             // charShape.ratio[0];                  // 언어별 장평, 50%~200%         // r#
-            xStyleProps.setPropertyValue("CharScaleWidth", (short)100);	// 리브레오피스에서 무조건 100%로 맞춘다. 100% 미만에서 폰트너비가 커지는 버그 존재
+            if (WriterContext.fontNameSet.contains(charShape.fontName[0])) {
+                xStyleProps.setPropertyValue("CharScaleWidth", charShape.ratio[0]);
+            } else {
+                // 일치하는 폰트가 리브레오피스에 없으면, 무조건 100%로 맞춘다. 100% 미만에서 폰트너비가 커지는 버그 존재
+                xStyleProps.setPropertyValue("CharScaleWidth", (short)100);
+            }
+            
             // charShape.spacing[0];                // 언어별 자간, -50%~50%         // s#
             // 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)* 한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
             double spacing = ((double)charShape.height)/100 * (charShape.spacing[0]/100.0f) * 0.8 + 0.4;
