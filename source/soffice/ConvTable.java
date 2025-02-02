@@ -980,7 +980,7 @@ public class ConvTable {
                 	}
                 }
                 try {
-                	xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
+                	xPropSet.setPropertyValue("TextWrap", WrapTextMode.DYNAMIC);
             	} catch (UnknownPropertyException e) {
                     e.printStackTrace();
             	}
@@ -1507,7 +1507,7 @@ public class ConvTable {
 
     private static boolean hasNullRow(int[] rowHeight, int totalHeight) {
         long sum = Arrays.stream(rowHeight).sum();
-        if (sum != totalHeight)
+        if (Math.abs(totalHeight-sum) > totalHeight*5/100)
             return true;
 
         long cnt = Arrays.stream(rowHeight).filter(w -> w == 0).count();
