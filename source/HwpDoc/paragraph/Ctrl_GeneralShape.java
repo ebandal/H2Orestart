@@ -260,7 +260,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                     if (numStr.matches("\\d+\\.\\d+")) {
                         maxTxtWidth = (int)Double.parseDouble(numStr);
                     } else {
-                        maxTxtWidth = Integer.parseInt(numStr);
+                        maxTxtWidth = (int)Long.parseLong(numStr);
                     }
                     /*
                     childAttrs.getNamedItem("width").getNodeValue();  // 글 상자 이름
