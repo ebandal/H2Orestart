@@ -63,8 +63,7 @@ public class ConvPara {
     private static Map<Integer, String> characterStyleNameMap = new HashMap<Integer, String>();
     private static final String PARAGRAPH_STYLE_PREFIX = "HWP ";
 
-    static final double PARABREAK_SPACING = 0.86;
-    static final double PARA_SPACING = 0.85;
+    static final double PARA_SPACING = 0.75;
     
     public static void reset(WriterContext wContext) {
         deleteCustomStyles(wContext);

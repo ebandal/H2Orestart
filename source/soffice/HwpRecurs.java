@@ -369,7 +369,7 @@ public class HwpRecurs {
                 }
 
                 if (paraShape!=null) {
-                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARABREAK_SPACING);
+                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
                 } else {
                     ConvPara.setMinimumParagraphProperties(paraProps);
                 }

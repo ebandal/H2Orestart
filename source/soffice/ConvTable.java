@@ -1202,10 +1202,10 @@ public class ConvTable {
                 @Override
                 public boolean onParaBreak() {
                     if (isLastPara == false) {
-                        HwpRecurs.insertParaString(childContext, "\r", para.lineSegs, styleName, paraStyle, paraShape,
-                                charShape, true, true, step);
+                    	return false;
+                    } else {
+                    	return true;
                     }
-                    return true;
                 }
             };
             HwpRecurs.printParaRecurs(childContext, wContext, para, callback, 2);
