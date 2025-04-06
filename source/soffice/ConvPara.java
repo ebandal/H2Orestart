@@ -211,14 +211,13 @@ public class ConvPara {
                 xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
                 break;
             case JUSTIFY:
-                xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
-                // xStyleProps.setPropertyValue("ParaLastLineAdjust", (short)2);
+                xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.LEFT);	// 양쪽정렬은 왼쪽정렬과 조금 더 유사하다. 특히 LINE_BREAK 올때 
                 break;
             case DISTRIBUTE:
-            case DISTRIBUTE_SPACE:
                 xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.BLOCK);
-                xStyleProps.setPropertyValue("ParaLastLineAdjust", (short)2);
-                xStyleProps.setPropertyValue("ParaExpandSingleWord", true);
+                break;
+            case DISTRIBUTE_SPACE:
+                xStyleProps.setPropertyValue("ParaAdjust", ParagraphAdjust.STRETCH);
                 break;
             }
             // breakLatinWord                       // 줄 나눔 기준 영어 단위 (0:단어, 1:하이픈, 2:글자)
@@ -436,9 +435,13 @@ public class ConvPara {
                 align = ParagraphAdjust.CENTER;
                 break;
             case JUSTIFY:
+            	align = ParagraphAdjust.LEFT;  // 양쪽정렬은 LEFT와 유사. 특히 LINE_BREAK가 있을때
+            	break;
             case DISTRIBUTE:
+            	align = ParagraphAdjust.BLOCK;
+            	break;
             case DISTRIBUTE_SPACE:
-                align = ParagraphAdjust.BLOCK;
+                align = ParagraphAdjust.STRETCH;
                 break;
             }
             xStyleProps.setPropertyValue("ParaAdjust", align);
@@ -995,4 +998,5 @@ public class ConvPara {
         return characterStyleNameMap.get(styleID);
     }
 
+    
 }
