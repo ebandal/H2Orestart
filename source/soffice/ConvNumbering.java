@@ -234,8 +234,7 @@ public class ConvNumbering {
 
             for (int i=0; i < xReplace.getCount(); i++) {
                 if (numbering.numbering[i]!=null && 
-                    numbering.numbering[i].numFormat!=null &&
-                    numbering.numbering[i].numFormat.equals("")==false) {
+                    numbering.numbering[i].numFormat!=null) {
                     PropertyValue[] aProps = (PropertyValue []) xReplace.getByIndex(i);
                     setNumberingProp(aProps, i, numbering);
                     xReplace.replaceByIndex(i, aProps);
