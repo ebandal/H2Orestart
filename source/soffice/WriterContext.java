@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.zip.DataFormatException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -54,10 +55,12 @@ import HwpDoc.Exception.CompoundParseException;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.Exception.OwpmlParseException;
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.HwpElement.HwpRecord_BinData;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_Bullet;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
+import HwpDoc.HwpElement.HwpRecord_FaceName;
 import HwpDoc.HwpElement.HwpRecord_Numbering;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.HwpElement.HwpRecord_Style;
@@ -404,6 +407,32 @@ public class WriterContext {
             break;
         }
         return (HwpRecord_TabDef) docInfo.tabDefList.get(id);
+    }
+    
+    public static List<HwpRecord_FaceName> getFontNames() {
+        HwpDocInfo docInfo = null;
+        switch (hType) {
+        case HWP:
+            docInfo = hwp.getDocInfo();
+            break;
+        case HWPX:
+            docInfo = hwpx.getDocInfo();
+            break;
+        }
+        return docInfo.faceNameList.stream().map(r -> (HwpRecord_FaceName)r).collect(Collectors.toList());
+    }
+
+    public static void setFontNameLineSpaceAlaph(String faceName, double fontLineSpaceAlpha) {
+        HwpDocInfo docInfo = null;
+        switch (hType) {
+        case HWP:
+            docInfo = hwp.getDocInfo();
+            break;
+        case HWPX:
+            docInfo = hwpx.getDocInfo();
+            break;
+        }
+        docInfo.setFontNameLineSpaceAlaph(faceName, fontLineSpaceAlpha);
     }
     
     public static HwpxFile getHwpx() {
