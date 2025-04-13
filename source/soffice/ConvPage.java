@@ -959,8 +959,7 @@ public class ConvPage {
 	    		= (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, xSupplier.getStyleFamilies());
 	        XNameContainer xFamily
 	    		= (XNameContainer) UnoRuntime.queryInterface(XNameContainer.class, xFamilies.getByName("PageStyles"));
-	        XPropertySet xTextCursorProps = UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
-	        String pageStyleName = xTextCursorProps.getPropertyValue("PageStyleName").toString();
+	        String pageStyleName = pageStyleNameMap.get(secdIndex);
 	        XStyle xStyle = UnoRuntime.queryInterface(XStyle.class, xFamily.getByName(pageStyleName));
 	        XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xStyle);
 
