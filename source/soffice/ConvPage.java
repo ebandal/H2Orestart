@@ -143,10 +143,16 @@ public class ConvPage {
             XDevice device = xToolkit.createScreenCompatibleDevice(0, 0);
             FontDescriptor[] fds = device.getFontDescriptors();
             
+            // 장평 조정 대상 폰트가 시스템에서 지원하는 폰트인지 알기 위해 저장
             for (int i = 0; i < fds.length; i++) {
                 WriterContext.fontNameSet.add(fds[i].Name);
             }
 
+            // LibreOffice는 폰트마다 줄간격이 달라서 폰트별 줄간격 가중치를 미리 포함해 놓는다.
+            // 폰트(크기100)의 Ascent와 Descent 합이 117 이하이면 가중치 0.87.  예) 굴림,돋움,궁서,바탕,새굴림,HY*,휴먼*
+            // 폰트(크기100)의 Ascent와 Descent 합이 130 이하이면 가중치 0.857. 예) 휴먼편지체
+            // 폰트(크기100)의 Ascent와 Descent 합이 133 이하이면 가중치 0.764. 예) 함초롬*,한컴*
+            // 폰트(크기100)의 Ascent와 Descent 합이 133 이상이면 가중치 0.752. 예) 맑은 고딕
         	List<HwpRecord_FaceName> fontnameList = WriterContext.getFontNames();
         	for (HwpRecord_FaceName fontname: fontnameList) {
         		FontDescriptor fd = new FontDescriptor();
@@ -165,7 +171,7 @@ public class ConvPage {
                 } else if (fontAscDes >= 133) {
                 	fontLineSpaceAlpha = 0.752;
                 }
-                wContext.setFontNameLineSpaceAlaph(fontname.faceName, fontLineSpaceAlpha);
+                WriterContext.setFontNameLineSpaceAlaph(fontname.faceName, fontLineSpaceAlpha);
         	}
         	
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {
