@@ -143,6 +143,10 @@ public class ConvPage {
             XDevice device = xToolkit.createScreenCompatibleDevice(0, 0);
             FontDescriptor[] fds = device.getFontDescriptors();
             
+            for (int i = 0; i < fds.length; i++) {
+                WriterContext.fontNameSet.add(fds[i].Name);
+            }
+
         	List<HwpRecord_FaceName> fontnameList = WriterContext.getFontNames();
         	for (HwpRecord_FaceName fontname: fontnameList) {
         		FontDescriptor fd = new FontDescriptor();
