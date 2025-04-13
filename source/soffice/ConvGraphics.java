@@ -120,8 +120,7 @@ public class ConvGraphics {
         HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
-        ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc,
-                ConvPara.PARA_SPACING);
+        ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
 
         switch (obj.ctrlId) {
         case "cip$":
@@ -1931,7 +1930,7 @@ public class ConvGraphics {
 
         try {
             paraProps.setPropertyValue("ParaStyleName", styleName);
-            ConvPara.setParagraphProperties(paraProps, captionParaShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
+            ConvPara.setParagraphProperties(paraProps, captionParaShape, wContext.getDocInfo().compatibleDoc, captionCharShape.lineSpaceAlpha);
             HwpRecord_BorderFill borderFill = wContext.getBorderFill(captionCharShape.borderFillIDRef);
             ConvPara.setCharacterProperties(paraProps, captionCharShape, borderFill, step);
             paraProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(shape.captionSpacing));

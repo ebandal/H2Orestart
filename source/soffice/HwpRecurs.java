@@ -45,6 +45,7 @@ import HwpDoc.paragraph.Ctrl_GeneralShape;
 import HwpDoc.paragraph.Ctrl_HeadFoot;
 import HwpDoc.paragraph.Ctrl_NewNumber;
 import HwpDoc.paragraph.Ctrl_Note;
+import HwpDoc.paragraph.Ctrl_PageNumPos;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.ParaText;
@@ -269,6 +270,12 @@ public class HwpRecurs {
             case "onwn":    // 새 번호 지정
                 Ctrl_NewNumber newNumber = (Ctrl_NewNumber) ctrl;
                 break;
+            case "dhgp":    // 감추기
+            	break;
+            case "pngp":    // 쪽 번호 위치
+            	Ctrl_PageNumPos numPoz = (Ctrl_PageNumPos) ctrl;
+            	ConvPage.putPageNum(wContext, numPoz);
+            	break;
             case " osg":    // GeneralShapeObject
             case "cip$":    // 그림
             case "cer$":    // 사각형
@@ -288,8 +295,6 @@ public class HwpRecurs {
                 break;
             case "cot%":    // FIELD_TABLEOFCONTENT
             case "klc%":    // FIELD_CLICKHERE
-            case "dhgp":    // 감추기
-            case "pngp":    // 쪽 번호 위치
             case "knu%":    // FIELD_UNKNOWN
             case "etd%":    // FIELD_DATE
             case "tdd%":    // FIELD_DOCDATE
@@ -327,7 +332,7 @@ public class HwpRecurs {
         }
     }
     
-    static void removeLastParaBreak(XTextCursor textCursor) {
+	static void removeLastParaBreak(XTextCursor textCursor) {
         // LibreOffice에서는 입력전부터 ParaBreak가 생성되어 있다. 따라서 미리 추가된 1개의 ParaBreak를 삭제한다.
         XParagraphCursor xParaCursor = UnoRuntime.queryInterface(XParagraphCursor.class, textCursor);
         if (xParaCursor != null) {
@@ -369,7 +374,7 @@ public class HwpRecurs {
                 }
 
                 if (paraShape!=null) {
-                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
+                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, charShape.lineSpaceAlpha);
                 } else {
                     ConvPara.setMinimumParagraphProperties(paraProps);
                 }
@@ -424,7 +429,7 @@ public class HwpRecurs {
                 }
 
                 if (paraShape!=null) {
-                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
+                    ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, charShape.lineSpaceAlpha);
                 }
 
                 if (charShape!=null) {

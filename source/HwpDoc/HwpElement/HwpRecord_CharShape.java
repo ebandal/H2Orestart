@@ -68,6 +68,8 @@ public class HwpRecord_CharShape extends HwpRecord {
 	public short		borderFillIDRef;						// 글자 테두리/배경 ID(CharShapeBorderFill ID) 참조 값
 	public int			strikeOutColor;							// 취소선 색
 	
+	public double		lineSpaceAlpha = 0.87;					// 한컴 vs. 리브레오피스 폰트에 따른 행간거리 보정 값. 디폴트 0.87
+	
 	HwpRecord_CharShape(int tagNum, int level, int size) {
 		super(tagNum, level, size);
 	}

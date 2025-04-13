@@ -1053,7 +1053,7 @@ public class ConvTable {
 
             try {
                 paraProps.setPropertyValue("ParaStyleName", styleName);
-                ConvPara.setParagraphProperties(paraProps, captionParaShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
+                ConvPara.setParagraphProperties(paraProps, captionParaShape, wContext.getDocInfo().compatibleDoc, captionCharShape.lineSpaceAlpha);
                 HwpRecord_BorderFill borderFill = wContext.getBorderFill(captionCharShape.borderFillIDRef);
                 ConvPara.setCharacterProperties(paraProps, captionCharShape, borderFill, step);
                 paraProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(table.captionSpacing));

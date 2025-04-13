@@ -22,15 +22,15 @@ package soffice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Logger;
 
 import com.sun.star.awt.FontDescriptor;
+import com.sun.star.awt.SimpleFontMetric;
 import com.sun.star.awt.XDevice;
+import com.sun.star.awt.XFont;
 import com.sun.star.awt.XToolkit;
 import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.PropertyVetoException;
@@ -41,6 +41,7 @@ import com.sun.star.container.XNameAccess;
 import com.sun.star.container.XNameContainer;
 import com.sun.star.graphic.XGraphic;
 import com.sun.star.graphic.XGraphicProvider;
+import com.sun.star.io.IOException;
 import com.sun.star.lang.DisposedException;
 import com.sun.star.lang.IllegalArgumentException;
 import com.sun.star.lang.WrappedTargetException;
@@ -49,6 +50,7 @@ import com.sun.star.style.BreakType;
 import com.sun.star.style.GraphicLocation;
 import com.sun.star.style.NumberingType;
 import com.sun.star.style.PageStyleLayout;
+import com.sun.star.style.ParagraphAdjust;
 import com.sun.star.style.VerticalAlignment;
 import com.sun.star.style.XStyle;
 import com.sun.star.style.XStyleFamiliesSupplier;
@@ -64,10 +66,12 @@ import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
 import HwpDoc.HwpElement.HwpRecord_CharShape;
+import HwpDoc.HwpElement.HwpRecord_FaceName;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
 import HwpDoc.paragraph.Ctrl_ColumnDef;
 import HwpDoc.paragraph.Ctrl_HeadFoot;
+import HwpDoc.paragraph.Ctrl_PageNumPos;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.Ctrl_ShapePic;
 import HwpDoc.paragraph.HwpParagraph;
@@ -132,16 +136,34 @@ public class ConvPage {
     }
 
     public static void adjustFontIfNotExists(WriterContext wContext) {
+    	
         try {
             Object o = wContext.mMCF.createInstanceWithContext("com.sun.star.awt.Toolkit", wContext.mContext);
             XToolkit xToolkit = UnoRuntime.queryInterface(XToolkit.class, o);
             XDevice device = xToolkit.createScreenCompatibleDevice(0, 0);
             FontDescriptor[] fds = device.getFontDescriptors();
-
-            for (int i = 0; i < fds.length; i++) {
-                WriterContext.fontNameSet.add(fds[i].Name);
-            }
-
+            
+        	List<HwpRecord_FaceName> fontnameList = WriterContext.getFontNames();
+        	for (HwpRecord_FaceName fontname: fontnameList) {
+        		FontDescriptor fd = new FontDescriptor();
+        		fd.Name = fontname.faceName;
+        		fd.Height = 100;
+                XFont xFont = device.getFont(fd);
+                SimpleFontMetric fontMetric = xFont.getFontMetric();
+                log.fine("Font[" + fd.Name + "] ascent="+fontMetric.Ascent+", descent="+fontMetric.Descent+", leading="+fontMetric.Leading);
+                
+                double fontAscDes = fontMetric.Ascent+fontMetric.Descent;
+                double fontLineSpaceAlpha = 0.870; // 기본 0.870
+                if (fontAscDes >= 117 && fontAscDes < 130) {
+                	fontLineSpaceAlpha = 0.857;
+                } else if (fontAscDes >= 130 && fontAscDes < 133) {
+                	fontLineSpaceAlpha = 0.764;
+                } else if (fontAscDes >= 133) {
+                	fontLineSpaceAlpha = 0.752;
+                }
+                wContext.setFontNameLineSpaceAlaph(fontname.faceName, fontLineSpaceAlpha);
+        	}
+        	
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {
                 HwpRecord_CharShape font = (HwpRecord_CharShape) wContext.getDocInfo().charShapeList.get(i);
 
@@ -924,4 +946,132 @@ public class ConvPage {
             e.printStackTrace();
         }
     }
+
+	public static void putPageNum(WriterContext wContext, Ctrl_PageNumPos numPoz) {
+		try {
+			// get current style for page style family
+	        XStyleFamiliesSupplier xSupplier = UnoRuntime.queryInterface(XStyleFamiliesSupplier.class, wContext.mMyDocument);
+	        XNameAccess xFamilies
+	    		= (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, xSupplier.getStyleFamilies());
+	        XNameContainer xFamily
+	    		= (XNameContainer) UnoRuntime.queryInterface(XNameContainer.class, xFamilies.getByName("PageStyles"));
+	        XPropertySet xTextCursorProps = UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
+	        String pageStyleName = xTextCursorProps.getPropertyValue("PageStyleName").toString();
+	        XStyle xStyle = UnoRuntime.queryInterface(XStyle.class, xFamily.getByName(pageStyleName));
+	        XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xStyle);
+
+	        XText footerText = null;
+
+	        switch (numPoz.pos) {
+	        case LEFT_TOP:
+	        case CENTER_TOP:
+	        case RIGHT_TOP:
+	        case OUTER_TOP:
+	        case INNER_TOP:
+		        boolean headerOn = (boolean) xStyleProps.getPropertyValue("HeaderIsOn");
+		        if (headerOn == false) {
+		        	xStyleProps.setPropertyValue("HeaderIsOn", Boolean.TRUE);
+		        }
+		        footerText = UnoRuntime.queryInterface(XText.class, xStyleProps.getPropertyValue("HeaderText"));
+	        	break;
+	        case LEFT_BOTTOM:
+	        case BOTTOM_CENTER:
+	        case RIGHT_BOTTOM:
+	        case OUTER_BOTTOM:
+	        case INNER_BOTTOM:
+		        boolean footerOn = (boolean) xStyleProps.getPropertyValue("FooterIsOn");
+		        if (footerOn == false) {
+		        	xStyleProps.setPropertyValue("FooterIsOn", Boolean.TRUE);
+		        }
+		        footerText = UnoRuntime.queryInterface(XText.class, xStyleProps.getPropertyValue("FooterText"));
+	        	break;
+	        }
+
+	        XTextCursor footerCursor = footerText.createTextCursor();
+	
+	        /* set footer text properties via its cursor: font, font size, paragraph orientation    */
+	        XPropertySet xFootProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, footerCursor);
+	        xFootProps.setPropertyValue("CharFontName", "맑은고딕");
+	        xFootProps.setPropertyValue("CharHeight", 10.0f);
+	        switch (numPoz.pos) {
+	        case NONE:
+	        case LEFT_TOP:
+	        case LEFT_BOTTOM:
+		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.LEFT);
+		        break;
+	        case CENTER_TOP:
+	        case BOTTOM_CENTER:
+		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
+		        break;
+	        case RIGHT_TOP:
+	        case RIGHT_BOTTOM:
+		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.RIGHT);
+		        break;
+	        case OUTER_TOP:
+	        case OUTER_BOTTOM:
+	        case INNER_TOP:
+	        case INNER_BOTTOM:
+	        	/* 처리하지 못하므로 가운데 */
+		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
+		        break;
+	        }
+	
+	        Object oPageNum = wContext.mMSF.createInstance("com.sun.star.text.TextField.PageNumber");
+	        XTextField numField = UnoRuntime.queryInterface(XTextField.class, oPageNum);
+	        XPropertySet xNumProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, numField);
+	        switch(numPoz.numShape) {
+	        case DIGIT:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.ARABIC);
+		        break;
+	        case CIRCLE_DIGIT:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.CIRCLE_NUMBER);
+		        break;
+	        case ROMAN_CAPITAL:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.ROMAN_UPPER);
+		        break;
+	        case ROMAN_SMALL:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.ROMAN_LOWER);
+		        break;
+	        case LATIN_CAPITAL:
+	        case CIRCLED_LATIN_CAPITAL:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.CHARS_UPPER_LETTER);
+		        break;
+	        case LATIN_SMALL:
+	        case CIRCLED_LATIN_SMALL:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.CHARS_LOWER_LETTER);
+		        break;
+	        case HANGLE_SYLLABLE:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_SYLLABLE_KO);
+		        break;
+	        case CIRCLED_HANGUL_SYLLABLE:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_CIRCLED_SYLLABLE_KO);
+		        break;
+	        case HANGUL_JAMO:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_JAMO_KO);
+		        break;
+	        case CIRCLED_HANGUL_JAMO:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_CIRCLED_JAMO_KO);
+		        break;
+	        case HANGUL_PHONETIC:
+	        case IDEOGRAPH:
+	        case CIRCLED_IDEOGRAPH:
+	        case DECAGON_CIRCLE:
+	        case DECAGON_CRICLE_HANGJA:
+	        case SYMBOL:
+	        case USER_CHAR:
+        	default:
+		        xNumProps.setPropertyValue("NumberingType", NumberingType.ARABIC);
+		        break;
+	        }
+	        xNumProps.setPropertyValue("SubType", PageNumberType.CURRENT);
+	
+			// add text fields to the footer
+	        XText xText = footerCursor.getText();
+	        xText.insertTextContent(footerCursor, numField, false);
+		} catch (Exception | IllegalArgumentException e) {
+			e.printStackTrace();
+		}
+
+	}  // end of setPageNumbers()
+	
 }

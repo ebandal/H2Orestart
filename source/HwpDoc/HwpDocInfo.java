@@ -21,6 +21,7 @@
 package HwpDoc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -381,6 +382,16 @@ public class HwpDocInfo {
         }
         
         return true;
+    }
+    
+    public void setFontNameLineSpaceAlaph(String fontName, double fontLineSpaceAlpha) {
+    	charShapeList.stream().filter(l -> l instanceof HwpRecord_CharShape)
+    				.filter(l -> {
+    						return Arrays.stream(((HwpRecord_CharShape)l).fontName).anyMatch(c -> c.equals(fontName));
+    					})
+    				.forEach(c -> {
+    						((HwpRecord_CharShape)c).lineSpaceAlpha = fontLineSpaceAlpha;	
+    					});
     }
 
     public HwpFile getParentHwp() {

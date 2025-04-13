@@ -63,7 +63,7 @@ public class ConvPara {
     private static Map<Integer, String> characterStyleNameMap = new HashMap<Integer, String>();
     private static final String PARAGRAPH_STYLE_PREFIX = "HWP ";
 
-    static final double PARA_SPACING = 0.75;
+    static final double PARA_SPACING = 0.85; // 0.75;
     
     public static void reset(WriterContext wContext) {
         deleteCustomStyles(wContext);
@@ -113,7 +113,7 @@ public class ConvPara {
             XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xFamily.getByName(hwpStyleName));
             
             if (paraShape!=null) {
-                setParagraphProperties(xStyleProps, paraShape, wContext.getDocInfo().compatibleDoc, PARA_SPACING);
+                setParagraphProperties(xStyleProps, paraShape, wContext.getDocInfo().compatibleDoc, charShape.lineSpaceAlpha);
             }
             if (charShape!=null) {
                 HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
