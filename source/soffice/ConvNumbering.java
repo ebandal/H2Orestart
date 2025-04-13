@@ -121,7 +121,21 @@ public class ConvNumbering {
         if (i<7) {
             Numbering numb = numbering.numbering[i];
             if (numb!=null) {
-                adjust = numb.align==0x0?HoriOrientation.LEFT:numb.align==0x1?HoriOrientation.CENTER:numb.align==0x2?HoriOrientation.RIGHT:HoriOrientation.NONE;
+            	switch(numb.align) {
+            	case 0x0:
+            		adjust = HoriOrientation.LEFT;
+            		break;
+            	case 0x1:
+            		adjust = HoriOrientation.CENTER;
+            		break;
+            	case 0x2:
+            		adjust = HoriOrientation.RIGHT;
+            		break;
+            	default:
+            		adjust = HoriOrientation.LEFT;  // NONE으로 하면 IllegalParameterException 발생
+            		break;
+            	}
+                ;
                 // boolean      useInstWidth;           // 문단머리정보 - 번호 너비를 실제 인스턴스 문자열의 너비에 따를지 여부
                 // boolean      autoIndent;             // 문단머리정보 - 자동 내어 쓰기 여부
                 // byte         textOffsetType;         // 문단머리정보 - 수준별 본문과의 거리 종류
@@ -233,8 +247,7 @@ public class ConvNumbering {
             XIndexReplace xReplace = (XIndexReplace) UnoRuntime.queryInterface(XIndexReplace.class, xStyleProps.getPropertyValue("NumberingRules"));
 
             for (int i=0; i < xReplace.getCount(); i++) {
-                if (numbering.numbering[i]!=null && 
-                    numbering.numbering[i].numFormat!=null) {
+                if (numbering.numbering[i]!=null && numbering.numbering[i].numFormat!=null) {
                     PropertyValue[] aProps = (PropertyValue []) xReplace.getByIndex(i);
                     setNumberingProp(aProps, i, numbering);
                     xReplace.replaceByIndex(i, aProps);
