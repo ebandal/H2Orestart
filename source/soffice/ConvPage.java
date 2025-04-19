@@ -372,19 +372,7 @@ public class ConvPage {
 				            						.map(ctrl -> (Ctrl_ShapePic)ctrl)
 				            						.findFirst();
             	if (picOp.isPresent()) {
-                	// DEBUG
-                    // DEBUG
-
 	            	setBackGraphic(wContext, xStyleProps, picOp.get());
-                    xStyleProps.setPropertyValue("BackTransparent", false);
-                    xStyleProps.setPropertyValue("BackGraphicLocation", GraphicLocation.AREA);
-                    xStyleProps.setPropertyValue("BackgroundFullSize", false);
-                    
-                    xStyleProps.setPropertyValue("HeaderBackTransparent", false);
-                    xStyleProps.setPropertyValue("HeaderBackGraphicLocation", GraphicLocation.TILED);
-                    
-                    xStyleProps.setPropertyValue("FooterBackTransparent", true);
-                    xStyleProps.setPropertyValue("FooterBackGraphicLocation", GraphicLocation.RIGHT_BOTTOM);
 	            }
             }
             // BackGraphicURL,BackGraphicFilter,BackGraphicLocation,
@@ -450,66 +438,21 @@ public class ConvPage {
         if (graphic == null) {
             log.severe("Error loading the image");
         } else {
-        	/*
-            if (pic.cropLeft>0 || pic.cropRight>0 || pic.cropTop>0 || pic.cropBottom>0) {
-                try {
-                    PropertyValue[] pv = new PropertyValue[2];
-                    Path homeDir = wContext.userHomeDir;
-                    Path path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + pic.binDataID + ".png");
-                    URL url = path.toFile().toURI().toURL();
-                    String urlString = url.toExternalForm();
-                    pv[0] = new PropertyValue();
-                    pv[0].Name = "URL";
-                    pv[0].Value = urlString;
-                    pv[1] = new PropertyValue();
-                    pv[1].Name = "MimeType";
-                    pv[1].Value = "image/png";
-                    xGraphicProvider.storeGraphic(graphic, pv);
-                    xStyleProps.setPropertyValue("BackGraphic", graphic);
-                    
-                    BufferedImage originalImage = ImageIO.read(path.toFile());
-                    Files.delete(path);
-                    
-                    int orgWidth = pic.iniPicWidth==0 ? pic.iniWidth : pic.iniPicWidth;
-                    int imgWidth = originalImage.getWidth();
-                    int imgHeight = originalImage.getHeight();
-                    float hwp2pixelRatio = (float)imgWidth / orgWidth;
-                    int cropLeftPixel = (int)(pic.cropLeft*hwp2pixelRatio);
-                    int cropTopPixel = (int)(pic.cropTop*hwp2pixelRatio);
-                    int cropWidthPixel = (int)((pic.cropRight-pic.cropLeft)*hwp2pixelRatio);
-                    int cropHeightPixel = (int)((pic.cropBottom-pic.cropTop)*hwp2pixelRatio);
-                    int subLeft = cropLeftPixel>imgWidth ? 0 : cropLeftPixel;
-                    int subTop = cropTopPixel>imgHeight ? 0 : cropTopPixel;
-                    int subWidth = Math.min(cropWidthPixel, imgWidth-subLeft);
-                    int subHeight = Math.min(cropHeightPixel, imgHeight-subTop);
-                    BufferedImage subImgage = originalImage.getSubimage(subLeft,
-                                                                        subTop,
-                                                                        subWidth,
-                                                                        subHeight);
-                    try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                        ImageIO.write(subImgage, "png", baos);
-                        imageAsByteArray = baos.toByteArray();
-                        pv[0] = new PropertyValue();
-                        pv[0].Name = "InputStream";
-                        pv[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
-                        pv[1] = new PropertyValue();
-                        pv[1].Name = "MimeType";
-                        pv[1].Value = "image/png";
-                        XGraphic graphic2 = xGraphicProvider.queryGraphic(pv);
-                        xStyleProps.setPropertyValue("BackGraphic", graphic2);
-
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            */
+        	// pic.xGrpOffset, pic.yGrpOffset, pic.curWidth, pic.curHeight 로 계산하여, 
+        	// header, footer, full, Area, tile 여부를 결정
             xStyleProps.setPropertyValue("BackGraphic", graphic);
-            Object obj = xStyleProps.getPropertyValue("BackGraphic");
-            XGraphic xgraphicOut = (XGraphic) UnoRuntime.queryInterface(XGraphic.class, obj);
-            
-            xStyleProps.setPropertyValue("HeaderBackGraphic", xgraphicOut);
+            xStyleProps.setPropertyValue("BackTransparent", false);
+            xStyleProps.setPropertyValue("BackGraphicLocation", GraphicLocation.MIDDLE_MIDDLE);
+            xStyleProps.setPropertyValue("BackgroundFullSize", false);
+            // 머리말에는 바탕쪽 그래픽 표시 안함
+            xStyleProps.setPropertyValue("HeaderBackGraphic", graphic);
+            xStyleProps.setPropertyValue("HeaderBackTransparent", false);
+            xStyleProps.setPropertyValue("HeaderBackGraphicLocation", GraphicLocation.NONE);
+            // 꼬리말에는 바탕쪽 그래픽 표시 안함
             xStyleProps.setPropertyValue("FooterBackGraphic", graphic);
+            xStyleProps.setPropertyValue("FooterBackTransparent", false);
+            xStyleProps.setPropertyValue("FooterBackGraphicLocation", GraphicLocation.NONE);
+
         }
 	}
 
