@@ -1810,6 +1810,7 @@ public class ConvGraphics {
     static XTextFrame makeOuterFrame(WriterContext wContext, Ctrl_GeneralShape shape, boolean fixedSize, int step)
             throws SkipDrawingException, Exception {
         XTextFrame xFrame = null;
+        boolean hasCaption = shape.caption == null ? false : shape.caption.size() == 0 ? false : true;
 
         Object oFrame = wContext.mMSF.createInstance("com.sun.star.text.TextFrame");
         xFrame = (XTextFrame) UnoRuntime.queryInterface(XTextFrame.class, oFrame);
@@ -1872,6 +1873,11 @@ public class ConvGraphics {
             frameProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.TOP);
             frameProps.setPropertyValue("FrameIsAutomaticHeight", false);
         }
+        // 캡션이 있을 경우, 캡션이 
+        if (hasCaption) {
+            frameProps.setPropertyValue("FrameIsAutomaticHeight", true);
+        }
+        
         wContext.mTextCursor.gotoEnd(false);
 
         return xFrame;
