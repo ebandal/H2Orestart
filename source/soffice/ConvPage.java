@@ -972,6 +972,8 @@ public class ConvPage {
 	        XText footerText = null;
 
 	        switch (numPoz.pos) {
+	        case NONE:
+	        	return;
 	        case LEFT_TOP:
 	        case CENTER_TOP:
 	        case RIGHT_TOP:
@@ -1000,10 +1002,11 @@ public class ConvPage {
 	
 	        /* set footer text properties via its cursor: font, font size, paragraph orientation    */
 	        XPropertySet xFootProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, footerCursor);
-	        xFootProps.setPropertyValue("CharFontName", "맑은고딕");
+	        // xFootProps.setPropertyValue("CharFontName", "맑은고딕");
 	        xFootProps.setPropertyValue("CharHeight", 10.0f);
 	        switch (numPoz.pos) {
 	        case NONE:
+	        	return;
 	        case LEFT_TOP:
 	        case LEFT_BOTTOM:
 		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.LEFT);
@@ -1076,7 +1079,10 @@ public class ConvPage {
 	
 			// add text fields to the footer
 	        XText xText = footerCursor.getText();
-	        xText.insertTextContent(footerCursor, numField, false);
+	        // 여러번 [쪽번호위치] 있더라도 이전 쪽번호를 대체 (expand=true)
+	        footerCursor.gotoStart(false);
+	        footerCursor.gotoEnd(true);
+	        xText.insertTextContent(footerCursor, numField, true);
 		} catch (Exception | IllegalArgumentException e) {
 			e.printStackTrace();
 		}
