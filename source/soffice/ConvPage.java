@@ -171,7 +171,7 @@ public class ConvPage {
                 } else if (fontAscDes >= 133) {
                 	fontLineSpaceAlpha = 0.752;
                 }
-                WriterContext.setFontNameLineSpaceAlaph(fontname.faceName, fontLineSpaceAlpha);
+                WriterContext.setFontNameLineSpaceAlpha(fontname.faceName, fontLineSpaceAlpha);
         	}
         	
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {

@@ -422,7 +422,7 @@ public class WriterContext {
         return docInfo.faceNameList.stream().map(r -> (HwpRecord_FaceName)r).collect(Collectors.toList());
     }
 
-    public static void setFontNameLineSpaceAlaph(String faceName, double fontLineSpaceAlpha) {
+    public static void setFontNameLineSpaceAlpha(String faceName, double fontLineSpaceAlpha) {
         HwpDocInfo docInfo = null;
         switch (hType) {
         case HWP:
@@ -432,7 +432,7 @@ public class WriterContext {
             docInfo = hwpx.getDocInfo();
             break;
         }
-        docInfo.setFontNameLineSpaceAlaph(faceName, fontLineSpaceAlpha);
+        docInfo.setFontNameLineSpaceAlpha(faceName, fontLineSpaceAlpha);
     }
     
     public static HwpxFile getHwpx() {

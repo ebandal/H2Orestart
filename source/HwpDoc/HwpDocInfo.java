@@ -384,7 +384,7 @@ public class HwpDocInfo {
         return true;
     }
     
-    public void setFontNameLineSpaceAlaph(String fontName, double fontLineSpaceAlpha) {
+    public void setFontNameLineSpaceAlpha(String fontName, double fontLineSpaceAlpha) {
     	charShapeList.stream().filter(l -> l instanceof HwpRecord_CharShape)
     				.filter(l -> {
     						return Arrays.stream(((HwpRecord_CharShape)l).fontName).anyMatch(c -> c.equals(fontName));
