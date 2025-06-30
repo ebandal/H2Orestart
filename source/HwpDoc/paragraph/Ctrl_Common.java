@@ -345,13 +345,13 @@ public class Ctrl_Common extends Ctrl {
                     }
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("left").getNodeValue();
-                    outMargin[0] = (short) Integer.parseInt(numStr);
+                    outMargin[0] = (short) Long.parseLong(numStr);
                     numStr = childAttrs.getNamedItem("right").getNodeValue();
-                    outMargin[1] = (short) Integer.parseInt(numStr);
+                    outMargin[1] = (short) Long.parseLong(numStr);
                     numStr = childAttrs.getNamedItem("top").getNodeValue();
-                    outMargin[2] = (short) Integer.parseInt(numStr);
+                    outMargin[2] = (short) Long.parseLong(numStr);
                     numStr = childAttrs.getNamedItem("bottom").getNodeValue();
-                    outMargin[3] = (short) Integer.parseInt(numStr);
+                    outMargin[3] = (short) Long.parseLong(numStr);
                     node.removeChild(child);
                 }
                 break;

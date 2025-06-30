@@ -258,7 +258,9 @@ public class HwpRecurs {
                         oweParaBreak = true;
                     }
                     ConvTable.insertTable(wContext, (Ctrl_Table) ctrl, para.paraShapeID, callback, step+1);
-                    callback.tableFrame = oldFrame;	// 원래 TableFrame 속성으로 복원
+                    if (callback!=null) {
+                        callback.tableFrame = oldFrame;	// 원래 TableFrame 속성으로 복원
+                    }
                 }
                 break;
             case "onta":    // 자동 번호
