@@ -275,7 +275,7 @@ public class ConvGraphics {
                         BufferedImage originalImage = ImageIO.read(path.toFile());
                         Files.delete(path);
                         
-                        int orgWidth = pic.iniPicWidth==0 ? pic.iniWidth : pic.iniPicWidth;
+                        int orgWidth = pic.iniWidth==0 ? pic.iniPicWidth : pic.iniWidth;
                         int imgWidth = originalImage.getWidth();
                         int imgHeight = originalImage.getHeight();
                         float hwp2pixelRatio = (float)imgWidth / orgWidth;
