@@ -393,7 +393,7 @@ public class WriterContext {
             break;
         }
 
-        return binData.format;
+        return binData==null ? null : binData.format;
     }
 
     public static HwpRecord_TabDef getTabDef(short id) {
