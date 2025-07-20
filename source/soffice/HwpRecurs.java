@@ -94,7 +94,7 @@ public class HwpRecurs {
         // HWP table과  LibreOffice table 표현 방법이 다름을 극복하기 위한 방법
         // 다른 공통개체(그림으로 표시하는 개체)가 현재 문단내에 존재하는지 갯수를 가져온다.  단, 문자로 취급하지 않는 개체만 카운트한다.
         long objCount = para.p.stream().filter(c -> ((c instanceof Ctrl_Common) && ((Ctrl_Common)c).treatAsChar==false)
-        										 || ((c instanceof Ctrl_Table) && ((Ctrl_Common)c).treatAsChar==true)
+                                                 || ((c instanceof Ctrl_Table) && ((Ctrl_Common)c).treatAsChar==true)
                                                )
                                        .collect(Collectors.counting());
         // 글자가 포함되어 있는지 가져온다.
@@ -172,7 +172,7 @@ public class HwpRecurs {
                 }
                 break;
             case "dces":
-                if (step==1) { // 1depth에서만 처리
+                if (step==1) { // 1-depth에서만 처리
                     if (secdDone==false) {
                         ConvPage.setupPage(wContext, ((Ctrl_SectionDef)ctrl).page);
                         secdDone = true;
@@ -180,8 +180,9 @@ public class HwpRecurs {
                 }
                 break;
             case "dloc":
-                if (step==1) { // 1depth에서만 처리
+                if (step==1) { // 1-depth에서만 처리
                     if (secdDone == false) {
+                        // 동일 PARAGRAPH내 COLD가 SECD 보다 먼저 오는 경우에 SECD를 먼저 처리
                         Ctrl_SectionDef ctrlSecd = para.p.stream().filter(c -> (c instanceof Ctrl_SectionDef))
                                                         .map(c -> (Ctrl_SectionDef)c).findAny().orElse(null);
                         if (ctrlSecd!=null) {
@@ -189,7 +190,10 @@ public class HwpRecurs {
                             secdDone = true;
                         }
                     }
-                    ConvPage.setColumn(wContext, (Ctrl_ColumnDef)ctrl);
+                    if (secdDone) { 
+                        // (25.07.20) COLD가 SECD와 PARAGRAPH내 같이 있는 경우에만 처리되도록 함.
+                        ConvPage.setColumn(wContext, (Ctrl_ColumnDef)ctrl);
+                    }
                 }
                 break;
             case "daeh":    // 머리말
