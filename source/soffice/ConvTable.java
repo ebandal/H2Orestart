@@ -37,8 +37,6 @@ import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
 import HwpDoc.paragraph.Ctrl_Character;
-import HwpDoc.paragraph.Ctrl_Common.VRelTo;
-import HwpDoc.paragraph.Ctrl_Common.VertAlign;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.ParaText;
@@ -52,21 +50,18 @@ import com.sun.star.table.BorderLineStyle;
 import com.sun.star.table.TableBorder;
 import com.sun.star.table.XCell;
 import com.sun.star.table.XTableRows;
-import com.sun.star.awt.Point;
 import com.sun.star.awt.Size;
 import com.sun.star.beans.PropertyVetoException;
 import com.sun.star.beans.UnknownPropertyException;
 import com.sun.star.beans.XPropertySet;
 import com.sun.star.drawing.TextVerticalAdjust;
 import com.sun.star.drawing.XShape;
-import com.sun.star.frame.*;
 import com.sun.star.text.*;
 
 public class ConvTable {
     private static final Logger log = Logger.getLogger(ConvTable.class.getName());
 
     private static int autoNum = 0;
-    private static int currentY = 0;
 
     public static void reset(WriterContext wContext) {
         autoNum = 0;
@@ -98,9 +93,6 @@ public class ConvTable {
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
         ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
-        if ((table.vertRelTo == VRelTo.PAGE || table.vertRelTo == VRelTo.PAPER)  && table.vertAlign==VertAlign.BOTTOM ) {
-            currentY = getHeightPosition(wContext.mMyDocument);
-        }
         
         XTextFrame xFrame = null;
         XText xFrameText = null;
@@ -445,7 +437,6 @@ public class ConvTable {
                     case BOTTOM:
                         // TextTable에는 VertOrient가 없으니, 위에서부터 계산해야 함.
                         posY = Transform.translateHwp2Office(page.height)
-                               - Transform.translateHwp2Office(currentY)
                                - Transform.translateHwp2Office(shape.height)
                                - Transform.translateHwp2Office(shape.vertOffset);
                         xProps.setPropertyValue("TopMargin", posY);
@@ -1527,22 +1518,5 @@ public class ConvTable {
             return true;
         else
             return false;
-    }
-    
-    private static int getHeightPosition(XTextDocument xTextDocument) {
-        // Get the XModel interface from the document
-        XModel xModel = UnoRuntime.queryInterface(XModel.class, xTextDocument);
-    
-        // Get the XTextViewCursorSupplier from the controller
-        XTextViewCursorSupplier xViewCursorSupplier = UnoRuntime.queryInterface(
-            XTextViewCursorSupplier.class, xModel.getCurrentController());
-    
-        // Get the current view cursor
-        XTextViewCursor xViewCursor = xViewCursorSupplier.getViewCursor();
-    
-        // Get the position of the cursor
-        Point cursorPosition = xViewCursor.getPosition();
-    
-        return cursorPosition.Y;
     }
 }

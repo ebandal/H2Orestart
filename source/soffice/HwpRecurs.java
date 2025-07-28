@@ -49,6 +49,8 @@ import HwpDoc.paragraph.Ctrl_PageNumPos;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.ParaText;
+import HwpDoc.paragraph.Ctrl_Common.VRelTo;
+import HwpDoc.paragraph.Ctrl_Common.VertAlign;
 import HwpDoc.section.Page;
 import soffice.HwpCallback.TableFrame;
 import HwpDoc.paragraph.HwpParagraph;
@@ -257,6 +259,10 @@ public class HwpRecurs {
                                 }
                             }
                         }
+                    } else if ((((Ctrl_Table)ctrl).vertRelTo == VRelTo.PAGE || ((Ctrl_Table)ctrl).vertRelTo == VRelTo.PAPER)  && 
+                               (((Ctrl_Table)ctrl).vertAlign == VertAlign.BOTTOM )) { 
+                        // issue #58. 테이블이 PAGE의 BOTTOM에 위치하는 경우, LibreOffice에서 처리할 수 없어 frame으로 만든다.
+                        callback.changeTableFrame(TableFrame.MAKE);
                     } else {
                     	// table 다음 PARA_BREAK 1개를 생략한다.
                         oweParaBreak = true;
