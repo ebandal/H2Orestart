@@ -58,6 +58,7 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
         String numStr;
         NodeList nodeList = node.getChildNodes();
         
+        nPoints = nodeList.getLength();
         points = new Point[nodeList.getLength()];
         segmentType = new byte[nodeList.getLength()];
         
