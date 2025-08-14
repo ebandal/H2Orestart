@@ -414,15 +414,14 @@ public class HwpSection {
                         // [그림의 caption 을 넣기 위한 임시 코드]
                         // Ctrl_Common ctrlCmn = (Ctrl_Common)ctrl;
                         // offset -= 6;
-                        // ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset,
-                        // version);
+                        // ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
                         // offset += 6;
                         // offset += parseListAppend(ctrlCmn, size-6, buf, offset, version);
                         // if (subParaCount>0) {
-                        // if (ctrlCmn.caption==null) ctrlCmn.caption = new ArrayList<CapParagraph>();
-                        // CapParagraph newPara = new CapParagraph();
-                        // ctrlCmn.caption.add(newPara);
-                        // offset += parseRecurse(newPara, level, buf, offset, version);
+                        //     if (ctrlCmn.caption==null) ctrlCmn.caption = new ArrayList<CapParagraph>();
+                        //     CapParagraph newPara = new CapParagraph();
+                        //     ctrlCmn.caption.add(newPara);
+                        //     offset += parseRecurse(newPara, level, buf, offset, version);
                         // }
                         // [그림의 caption 을 넣기 위한 임시 코드]
                         
@@ -1052,6 +1051,9 @@ public class HwpSection {
             break;
         case "lle$":
             len = Ctrl_ShapeEllipse.parseListHeaderAppend((Ctrl_ShapeEllipse) obj, size, buf, off, version);
+            break;
+        case "ruc$":
+            len = Ctrl_ShapeCurve.parseListHeaderAppend((Ctrl_ShapeCurve) obj, size, buf, off, version);
             break;
         }
 
