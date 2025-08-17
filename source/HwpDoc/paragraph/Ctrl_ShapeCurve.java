@@ -137,7 +137,15 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
         
         return offset-off;
     }
-	    
+    
+    public static int parseListHeaderAppend(Ctrl_ShapeCurve shape, int size, byte[] buf, int off, int version) throws HwpParseException {
+        int offset = off;
+        // LIST_HEADER 정의는 6byte이지만, 실제 33byte 넘어온다. 6byte 뒤의 27byte는 알 수 없다.
+        offset += size;
+        
+        return offset-off;
+    }    
+	   
     public String toString() {
         StringBuffer strb = new StringBuffer();
         strb.append("CTRL("+ctrlId+")")
