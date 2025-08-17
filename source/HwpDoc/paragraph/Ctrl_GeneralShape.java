@@ -557,8 +557,19 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         obj.fill = new Fill(buf, offset, size-(offset-off)-22);
         offset += obj.fill.getSize();
         
-        // 글상자 텍스트 속성.  아래 내용대로 읽히지 않는다.  알 수 없는 22bytes가 온다.
-        offset += 22;
+        // 글상자 텍스트 속성. 
+        obj.leftSpace	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF); // 글상자 텍스트 왼쪽 여백
+        offset += 2;  
+        obj.rightSpace	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF); // 글상자 텍스트 오른쪽 여백
+        offset += 2;
+        obj.upSpace		= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF); // 글상자 텍스트 위쪽 여백
+        offset += 2;
+        obj.downSpace	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF); // 글상자 텍스트 아래쪽 여백
+        offset += 2;
+        obj.maxTxtWidth	= buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF; // 텍스트 문자열 최대 폭
+        offset += 4;
+        // 알 수 없는 추가 10bytes가 온다.
+        offset += 10;
         
         if (log.isLoggable(Level.FINEST)) {
             log.finest("[그리기 개체 공통 속성]을 읽었습니다.");
