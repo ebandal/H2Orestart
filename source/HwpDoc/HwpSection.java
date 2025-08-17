@@ -249,14 +249,14 @@ public class HwpSection {
                     }
                     break;
                 case HWPTAG_PARA_CHAR_SHAPE:
-	                {
-	                	if (currPara.p == null)  {
-	                		currPara.p = new LinkedList<>();
-	                		currPara.p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
-	                	}
-	                    CharShape.fillCharShape(tagNum, level, size, buf, offset, version, currPara.p);
-	                    offset += size;
-	                }
+                    {
+                        if (currPara.p == null)  {
+                            currPara.p = new LinkedList<>();
+                            currPara.p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
+                        }
+                        CharShape.fillCharShape(tagNum, level, size, buf, offset, version, currPara.p);
+                        offset += size;
+                    }
                     break;
                 case HWPTAG_PARA_LINE_SEG:
                     currPara.lineSegs = new LineSeg(tagNum, level, size, buf, offset, version);
@@ -403,29 +403,7 @@ public class HwpSection {
                             ((Ctrl_Table) ctrl).caption.add(newPara);
                             offset += parseRecurse(newPara, level, buf, offset, version);
                         }
-                    } else if (ctrl instanceof Ctrl_ShapeRect) {
-                        Ctrl_Common ctrlCmn = (Ctrl_Common) ctrl;
-                        offset -= 6;
-                        ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
-                        offset += 6;
-                        offset += parseListAppend(ctrlCmn, size - 6, buf, offset, version);
-                        offset += parseCtrlRecurse(ctrl, level, buf, offset, version);
                     } else if (ctrl instanceof Ctrl_GeneralShape) {
-                        // [그림의 caption 을 넣기 위한 임시 코드]
-                        // Ctrl_Common ctrlCmn = (Ctrl_Common)ctrl;
-                        // offset -= 6;
-                        // ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
-                        // offset += 6;
-                        // offset += parseListAppend(ctrlCmn, size-6, buf, offset, version);
-                        // if (subParaCount>0) {
-                        //     if (ctrlCmn.caption==null) ctrlCmn.caption = new ArrayList<CapParagraph>();
-                        //     CapParagraph newPara = new CapParagraph();
-                        //     ctrlCmn.caption.add(newPara);
-                        //     offset += parseRecurse(newPara, level, buf, offset, version);
-                        // }
-                        // [그림의 caption 을 넣기 위한 임시 코드]
-                        
-                        // 글상자속성
                         Ctrl_Common ctrlCmn = (Ctrl_Common) ctrl;
                         offset -= 6;
                         ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
@@ -519,16 +497,10 @@ public class HwpSection {
                             // HWP_PARA_HEADER의 하위 level부터 읽도록 offset 변경되었음.
                             offset += parseRecurse(newPara, level, buf, offset, version);
                         }
-                    } else if (ctrl instanceof Ctrl_ShapeRect) {
-                        if (((Ctrl_Common) ctrl).paras == null)
-                            ((Ctrl_Common) ctrl).paras = new ArrayList<HwpParagraph>();
-                        HwpParagraph newPara = HwpParagraph.parse(tagNum, level, size, buf, offset, version);
-                        ((Ctrl_Common) ctrl).paras.add(newPara);
-                        offset += HwpParagraph.parse(newPara, size, buf, offset, version);
-                        // parseRecurse에서 PARA_TEXT 부터 읽도록 offset 변경되었음.
-                        offset += parseRecurse(newPara, level, buf, offset, version);
                     } else if (ctrl instanceof Ctrl_GeneralShape) {
-                        if (((Ctrl_Common) ctrl).captionWidth > 0 && ((Ctrl_Common) ctrl).caption == null) {
+                        if (ctrl.ctrlId.equals(" osg")) {	// 20250816
+                            // GSO 다음에 오는 PARA는 Caption
+                            // if (((Ctrl_Common) ctrl).captionWidth > 0 && ((Ctrl_Common) ctrl).caption == null) {
                             ((Ctrl_Common) ctrl).caption = new ArrayList<CapParagraph>();
                             CapParagraph newPara = new CapParagraph(); // HwpRecord_ParaHeader.parse(tagNum, level,
                                                                        // size, buf, offset, version);
@@ -537,6 +509,7 @@ public class HwpSection {
                             // parseRecurse에서 PARA_TEXT 부터 읽도록 offset 변경되었음.
                             offset += parseRecurse(newPara, level, buf, offset, version);
                         } else {
+                            // GSO 아닌 도형 ctrl 다음에 오는 PARA는 글상자
                             if (((Ctrl_Common) ctrl).paras == null)
                                 ((Ctrl_Common) ctrl).paras = new ArrayList<HwpParagraph>();
                             HwpParagraph newPara = HwpParagraph.parse(tagNum, level, size, buf, offset, version);
@@ -569,7 +542,7 @@ public class HwpSection {
                     } else {
                         HwpParagraph newPara = HwpParagraph.parse(tagNum, level, size, buf, offset, version);
                         offset += size;
-                        parseRecurse(newPara, level, buf, offset, version);
+                        offset += parseRecurse(newPara, level, buf, offset, version);
                     }
                     break;
                 case HWPTAG_CTRL_HEADER:
