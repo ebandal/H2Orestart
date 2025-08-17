@@ -200,8 +200,8 @@ public class ConvTable {
                     tableProps.getPropertyValue("TableColumnSeparators"));
             double dPosition = 0;
             for (int col = 0; col < colWidth.length; col++) {
-                dPosition += (colWidth[col] * dRatio > 1.0 ? colWidth[col] * dRatio : 1); // [20221106] position gap이 최소
-                                                                                          // 1이상이 되도록 한다. 장기요양 서식.
+                // [20250817] position gap이 최소 2이상이 되도록 한다. 1에서 머지가 안되는 경우 있음. issue #60
+                dPosition += (colWidth[col] * dRatio > 1.0 ? colWidth[col] * dRatio : 3);
                 xSeparators[col].Position = (short) Math.ceil(dPosition);
             }
             tableProps.setPropertyValue("TableColumnSeparators", xSeparators);
@@ -219,15 +219,12 @@ public class ConvTable {
                     }
                 }
             }
-
+            
             // merge cell and fill text.
             for (int row = 0; row < cellArray.length; row++) {
-
                 for (int col = cellArray[row].length - 1; col >= 0; col--) {
                     TblCell cell = cellArray[row][col];
-
                     String cellAddr = mkCellNameBeforeMerge(cellArray, col, row, row - 1);
-
                     XCell xCell = xTextTable.getCellByName(cellAddr);
                     if (xCell != null) {
                         // 인접한 Cell Border때문에 border가 지워지지 않는 현상있음. 모든 Cell에 대해 border가 없는 상태로 먼저 만든다.
@@ -252,11 +249,10 @@ public class ConvTable {
                             // 한가지 방식으로 통일하면 좋겠으나 extension에서 동작하지 않아 각각 방식을 달리한다.
                             log.finest("CELL ADDR=" + cellAddr + " out of (" + cell.colAddr + ", " + cell.rowAddr
                                     + ") spans (" + cell.colSpan + "," + cell.rowSpan + ")");
-
                             XTextTableCursor xCellCursor = xTextTable.createCursorByCellName(cellAddr);
                             // column merge는 goRight() 후 mergeRange(). gotoCellByName()은 extension에서 동작 안함.
                             if (cell.colSpan > 1) {
-                                boolean ret = xCellCursor.goRight((short) (cell.colSpan - 1), true);
+                            	boolean ret = xCellCursor.goRight((short) (cell.colSpan - 1), true);
                                 log.finest("GoRight(" + (cell.colSpan - 1) + ") return=" + ret);
                                 ret = xCellCursor.mergeRange();
                                 log.finest("Merge=" + ret);
@@ -287,11 +283,10 @@ public class ConvTable {
                                 cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(cellBorderFill.bottom));
                             }
                             // 안쪽여백은 한컴값을 사용하지 않고, 0으로 임의조정한다. 가능한 Cell내 모든 문단을 보여주기 위해  
-                            cellProps.setPropertyValue("LeftBorderDistance", 0 /* Transform.translateHwp2Office(table.inLSpace) */);
-                            cellProps.setPropertyValue("RightBorderDistance", 0 /* Transform.translateHwp2Office(table.inRSpace) */);
-                            cellProps.setPropertyValue("TopBorderDistance", 0 /* Transform.translateHwp2Office(table.inUSpace) */);
-                            cellProps.setPropertyValue("BottomBorderDistance", 0 /* Transform.translateHwp2Office(table.inDSpace) */);
-                            
+                            cellProps.setPropertyValue("LeftBorderDistance", 0);
+                            cellProps.setPropertyValue("RightBorderDistance", 0);
+                            cellProps.setPropertyValue("TopBorderDistance", 0);
+                            cellProps.setPropertyValue("BottomBorderDistance", 0);
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
@@ -1071,7 +1066,7 @@ public class ConvTable {
             }
         }
     }
-
+    
     public static String mkCellNameBeforeMerge(TblCell[][] cellArray, int x, int y, int mergedY) {
         // cell에 대한 알파벳을 가져오려면,
         // null을 포함하고 (아직 머지하기 전의 알파벳을 구해야 하므로), nullColCount
