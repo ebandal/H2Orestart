@@ -54,6 +54,7 @@ import com.sun.star.drawing.HomogenMatrix3;
 import com.sun.star.drawing.LineEndType;
 import com.sun.star.drawing.PolyPolygonBezierCoords;
 import com.sun.star.drawing.PolygonFlags;
+import com.sun.star.drawing.TextFitToSizeType;
 import com.sun.star.drawing.TextHorizontalAdjust;
 import com.sun.star.drawing.TextVerticalAdjust;
 import com.sun.star.drawing.XShape;
@@ -78,6 +79,7 @@ import com.sun.star.text.XText;
 import com.sun.star.text.XTextContent;
 import com.sun.star.text.XTextCursor;
 import com.sun.star.text.XTextFrame;
+
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
@@ -1231,8 +1233,8 @@ public class ConvGraphics {
         }
     }
 
-    private static void insertELLIPSE(WriterContext wContext, Ctrl_ShapeEllipse ell, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertELLIPSE(WriterContext wContext, Ctrl_ShapeEllipse ell, int step, int shapeWidth, int shapeHeight) {
+        boolean hasParas = ell.paras == null ? false : ell.paras.size() == 0 ? false : true;
         boolean hasCaption = ell.caption == null ? false : ell.caption.size() == 0 ? false : true;
         XTextFrame xFrame = null;
         XText xFrameText = null;
@@ -1246,9 +1248,9 @@ public class ConvGraphics {
                 xFrameCursor = xFrameText.createTextCursor();
             }
 
-            Object xObj = wContext.mMSF.createInstance("com.sun.star.drawing.EllipseShape");
-            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
-            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
+            Object shapeObj = wContext.mMSF.createInstance("com.sun.star.drawing.EllipseShape");
+            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, shapeObj);
+            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, shapeObj);
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
@@ -1316,6 +1318,32 @@ public class ConvGraphics {
             
             if (ell.nGrp == 0) {
                 ++autoNum;
+            }
+            if (hasParas) {
+                XPropertySet xShapeProps = (XPropertySet)UnoRuntime.queryInterface(XPropertySet.class, shapeObj);
+                // 도형내 텍스트 삽입
+                xShapeProps.setPropertyValue("TextHorizontalAdjust", TextHorizontalAdjust.CENTER);
+                xShapeProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.CENTER);
+                xShapeProps.setPropertyValue("TextLeftDistance", Transform.translateHwp2Office(ell.leftSpace));
+                xShapeProps.setPropertyValue("TextRightDistance", Transform.translateHwp2Office(ell.rightSpace));
+                xShapeProps.setPropertyValue("TextUpperDistance", Transform.translateHwp2Office(ell.upSpace));
+                xShapeProps.setPropertyValue("TextLowerDistance", Transform.translateHwp2Office(ell.downSpace));
+                xShapeProps.setPropertyValue("TextFitToSize", TextFitToSizeType.AUTOFIT);
+                
+                XText xShapeText = (XText)UnoRuntime.queryInterface(XText.class, shapeObj);
+                XTextCursor xTextCursor = xShapeText.createTextCursor();
+                XPropertySet xCursorProps = (XPropertySet)UnoRuntime.queryInterface(XPropertySet.class, xTextCursor);
+                xCursorProps.setPropertyValue("CharPosture", com.sun.star.awt.FontSlant.NONE);
+                xCursorProps.setPropertyValue("CharWeight", new Float(com.sun.star.awt.FontWeight.NORMAL));
+                
+                for (HwpParagraph para : ell.paras) {
+                    for (Ctrl ctrl: para.p) {
+                        if (ctrl instanceof ParaText) {
+                            xTextCursor.gotoEnd(false);
+                            xShapeText.insertString(xTextCursor, ((ParaText)ctrl).text, false);
+                        }
+                    }
+                }
             }
 
             // 캡션 쓰기
@@ -1391,7 +1419,7 @@ public class ConvGraphics {
                 // xPropSet.setPropertyValue("BackTransparent", RelOrientation.PRINT_AREA); //
                 // 1:paragraph text area
                 xPropSet.setPropertyValue("FillStyle", FillStyle.NONE);
-                xPropSet.setPropertyValue("FillTransparence", 100);                
+                xPropSet.setPropertyValue("FillTransparence", 100);
             } else {
                 setPosition(xPropSet, pol, pol.nGrp > 0 ? pol.xGrpOffset : 0, pol.nGrp > 0 ? pol.yGrpOffset : 0);
             }
@@ -1469,10 +1497,11 @@ public class ConvGraphics {
 
     private static void insertCURVE(WriterContext wContext, Ctrl_ShapeCurve cur, int step) {
         String shapeString = "com.sun.star.drawing.OpenBezierShape";
-        if ((cur.fillType > 0)) {
+        if (cur.fill != null && cur.fill.fillType > 0) {
             shapeString = "com.sun.star.drawing.ClosedBezierShape";
         }
 
+        boolean hasParas = cur.paras == null ? false : cur.paras.size() == 0 ? false : true;
         boolean hasCaption = cur.caption == null ? false : cur.caption.size() == 0 ? false : true;
         XTextFrame xFrame = null;
         XText xFrameText = null;
@@ -1494,9 +1523,9 @@ public class ConvGraphics {
                 sizeHeight = Math.abs(cur.height);
             }
 
-            Object xObj = wContext.mMSF.createInstance(shapeString);
-            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
-            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
+            Object shapeObj = wContext.mMSF.createInstance(shapeString);
+            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, shapeObj);
+            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, shapeObj);
             // 그릴 위치
             Point aPos = new Point(0, 0);
             Size aSize = new Size(Transform.translateHwp2Office(sizeWidth), Transform.translateHwp2Office(sizeHeight));
@@ -1627,6 +1656,7 @@ public class ConvGraphics {
             if (cur.nGrp == 0) {
                 ++autoNum;
             }
+
             if (hasCaption) {
                 XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
                 // 투명하게 해야 도형이 보인다.
@@ -1646,6 +1676,32 @@ public class ConvGraphics {
                 // workaround-LibreOffice7.2 END
             }
 
+            if (hasParas) {
+                XPropertySet xShapeProps = (XPropertySet)UnoRuntime.queryInterface(XPropertySet.class, shapeObj);
+                // 도형내 텍스트 삽입
+                xShapeProps.setPropertyValue("TextHorizontalAdjust", TextHorizontalAdjust.CENTER);
+                xShapeProps.setPropertyValue("TextVerticalAdjust", TextVerticalAdjust.CENTER);
+                xShapeProps.setPropertyValue("TextLeftDistance", Transform.translateHwp2Office(cur.leftSpace));
+                xShapeProps.setPropertyValue("TextRightDistance", Transform.translateHwp2Office(cur.rightSpace));
+                xShapeProps.setPropertyValue("TextUpperDistance", Transform.translateHwp2Office(cur.upSpace));
+                xShapeProps.setPropertyValue("TextLowerDistance", Transform.translateHwp2Office(cur.downSpace));
+                xShapeProps.setPropertyValue("TextFitToSize", TextFitToSizeType.AUTOFIT);
+                
+                XText xShapeText = (XText)UnoRuntime.queryInterface(XText.class, shapeObj);
+                XTextCursor xTextCursor = xShapeText.createTextCursor();
+                XPropertySet xCursorProps = (XPropertySet)UnoRuntime.queryInterface(XPropertySet.class, xTextCursor);
+                xCursorProps.setPropertyValue("CharPosture", com.sun.star.awt.FontSlant.NONE);
+                xCursorProps.setPropertyValue("CharWeight", new Float(com.sun.star.awt.FontWeight.NORMAL));
+                
+                for (HwpParagraph para : cur.paras) {
+                    for (Ctrl ctrl: para.p) {
+                        if (ctrl instanceof ParaText) {
+                            xTextCursor.gotoEnd(false);
+                            xShapeText.insertString(xTextCursor, ((ParaText)ctrl).text, false);
+                        }
+                    }
+                }
+            }
             // 캡션 쓰기
             if (hasCaption) {
                 addCaptionString(wContext, xFrameText, xFrameCursor, cur, step);

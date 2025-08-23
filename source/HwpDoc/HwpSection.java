@@ -899,26 +899,13 @@ public class HwpSection {
                     int subParaCount = HwpRecord_ListHeader.getCount(tagNum, level, size, buf, offset, version);
                     offset += 6; // 문단수 2byte, 속성 4byte
 
-                    if (ctrl instanceof Ctrl_ShapeRect) {
-                        Ctrl_Common ctrlCmn = (Ctrl_Common) ctrl;
-                        ctrlCmn.ctrlId = "cer$";
-                        offset -= 6;
-                        ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
-                        offset += 6;
-                        offset += parseListAppend(ctrlCmn, size - 6, buf, offset, version);
-                        offset += parseCtrlRecurse(ctrl, level, buf, offset, version);
-                    } else if (ctrl instanceof Ctrl_ShapePolygon) {
-                        Ctrl_Common ctrlCmn = (Ctrl_Common) ctrl;
-                        ctrlCmn.ctrlId = "lop$";
-                        offset -= 6;
-                        ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
-                        offset += 6;
-                        offset += parseListAppend(ctrlCmn, size - 6, buf, offset, version);
-                        offset += parseCtrlRecurse(ctrl, level, buf, offset, version);
-                    } else {
-                        // container내 도형의 caption은 무시하자.
-                        offset += (size - 6);
-                    }
+                    // 기존에는 Container에 포함된 ShareRect, ShaprePolygon만 지원했으나, 모든 도형내 글상자를 파싱하도록 수정 [2025.08.23]
+                    Ctrl_Common ctrlCmn = (Ctrl_Common) ctrl;
+                    offset -= 6;
+                    ctrlCmn.textVerAlign = HwpRecord_ListHeader.getVertAlign(6, buf, offset, version);
+                    offset += 6;
+                    offset += parseListAppend(ctrlCmn, size - 6, buf, offset, version);
+                    offset += parseCtrlRecurse(ctrl, level, buf, offset, version);
                 }
                     break;
                 case HWPTAG_SHAPE_COMPONENT:
