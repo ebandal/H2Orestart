@@ -117,8 +117,15 @@ public class OwpmlFile {
     }
     
     public List<String> getSections() {
-        List<String> sections = offsetMap.keySet().stream().filter(s -> s.contains("section")).sorted().collect(Collectors.toList());
-
+        List<String> sections = offsetMap.keySet().stream().filter(s -> s.contains("section"))
+                                         .sorted((s1, s2) -> {
+                                                int lengthCompare = Integer.compare(s1.length(), s2.length());
+                                                if (lengthCompare != 0) {
+                                                    return lengthCompare;
+                                                }
+                                                return s1.compareTo(s2);
+                                            })
+                                         .collect(Collectors.toList());
         return sections;
     }
     
