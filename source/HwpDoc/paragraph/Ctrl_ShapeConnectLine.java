@@ -20,6 +20,8 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +38,7 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
 	public ConnectLineType type;       // 연결선 형식
 	public ConnectPoint    startPt;    // 연결선 시작점 정보
 	public ConnectPoint    endPt;      // 연결선 끝점 정보
+	public List<Point>	controlPoints;
 	
 	public Ctrl_ShapeConnectLine(String ctrlId, int size, byte[] buf, int off, int version) {
 		super(ctrlId, size, buf, off, version);
@@ -61,12 +64,15 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
         String numStr;
         
         NodeList nodeList = node.getChildNodes();
-        for (int i=0; i<nodeList.getLength(); i++) {
+        for (int i=nodeList.getLength()-1; i>=0; i--) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
             case "hp:startPt":    // 시작점
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
+                    if (startPt==null) {
+                    	startPt = new ConnectPoint();
+                    }
                     numStr = childAttrs.getNamedItem("x").getNodeValue();
                     startPt.x = Integer.parseInt(numStr);
                     numStr = childAttrs.getNamedItem("y").getNodeValue();
@@ -81,6 +87,9 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
             case "hp:endPt":      // 끝점
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
+                    if (endPt==null) {
+                    	endPt = new ConnectPoint();
+                    }
                     numStr = childAttrs.getNamedItem("x").getNodeValue();
                     endPt.x = Integer.parseInt(numStr);
                     numStr = childAttrs.getNamedItem("y").getNodeValue();
@@ -92,6 +101,29 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
                 }
                 node.removeChild(child);
                 break;
+            case "hp:controlPoints":
+	            {
+	            	if (controlPoints == null) {
+	            		controlPoints = new ArrayList<Point>();
+	            	}
+	                NodeList grandChildList = child.getChildNodes();
+	                for (int j=0; j<grandChildList.getLength(); j++) {
+	                	Point p = new Point();
+	                    Node grandChild = grandChildList.item(j);
+	                    switch(grandChild.getNodeName()) {
+	                    case "hp:point":
+	                        NamedNodeMap grandChildAttrs = grandChild.getAttributes();
+	                        numStr = grandChildAttrs.getNamedItem("x").getNodeValue();
+	                        p.x = Integer.parseInt(numStr);
+	                        numStr = grandChildAttrs.getNamedItem("y").getNodeValue();
+	                        p.y = Integer.parseInt(numStr);
+	                        break;
+	                    }
+	                    controlPoints.add(p);
+	                }
+	            }
+	            node.removeChild(child);
+	            break;
             default:
             	log.fine(child.getNodeName() + "=" + child.getNodeValue());
             	if (log.isLoggable(Level.FINE)) {
