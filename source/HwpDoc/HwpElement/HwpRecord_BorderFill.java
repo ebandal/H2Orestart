@@ -434,8 +434,10 @@ public class HwpRecord_BorderFill extends HwpRecord {
         for (int j=0; j<grandChildren.getLength(); j++) {
             Node grandChild = grandChildren.item(j);
             switch(grandChild.getNodeName()) {
-            case "Color":
-                String colorStr = grandChild.getNodeValue().replaceAll("\\D", "");
+            case "hc:color":
+        	    NamedNodeMap grandChildAttrs = grandChild.getAttributes();
+                String colorStr = grandChildAttrs.getNamedItem("value").getNodeValue();
+                colorStr = colorStr.replaceAll("[^0-9A-Fa-f]", "");   // hexa코드 외 제거 (예: #FFFFFF)
                 fill.colors[j] = Integer.parseInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장
                 break;
             }
