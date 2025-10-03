@@ -30,6 +30,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
@@ -102,9 +103,9 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         this.downSpace      = shape.downSpace;
         this.maxTxtWidth    = shape.maxTxtWidth;
     }
-    
-    public Ctrl_GeneralShape(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+
+    public Ctrl_GeneralShape(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
+        super(ctrlId, node, version, context);
 
         // 초기값
         lineStyle = LineStyle2.NONE;
@@ -282,7 +283,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                             downSpace = (short) Integer.parseInt(numStr);
                             break;
                         case "hp:subList":
-                            do_subList(grandChild, version);
+                            do_subList(grandChild, version, context);
                             break;
                         case "#text":
                             break;
@@ -359,8 +360,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         }
     }
 
-
-    private void do_subList(Node node, int version) throws NotImplementedException {
+    private void do_subList(Node node, int version, IContext context) throws NotImplementedException {
         if (paras==null) {
             paras = new ArrayList<HwpParagraph>();
         }
@@ -397,7 +397,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
             Ctrl latestCtrl = null;
             switch(child.getNodeName()) {
             case "hp:p":
-                HwpParagraph p = new HwpParagraph(child, version);
+                HwpParagraph p = new HwpParagraph(child, version, context);
                 paras.add(p);
                 latestCtrl = (p.p==null ? null : p.p.getLast());
                 break;
@@ -405,7 +405,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
         
             // ParaBreak를 subList 중간에 하나씩 강제로 넣는다. Paragraph 단위로 다음줄에 써지도록
             if (latestCtrl != null && latestCtrl instanceof ParaText && i<nodeLength-1) {
-                HwpParagraph breakP = new HwpParagraph(child, version);
+                HwpParagraph breakP = new HwpParagraph(child, version, context);
                 if (breakP.p != null) {
                     breakP.p.clear();
                 } else {

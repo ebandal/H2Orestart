@@ -29,6 +29,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.paragraph.Ctrl_Character.CtrlCharType;
@@ -46,8 +47,8 @@ public class HwpParagraph {
     public LinkedList<Ctrl> p;              // HWPTAG_PARA_TEXT + List<Ctrl>  V2
     
     public HwpParagraph() { }
-    
-    public HwpParagraph(Node node, int version) throws NotImplementedException {
+
+    public HwpParagraph(Node node, int version, IContext context) throws NotImplementedException {
         
         NamedNodeMap attributes = node.getAttributes();
         
@@ -106,7 +107,7 @@ public class HwpParagraph {
                     NodeList childNodeList = child.getChildNodes();
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
-                        parseHwpParagraph(grandChild, charShapeID, version);
+                        parseHwpParagraph(grandChild, charShapeID, version, context);
                     }
                 }
                 break;
@@ -144,7 +145,7 @@ public class HwpParagraph {
         }
     }
 
-    private void parseHwpParagraph(Node node, int charShapeId, int version) throws NotImplementedException {
+    private void parseHwpParagraph(Node node, int charShapeId, int version, IContext context) throws NotImplementedException {
 
         if (p == null) {
             p = new LinkedList<Ctrl>();
@@ -156,7 +157,7 @@ public class HwpParagraph {
         switch(node.getNodeName()) {
         case "hp:secPr":
             {
-                ctrl = new Ctrl_SectionDef("dces", node, version);
+                ctrl = new Ctrl_SectionDef("dces", node, version, context);
                 p.add(ctrl);
             }
             break;
@@ -165,7 +166,7 @@ public class HwpParagraph {
                 NodeList nodeList = node.getChildNodes();
                 for (int j=0; j<nodeList.getLength(); j++) {
                     Node child = nodeList.item(j);
-                    ctrl = Ctrl.getCtrl(child, version);
+                    ctrl = Ctrl.getCtrl(child, version, context);
                     p.add(ctrl);
                 }
             }
@@ -217,59 +218,59 @@ public class HwpParagraph {
             }
             break;
         case "hp:tbl":
-            ctrl = new Ctrl_Table(" lbt" , node, version);
+            ctrl = new Ctrl_Table(" lbt" , node, version, context);
             p.add(ctrl);
             break;
         case "hp:pic":
-            ctrl = new Ctrl_ShapePic("cip$", node, version);
+            ctrl = new Ctrl_ShapePic("cip$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:container":
-            ctrl = new Ctrl_Container("noc$", node, version);
+            ctrl = new Ctrl_Container("noc$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:ole":
-            ctrl = new Ctrl_ShapeOle("elo$", node, version);
+            ctrl = new Ctrl_ShapeOle("elo$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:equation":
-            ctrl = new Ctrl_EqEdit("deqe", node, version);
+            ctrl = new Ctrl_EqEdit("deqe", node, version, context);
             p.add(ctrl);
             break;
         case "hp:line":
-            ctrl = new Ctrl_ShapeLine("nil$", node, version);
+            ctrl = new Ctrl_ShapeLine("nil$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:rect":
-            ctrl = new Ctrl_ShapeRect("cer$", node, version);
+            ctrl = new Ctrl_ShapeRect("cer$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:ellipse":
-            ctrl = new Ctrl_ShapeEllipse("lle$", node, version);
+            ctrl = new Ctrl_ShapeEllipse("lle$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:arc":
-            ctrl = new Ctrl_ShapeArc("cra$", node, version);
+            ctrl = new Ctrl_ShapeArc("cra$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:polygon":
-            ctrl = new Ctrl_ShapePolygon("lop$", node, version);
+            ctrl = new Ctrl_ShapePolygon("lop$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:curve":
-            ctrl = new Ctrl_ShapeCurve("ruc$", node, version);
+            ctrl = new Ctrl_ShapeCurve("ruc$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:connectLine":
-            ctrl = new Ctrl_ShapeConnectLine("loc$", node, version);
+            ctrl = new Ctrl_ShapeConnectLine("loc$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:textart":
-            ctrl = new Ctrl_ShapeTextArt("tat$", node, version);
+            ctrl = new Ctrl_ShapeTextArt("tat$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:video":
-            ctrl = new Ctrl_ShapeVideo("div$", node, version);
+            ctrl = new Ctrl_ShapeVideo("div$", node, version, context);
             p.add(ctrl);
             break;
         case "hp:compose":

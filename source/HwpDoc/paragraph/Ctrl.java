@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import org.w3c.dom.Node;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 
 public abstract class Ctrl {
@@ -42,32 +43,32 @@ public abstract class Ctrl {
     
     public abstract int getSize();
     
-    public static Ctrl getCtrl(Node node, int version) throws NotImplementedException {
+    public static Ctrl getCtrl(Node node, int version, IContext context) throws NotImplementedException {
         Ctrl ctrl = null;
         switch(node.getNodeName()) {
         case "hp:colPr":
-            ctrl = new Ctrl_ColumnDef("dloc", node, version);
+            ctrl = new Ctrl_ColumnDef("dloc", node, version, context);
             break;
         case "hp:header":
-            ctrl = new Ctrl_HeadFoot("daeh", node, version);
+            ctrl = new Ctrl_HeadFoot("daeh", node, version, context);
             break;
         case "hp:footer":
-            ctrl = new Ctrl_HeadFoot("toof", node, version);
+            ctrl = new Ctrl_HeadFoot("toof", node, version, context);
             break;
         case "hp:footNote":
-            ctrl = new Ctrl_Note("  nf", node, version);
+            ctrl = new Ctrl_Note("  nf", node, version, context);
             break;
         case "hp:endNote":
-            ctrl = new Ctrl_Note("  ne", node, version);
+            ctrl = new Ctrl_Note("  ne", node, version, context);
             break;
         case "hp:autoNum":
-            ctrl = new Ctrl_AutoNumber("onta", node, version);
+            ctrl = new Ctrl_AutoNumber("onta", node, version, context);
             break;
         case "hp:newNum":
-            ctrl = new Ctrl_NewNumber("onwn", node, version);
+            ctrl = new Ctrl_NewNumber("onwn", node, version, context);
             break;
         case "hp:pageNum":
-            ctrl = new Ctrl_PageNumPos("pngp", node, version);
+            ctrl = new Ctrl_PageNumPos("pngp", node, version, context);
         case "hp:fieldBegin":
         case "hp:fieldEnd":
         case "hp:bookmark":

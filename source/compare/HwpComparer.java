@@ -20,6 +20,7 @@ import HwpDoc.HwpDocInfo;
 import HwpDoc.HwpFile;
 import HwpDoc.HwpSection;
 import HwpDoc.HwpxFile;
+import HwpDoc.IContext;
 import HwpDoc.Exception.CompoundDetectException;
 import HwpDoc.Exception.CompoundParseException;
 import HwpDoc.Exception.HwpParseException;
@@ -31,7 +32,7 @@ import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.HwpParagraph;
 
-public class HwpComparer {
+public class HwpComparer implements IContext {
     private static final Logger log = Logger.getLogger(HwpComparer.class.getName());
     private static final String PATTERN_STRING = "[\\u0000\\u000a\\u000d\\u0018-\\u001f]|[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017].{6}[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017]";
     public static Pattern pattern = Pattern.compile(PATTERN_STRING);
@@ -59,7 +60,7 @@ public class HwpComparer {
             break;
         case "HWPX":
             hwpx = new HwpxFile(inputFile);
-            hwpx.open();
+            hwpx.open(this);
             sections = hwpx.getSections();
             docInfo = hwpx.getDocInfo();
             break;
@@ -313,4 +314,9 @@ public class HwpComparer {
         }
         comp.close();
     }
+
+	@Override
+	public HwpxFile getHwpx() {
+		return hwpx;
+	}
 }

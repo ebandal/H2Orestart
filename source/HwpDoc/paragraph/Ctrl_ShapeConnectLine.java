@@ -29,6 +29,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
@@ -53,8 +54,8 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
 		this.size = shape.getSize();
 	}
 	
-	public Ctrl_ShapeConnectLine(String ctrlId, Node node, int version) throws NotImplementedException {
-	    super(ctrlId, node, version);
+	public Ctrl_ShapeConnectLine(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
+	    super(ctrlId, node, version, context);
 	    
         NamedNodeMap attributes = node.getAttributes();
         if (attributes.getNamedItem("type")!=null) {

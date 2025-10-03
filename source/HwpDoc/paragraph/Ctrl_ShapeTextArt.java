@@ -27,6 +27,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -63,8 +64,8 @@ public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_ShapeTextArt(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+    public Ctrl_ShapeTextArt(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
+        super(ctrlId, node, version, context);
         
         NamedNodeMap attributes = node.getAttributes();
         text = attributes.getNamedItem("text").getNodeValue();

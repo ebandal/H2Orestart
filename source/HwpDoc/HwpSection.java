@@ -87,8 +87,8 @@ public class HwpSection {
     public HwpSection(HwpxFile hwpx) {
         paraList = new ArrayList<HwpParagraph>();
     }
-    
-    boolean read(Document document, int version) throws NotImplementedException {
+
+    boolean read(Document document, int version, IContext context) throws NotImplementedException {
         Element element = document.getDocumentElement();
         paraList = new ArrayList<HwpParagraph>();
         
@@ -98,7 +98,7 @@ public class HwpSection {
             HwpParagraph para = null;
             switch(node.getNodeName()) {
             case "hp:p":
-                para = new HwpParagraph(node, version);
+                para = new HwpParagraph(node, version, context);
                 paraList.add(para);
                 break;
             }

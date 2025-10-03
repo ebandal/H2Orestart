@@ -29,6 +29,7 @@ import java.util.logging.Logger;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -51,8 +52,8 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_Container(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+    public Ctrl_Container(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
+        super(ctrlId, node, version, context);
         
         NodeList nodeList = node.getChildNodes();
         nElement = (short) nodeList.getLength();
@@ -67,43 +68,43 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
             Ctrl_GeneralShape ctrl;
             switch(child.getNodeName()) {
             case "hp:container":    // 컨테이너 객체
-                ctrl = new Ctrl_Container("noc$", child, version);
+                ctrl = new Ctrl_Container("noc$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:line":     // 그리기 객체 - 선
-                ctrl = new Ctrl_ShapeLine("nil$", child, version);
+                ctrl = new Ctrl_ShapeLine("nil$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:rect":
-                ctrl = new Ctrl_ShapeRect("cer$", child, version);
+                ctrl = new Ctrl_ShapeRect("cer$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:ellipse":
-                ctrl = new Ctrl_ShapeEllipse("lle$", child, version);
+                ctrl = new Ctrl_ShapeEllipse("lle$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:arc":
-                ctrl = new Ctrl_ShapeArc("cra$", child, version);
+                ctrl = new Ctrl_ShapeArc("cra$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:polygon":
-                ctrl = new Ctrl_ShapePolygon("lop$", child, version);
+                ctrl = new Ctrl_ShapePolygon("lop$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:curve":
-                ctrl = new Ctrl_ShapeCurve("ruc$", child, version);
+                ctrl = new Ctrl_ShapeCurve("ruc$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:connectLine":
-                ctrl = new Ctrl_ShapeLine("loc$", child, version);
+                ctrl = new Ctrl_ShapeLine("loc$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:pic":
-                ctrl = new Ctrl_ShapePic("cip$", child, version);
+                ctrl = new Ctrl_ShapePic("cip$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:ole":
-                ctrl = new Ctrl_ShapeOle("elo$", child, version);
+                ctrl = new Ctrl_ShapeOle("elo$", child, version, context);
                 list.add(ctrl);
                 break;
             case "#text":

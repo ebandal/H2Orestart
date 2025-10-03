@@ -22,13 +22,14 @@ package HwpDoc.paragraph;
 
 import org.w3c.dom.Node;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 
 public class CapParagraph extends HwpParagraph {
 
 	public CapParagraph() { super(); }
 
-    public CapParagraph(Node node, int version) throws NotImplementedException {
-        super(node, version);
+    public CapParagraph(Node node, int version, IContext context) throws NotImplementedException {
+        super(node, version, context);
     }
 }

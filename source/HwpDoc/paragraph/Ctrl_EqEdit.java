@@ -28,6 +28,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -61,8 +62,8 @@ public class Ctrl_EqEdit extends Ctrl_GeneralShape {
         this.size = shape.getSize();
     }
     
-    public Ctrl_EqEdit(String ctrlId, Node node, int ver) throws NotImplementedException {
-        super(ctrlId, node, ver);
+    public Ctrl_EqEdit(String ctrlId, Node node, int ver, IContext context) throws NotImplementedException {
+        super(ctrlId, node, ver, context);
         
         NamedNodeMap attributes = node.getAttributes();
         version = attributes.getNamedItem("version").getNodeValue();

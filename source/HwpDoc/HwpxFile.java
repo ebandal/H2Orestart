@@ -101,7 +101,7 @@ public class HwpxFile {
         return true;
     }
     
-    public void open() throws HwpDetectException, IOException, DataFormatException,  
+    public void open(IContext context) throws HwpDetectException, IOException, DataFormatException,  
                                 ParserConfigurationException, SAXException, OwpmlParseException, 
                                 HwpParseException, NotImplementedException {
         if (fileHeader.version==null) {
@@ -115,7 +115,7 @@ public class HwpxFile {
         
         // Contents/SectionX.xml 을 읽는다.
         for (String section: owplmFile.getSections()) {
-            readSection(section, version);
+            readSection(section, version, context);
         }
     }
     
@@ -135,13 +135,13 @@ public class HwpxFile {
         }
     }
     
-    public boolean readSection(String name, int version) throws IOException, DataFormatException, 
+    public boolean readSection(String name, int version, IContext context) throws IOException, DataFormatException, 
                                                                 ParserConfigurationException, SAXException, NotImplementedException {
         
         Document document = getDocument(name);
         
         HwpSection hwpSection = new HwpSection(this);
-        hwpSection.read(document, version);
+        hwpSection.read(document, version, context);
             
         sections.add(hwpSection);
         return true;

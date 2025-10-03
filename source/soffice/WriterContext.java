@@ -50,6 +50,7 @@ import HwpDoc.HwpDocInfo;
 import HwpDoc.HwpFile;
 import HwpDoc.HwpSection;
 import HwpDoc.HwpxFile;
+import HwpDoc.IContext;
 import HwpDoc.Exception.CompoundDetectException;
 import HwpDoc.Exception.CompoundParseException;
 import HwpDoc.Exception.HwpParseException;
@@ -67,7 +68,7 @@ import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.HwpElement.HwpRecord_TabDef;
 import HwpDoc.HwpElement.HwpRecord_BinData.Type;
 
-public class WriterContext {
+public class WriterContext implements IContext {
     private static final Logger log = Logger.getLogger(WriterContext.class.getName());
 
     private static HanType hType;
@@ -156,7 +157,7 @@ public class WriterContext {
         case "HWPX":
             hType = HanType.HWPX;
             hwpx = new HwpxFile(inputFile);
-            hwpx.open();
+            hwpx.open(this);
             break;
         default:
             throw new HwpDetectException();
@@ -176,7 +177,7 @@ public class WriterContext {
         case "HWPX":
             hType = HanType.HWPX;
             hwpx = new HwpxFile(inputFile);
-            hwpx.open();
+            hwpx.open(this);
             break;
         default:
             throw new HwpDetectException();
@@ -435,7 +436,8 @@ public class WriterContext {
         docInfo.setFontNameLineSpaceAlpha(faceName, fontLineSpaceAlpha);
     }
     
-    public static HwpxFile getHwpx() {
+    @Override
+    public HwpxFile getHwpx() {
     	return hwpx;
     }
 

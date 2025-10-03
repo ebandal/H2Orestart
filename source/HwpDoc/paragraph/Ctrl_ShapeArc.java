@@ -27,6 +27,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.paragraph.Ctrl_ShapeEllipse.ArcType;
@@ -57,8 +58,8 @@ public class Ctrl_ShapeArc extends Ctrl_GeneralShape {
 		this.size = shape.getSize();
 	}
 	
-	public Ctrl_ShapeArc(String ctrlId, Node node, int version) throws NotImplementedException {
-        super(ctrlId, node, version);
+	public Ctrl_ShapeArc(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
+        super(ctrlId, node, version, context);
         
         NamedNodeMap attributes = node.getAttributes();
         

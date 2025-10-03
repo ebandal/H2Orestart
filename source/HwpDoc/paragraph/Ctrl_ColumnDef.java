@@ -27,6 +27,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 
@@ -95,7 +96,7 @@ public class Ctrl_ColumnDef extends Ctrl {
 		log.finest(toString());
 	}
 	
-	public Ctrl_ColumnDef(String ctrlId, Node node, int version) throws NotImplementedException {
+	public Ctrl_ColumnDef(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
         super(ctrlId);
         
         // 초기값

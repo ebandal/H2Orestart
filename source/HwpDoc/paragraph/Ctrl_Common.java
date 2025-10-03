@@ -30,6 +30,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -168,7 +169,7 @@ public class Ctrl_Common extends Ctrl {
         this.caption        = common.caption;
     }
     
-    public Ctrl_Common(String ctrlId, Node node, int version) throws NotImplementedException {
+    public Ctrl_Common(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
         this(ctrlId);
         
         NamedNodeMap attributes = node.getAttributes();
@@ -359,7 +360,7 @@ public class Ctrl_Common extends Ctrl {
                 
                 break;
             case "hp:caption":
-                setCaption(child, version);
+                setCaption(child, version, context);
                 node.removeChild(child);
                 break;
             case "hp:shapeComment":
@@ -368,7 +369,7 @@ public class Ctrl_Common extends Ctrl {
         }
     }
     
-    private void setCaption(Node node, int version) throws NotImplementedException {
+    private void setCaption(Node node, int version, IContext context) throws NotImplementedException {
         NamedNodeMap attrs = node.getAttributes();
         // [fullSz="0", gap="850", lastWidth="38288", side="TOP", width="8504"]
         switch(attrs.getNamedItem("side").getNodeValue()) {
@@ -426,7 +427,7 @@ public class Ctrl_Common extends Ctrl {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
                         case "p":
-                            CellParagraph cellP = new CellParagraph(grandChild, version);
+                            CellParagraph cellP = new CellParagraph(grandChild, version, context);
                             paras.add(cellP);
                             break;
                         }

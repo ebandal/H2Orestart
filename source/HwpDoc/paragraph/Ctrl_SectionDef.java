@@ -37,11 +37,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import HwpDoc.HwpxFile;
+import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.section.NoteShape;
 import HwpDoc.section.Page;
 import HwpDoc.section.PageBorderFill;
-import soffice.WriterContext;
 
 public class Ctrl_SectionDef extends Ctrl {
 	private static final Logger log = Logger.getLogger(Ctrl_SectionDef.class.getName());
@@ -142,8 +142,8 @@ public class Ctrl_SectionDef extends Ctrl {
 		this.size = offset-off;
 		this.fullfilled = true;
 	}
-	
-	public Ctrl_SectionDef(String ctrlId, Node node, int version) throws NotImplementedException {
+
+	public Ctrl_SectionDef(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
 	    super(ctrlId);
 	    
         NamedNodeMap attributes = node.getAttributes();
@@ -331,7 +331,7 @@ public class Ctrl_SectionDef extends Ctrl {
                     NamedNodeMap childAttrs = child.getAttributes();
                     String pageName = childAttrs.getNamedItem("idRef").getNodeValue();
                     try {
-		            	HwpxFile hwpx = WriterContext.getHwpx();
+		            	HwpxFile hwpx = context.getHwpx();
 		            	if (hwpx!=null) {
 							Document masterDoc = hwpx.getDocument("Contents/" + pageName + ".xml");
 							if (masterDoc!=null) {
@@ -361,7 +361,7 @@ public class Ctrl_SectionDef extends Ctrl {
 							                    Node subMasterchild = subMasterNodeList.item(j);
 							                    switch(subMasterchild.getNodeName()) {
 							                    case "hp:p":
-										            HwpParagraph para = new HwpParagraph(subMasterchild, version);
+										            HwpParagraph para = new HwpParagraph(subMasterchild, version, context);
 									                this.paras.add(para);
 							                        break;
 							                    }
