@@ -22,7 +22,6 @@ package HwpDoc.paragraph;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -33,30 +32,30 @@ import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
-	private static final Logger log = Logger.getLogger(Ctrl_ShapeConnectLine.class.getName());
-	private int size;
-	
-	public ConnectLineType type;       // 연결선 형식
-	public ConnectPoint    startPt;    // 연결선 시작점 정보
-	public ConnectPoint    endPt;      // 연결선 끝점 정보
-	public List<Point>	controlPoints;
-	
-	public Ctrl_ShapeConnectLine(String ctrlId, int size, byte[] buf, int off, int version) {
-		super(ctrlId, size, buf, off, version);
-		this.size = offset-off;
+    private static final Logger log = Logger.getLogger(Ctrl_ShapeConnectLine.class.getName());
+    private int size;
 
-		log.fine("                                                  " + toString());
-	}
-	
-	public Ctrl_ShapeConnectLine(Ctrl_GeneralShape shape) {
-		super(shape);
-		
-		this.size = shape.getSize();
-	}
-	
-	public Ctrl_ShapeConnectLine(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
-	    super(ctrlId, node, version, context);
-	    
+    public ConnectLineType type;       // 연결선 형식
+    public ConnectPoint    startPt;    // 연결선 시작점 정보
+    public ConnectPoint    endPt;      // 연결선 끝점 정보
+    public List<Point>	controlPoints;
+
+    public Ctrl_ShapeConnectLine(String ctrlId, int size, byte[] buf, int off, int version) {
+        super(ctrlId, size, buf, off, version);
+        this.size = offset-off;
+
+        log.fine("                                                  " + toString());
+    }
+
+    public Ctrl_ShapeConnectLine(Ctrl_GeneralShape shape) {
+        super(shape);
+
+        this.size = shape.getSize();
+    }
+
+    public Ctrl_ShapeConnectLine(String ctrlId, Node node, int version, IContext context) throws NotImplementedException {
+        super(ctrlId, node, version, context);
+
         NamedNodeMap attributes = node.getAttributes();
         if (attributes.getNamedItem("type")!=null) {
             type = ConnectLineType.valueOf(attributes.getNamedItem("type").getNodeValue());
@@ -103,66 +102,62 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
                 node.removeChild(child);
                 break;
             case "hp:controlPoints":
-	            {
-	            	if (controlPoints == null) {
-	            		controlPoints = new ArrayList<Point>();
-	            	}
-	                NodeList grandChildList = child.getChildNodes();
-	                for (int j=0; j<grandChildList.getLength(); j++) {
-	                	Point p = new Point();
-	                    Node grandChild = grandChildList.item(j);
-	                    switch(grandChild.getNodeName()) {
-	                    case "hp:point":
-	                        NamedNodeMap grandChildAttrs = grandChild.getAttributes();
-	                        numStr = grandChildAttrs.getNamedItem("x").getNodeValue();
-	                        p.x = Integer.parseInt(numStr);
-	                        numStr = grandChildAttrs.getNamedItem("y").getNodeValue();
-	                        p.y = Integer.parseInt(numStr);
-	                        break;
-	                    }
-	                    controlPoints.add(p);
-	                }
-	            }
-	            node.removeChild(child);
-	            break;
+                {
+                    if (controlPoints == null) {
+                        controlPoints = new ArrayList<Point>();
+                    }
+                    NodeList grandChildList = child.getChildNodes();
+                    for (int j=0; j<grandChildList.getLength(); j++) {
+                        Point p = new Point();
+                        Node grandChild = grandChildList.item(j);
+                        switch(grandChild.getNodeName()) {
+                        case "hp:point":
+                            NamedNodeMap grandChildAttrs = grandChild.getAttributes();
+                            numStr = grandChildAttrs.getNamedItem("x").getNodeValue();
+                            p.x = Integer.parseInt(numStr);
+                            numStr = grandChildAttrs.getNamedItem("y").getNodeValue();
+                            p.y = Integer.parseInt(numStr);
+                            break;
+                        }
+                        controlPoints.add(p);
+                    }
+                }
+                node.removeChild(child);
+                break;
             default:
-            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ShapeConnectLine");
-            	}
             	break;
             }
         }
     }
 
     public String toString() {
-		StringBuffer strb = new StringBuffer();
-		strb.append("CTRL("+ctrlId+")")
-			.append("=공통속성:"+super.toString());
-		return strb.toString();
-	}
+        StringBuffer strb = new StringBuffer();
+        strb.append("CTRL("+ctrlId+")")
+            .append("=공통속성:"+super.toString());
+        return strb.toString();
+    }
 
-	@Override
-	public int getSize() {
-		return size;
-	}
+    @Override
+    public int getSize() {
+        return size;
+    }
 	
-	public static class ConnectPoint extends Point {
-	    public short subjectIDRef;
-	    public short subjectIdx;
-	}
+    public static class ConnectPoint extends Point {
+        public short subjectIDRef;
+        public short subjectIdx;
+    }
 	
-	public static enum ConnectLineType {
-	    STRAIGHT_NOARROW   (0x0),
-	    STRAIGHT_ONEWAY    (0x1),
-	    STRAIGHT_BOTH      (0x2),
-	    STROKE_NOARROW     (0x3),
-	    STROKE_ONEWAY      (0x4),
-	    STROKE_BOTH        (0x5),
-	    ARC_NOARROW        (0x6),
-	    ARC_ONEWAY         (0x7),
-	    ARC_BOTH           (0x8);
-	    
+    public static enum ConnectLineType {
+        STRAIGHT_NOARROW   (0x0),
+        STRAIGHT_ONEWAY    (0x1),
+        STRAIGHT_BOTH      (0x2),
+        STROKE_NOARROW     (0x3),
+        STROKE_ONEWAY      (0x4),
+        STROKE_BOTH        (0x5),
+        ARC_NOARROW        (0x6),
+        ARC_ONEWAY         (0x7),
+        ARC_BOTH           (0x8);
+        
         private int num;
         
         private ConnectLineType(int num) { 
@@ -176,7 +171,5 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
             }
             return null;
         }
-	    
-
-	}
+    }
 }
