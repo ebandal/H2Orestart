@@ -37,6 +37,7 @@ import HwpDoc.HwpElement.HwpRecord_Style;
 import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
 import HwpDoc.paragraph.Ctrl_Character;
+import HwpDoc.paragraph.Ctrl_ShapePic;
 import HwpDoc.paragraph.Ctrl_Table;
 import HwpDoc.paragraph.HwpParagraph;
 import HwpDoc.paragraph.ParaText;
@@ -45,17 +46,22 @@ import soffice.HwpCallback.TableFrame;
 
 import com.sun.star.lang.*;
 import com.sun.star.lang.IllegalArgumentException;
+import com.sun.star.lib.uno.adapter.ByteArrayToXInputStreamAdapter;
+import com.sun.star.style.GraphicLocation;
 import com.sun.star.table.BorderLine2;
 import com.sun.star.table.BorderLineStyle;
 import com.sun.star.table.TableBorder;
 import com.sun.star.table.XCell;
 import com.sun.star.table.XTableRows;
 import com.sun.star.awt.Size;
+import com.sun.star.beans.PropertyValue;
 import com.sun.star.beans.PropertyVetoException;
 import com.sun.star.beans.UnknownPropertyException;
 import com.sun.star.beans.XPropertySet;
 import com.sun.star.drawing.TextVerticalAdjust;
 import com.sun.star.drawing.XShape;
+import com.sun.star.graphic.XGraphic;
+import com.sun.star.graphic.XGraphicProvider;
 import com.sun.star.text.*;
 
 public class ConvTable {
@@ -170,20 +176,45 @@ public class ConvTable {
                 }
             }
 
-            TableBorder tBorder = new TableBorder();
-            tBorder.LeftLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
-            tBorder.IsLeftLineValid = true;
-            tBorder.RightLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
-            tBorder.IsRightLineValid = true;
-            tBorder.TopLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
-            tBorder.IsTopLineValid = true;
-            tBorder.BottomLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
-            tBorder.IsBottomLineValid = true;
-            tBorder.VerticalLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
-            tBorder.IsVerticalLineValid = true;
-            tBorder.HorizontalLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
-            tBorder.IsHorizontalLineValid = true;
-            tableProps.setPropertyValue("TableBorder", tBorder);
+            
+            HwpRecord_BorderFill tableBorderFill = WriterContext.getBorderFill(table.borderFillID);
+            if (tableBorderFill != null) {
+                TableBorder tBorder = new TableBorder();
+                tBorder.LeftLine = Transform.toBorderLine(tableBorderFill.left);
+                tBorder.IsLeftLineValid = true;
+                tBorder.RightLine = Transform.toBorderLine(tableBorderFill.right);
+                tBorder.IsRightLineValid = true;
+                tBorder.TopLine = Transform.toBorderLine(tableBorderFill.top);
+                tBorder.IsTopLineValid = true;
+                tBorder.BottomLine = Transform.toBorderLine(tableBorderFill.bottom);
+                tBorder.IsBottomLineValid = true;
+                tBorder.VerticalLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
+                tBorder.IsVerticalLineValid = true;
+                tBorder.HorizontalLine = Transform.toBorderLine((HwpRecord_BorderFill.Border) null);
+                tBorder.IsHorizontalLineValid = true;
+                tableProps.setPropertyValue("TableBorder", tBorder);
+            }
+            if (tableBorderFill != null) {
+                if (tableBorderFill.fill.isColorFill()) {
+                    tableProps.setPropertyValue("BackTransparent", false);
+                    tableProps.setPropertyValue("BackColor", tableBorderFill.fill.faceColor);
+                } else if (tableBorderFill.fill.isGradFill()) {
+                    // CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
+                    if (tableBorderFill.fill.colors.length==2) {
+                        short r, g, b;
+                        r = (short) (((tableBorderFill.fill.colors[0]>>16&0x00FF) + (tableBorderFill.fill.colors[1]>>16&0x00FF))/2);  
+                        g = (short) (((tableBorderFill.fill.colors[0]>>8&0x00FF) + (tableBorderFill.fill.colors[1]>>8&0x00FF))/2);  
+                        b = (short) (((tableBorderFill.fill.colors[0]&0x00FF) + (tableBorderFill.fill.colors[1]&0x00FF))/2);  
+                        int midColor = (r<<16)|(g<<8)|b;
+                        tableProps.setPropertyValue("BackColor", midColor);
+                    }
+                } else if (tableBorderFill.fill.isImageFill()) {
+                    setBackGraphic(wContext, tableProps, tableBorderFill.fill.binItemID);
+                } else {
+                    tableProps.setPropertyValue("BackTransparent", false);
+                }
+            }
+
 
             int width = Transform.translateHwp2Office(table.width);
             short sTableColumnRelativeSum = (Short) tableProps.getPropertyValue("TableColumnRelativeSum");
@@ -205,6 +236,7 @@ public class ConvTable {
                 xSeparators[col].Position = (short) Math.ceil(dPosition);
             }
             tableProps.setPropertyValue("TableColumnSeparators", xSeparators);
+            
             // table row 높이 조정
             XTableRows xTableRows = xTextTable.getRows();
             if (xTableRows != null) {
@@ -309,8 +341,6 @@ public class ConvTable {
                                     }
                                 } else if (cellBorderFill.fill.isImageFill()) {
                                     ConvGraphics.fillGraphic(wContext, cellProps, cellBorderFill.fill);
-                                } else {
-                                    cellProps.setPropertyValue("BackTransparent", false);
                                 }
                             }
                         }
@@ -1514,4 +1544,62 @@ public class ConvTable {
         else
             return false;
     }
+    
+    private static void setBackGraphic(WriterContext wContext, XPropertySet xStyleProps, String binDataID) throws Exception {
+        // image ByteArray로 그림 그리기
+        Object graphicProviderObject = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
+        XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
+
+        byte[] imageAsByteArray = null;
+        String imageType = "";
+
+        imageAsByteArray = wContext.getBinBytes(binDataID);
+        imageType = wContext.getBinFormat(binDataID);
+
+        if (imageAsByteArray == null || imageAsByteArray.length == 0) {
+            log.severe("Something Wrong!!!. skip drawing");
+            return;
+        }
+
+        PropertyValue[] v = new PropertyValue[2];
+        v[0] = new PropertyValue();
+        v[0].Name = "InputStream";
+        v[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
+        v[1] = new PropertyValue();
+        v[1].Name = "MimeType";
+        switch (imageType.toLowerCase()) {
+        case "png":
+            v[1].Value = "image/png";
+            break;
+        case "bmp":
+            v[1].Value = "image/bmp";
+            break;
+        case "wmf":
+            v[1].Value = "image/x-wmf";
+            break;
+        case "jpg":
+            v[1].Value = "image/jpeg";
+            break;
+        case "gif":
+            v[1].Value = "image/gif";
+            break;
+        case "tif":
+            v[1].Value = "image/tiff";
+            break;
+        case "svg":
+            v[1].Value = "image/svg+xml";
+            break;
+        }
+
+        XGraphic graphic = xGraphicProvider.queryGraphic(v);
+
+        if (graphic == null) {
+            log.severe("Error loading the image");
+        } else {
+            xStyleProps.setPropertyValue("BackGraphic", graphic);
+            xStyleProps.setPropertyValue("BackTransparent", false);
+            xStyleProps.setPropertyValue("BackGraphicLocation", GraphicLocation.MIDDLE_MIDDLE);
+        }
+    }
+
 }
