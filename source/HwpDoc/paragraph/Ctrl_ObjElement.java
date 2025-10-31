@@ -195,11 +195,11 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     }
                     if (childAttrs.getNamedItem("centerX")!=null) {
                         numStr = childAttrs.getNamedItem("centerX").getNodeValue();
-                        xCenter = Integer.parseInt(numStr);
+                        xCenter = (int) Long.parseLong(numStr);
                     }
                     if (childAttrs.getNamedItem("centerY")!=null) {
                         numStr = childAttrs.getNamedItem("centerY").getNodeValue();
-                        yCenter = Integer.parseInt(numStr);
+                        yCenter = (int) Long.parseLong(numStr);
                     }
                     // childAttrs.getNamedItem("rotateimage").getNodeValue()) {
                 }
