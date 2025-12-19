@@ -444,10 +444,10 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
     
     public static class Shadow extends PicEffect {
         public int      style;          // 그림자 스타일
-        public int      transparency;   // 그림자 투명도
-        public int      blur;           // 그림자 흐릿하게
-        public int      direction;      // 방향
-        public int      distance;       // 거리
+        public float      transparency;   // 그림자 투명도
+        public float      blur;           // 그림자 흐릿하게
+        public float      direction;      // 방향
+        public float      distance;       // 거리
         public float    angleX;         // 기울기 각도 x
         public float    angleY;         // 기울기 각도 y
         public float    magnifyX;       // 확배비율 x
@@ -492,16 +492,23 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             super(type);
             
             NamedNodeMap attrs = node.getAttributes();
-            String numStr =  attrs.getNamedItem("style").getNodeValue(); // 그림자스타일
-            style = Integer.parseInt(numStr);
-            numStr =  attrs.getNamedItem("alpha").getNodeValue(); // 시작 투명도
-            transparency = Integer.parseInt(numStr);
+            String shadowStyle =  attrs.getNamedItem("style").getNodeValue(); // 그림자스타일
+            switch(shadowStyle) {
+            case "OUTSIDE":
+                style=0;
+                break;
+            case "INSIDE":
+                style=1;
+                break;
+            }
+            String numStr =  attrs.getNamedItem("alpha").getNodeValue(); // 시작 투명도
+            transparency = Float.parseFloat(numStr);
             numStr =  attrs.getNamedItem("radius").getNodeValue(); // 흐릿함 정도
-            blur = Integer.parseInt(numStr);
+            blur = Float.parseFloat(numStr);
             numStr =  attrs.getNamedItem("direction").getNodeValue(); // 방향 각도
-            direction = Integer.parseInt(numStr);
+            direction = Float.parseFloat(numStr);
             numStr =  attrs.getNamedItem("distance").getNodeValue(); // 대상과 그림자 사이의 거리
-            distance = Integer.parseInt(numStr);
+            distance = Float.parseFloat(numStr);
             // attrs.getNamedItem("alignStyle").getNodeValue(); // 그림자 정렬
             switch(attrs.getNamedItem("rotationStyle").getNodeValue()) { // 도형과 함께 그림자 회전 여부
             case "0":
