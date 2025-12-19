@@ -450,6 +450,7 @@ public class ConvNumbering {
                     }
                 }
                 Path path = null;
+                boolean newPropsReady = false;
                 
                 if (i==0) {
                     if (bullet.bulletImage==0) {	// 글머리표
@@ -465,37 +466,43 @@ public class ConvNumbering {
                                                                                (short)0, (short)10, (short)0, 0.0f, 0.0f,	// Family,CharSet,Pitch,CharacterWidth,Weight,
                                                                                FontSlant.NONE, (short)0, (short)0, 		// Slant,Underline,Strikeout,Orientation,
                                                                                0.0f, false, false, (short)0);				// Kerning,WordLineMode,Type
+                        newPropsReady = true;
                     } else {
                         // GraphicBitmap 전달하는 것이 동작하지 않는다. 해결될때까지 GraphicURL 전달하는 방식으로 유지한다.
                     	int binId = Integer.parseInt(bullet.binItemRefID)-1;
                         byte[] imageAsByteArray = wContext.getBinBytes(String.valueOf(binId));
                         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageAsByteArray)) {
                             BufferedImage originalImage = ImageIO.read(bis);
-                            int imgWidth = originalImage.getWidth();
-                            int imgHeight = originalImage.getHeight();
-                            
-                            String imageExtractPath = wContext.getBinFilename(String.valueOf(binId));
-                            Path homeDir = wContext.userHomeDir;
-                            path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + imageExtractPath);
-                            URL url = path.toFile().toURI().toURL();
-                            String urlString = url.toExternalForm();
-                            ImageIO.write(originalImage, "png", path.toFile());
-
-                            newProps[newProps.length-3] = new PropertyValue();
-                            newProps[newProps.length-3].Name = "GraphicSize";
-                            newProps[newProps.length-3].Value = new Size(imgWidth*10, imgHeight*10);
-                            newProps[newProps.length-2] = new PropertyValue();
-                            newProps[newProps.length-2].Name = "GraphicURL";	// "GraphicBitmap"
-                            newProps[newProps.length-2].Value = urlString;		// myBitmap;
-                            newProps[newProps.length-1] = new PropertyValue();
-                            newProps[newProps.length-1].Name = "VertOrient";
-                            newProps[newProps.length-1].Value = VertOrientation.LINE_CENTER;
+                            if (originalImage != null) {
+                                int imgWidth = originalImage.getWidth();
+                                int imgHeight = originalImage.getHeight();
+                                
+                                String imageExtractPath = wContext.getBinFilename(String.valueOf(binId));
+                                Path homeDir = wContext.userHomeDir;
+                                path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + imageExtractPath);
+                                URL url = path.toFile().toURI().toURL();
+                                String urlString = url.toExternalForm();
+                                ImageIO.write(originalImage, "png", path.toFile());
+    
+                                newProps[newProps.length-3] = new PropertyValue();
+                                newProps[newProps.length-3].Name = "GraphicSize";
+                                newProps[newProps.length-3].Value = new Size(imgWidth*10, imgHeight*10);
+                                newProps[newProps.length-2] = new PropertyValue();
+                                newProps[newProps.length-2].Name = "GraphicURL";	// "GraphicBitmap"
+                                newProps[newProps.length-2].Value = urlString;		// myBitmap;
+                                newProps[newProps.length-1] = new PropertyValue();
+                                newProps[newProps.length-1].Name = "VertOrient";
+                                newProps[newProps.length-1].Value = VertOrientation.LINE_CENTER;
+                                newPropsReady = true;
+                            }
                         } catch (IOException e) {
                         	e.printStackTrace();
                         }
                     }
                 }
-                xReplace.replaceByIndex(i, newProps);
+                if (newPropsReady) {
+                    xReplace.replaceByIndex(i, newProps);
+                }
                 if (path!=null) {
                     try {
                         Files.delete(path);
