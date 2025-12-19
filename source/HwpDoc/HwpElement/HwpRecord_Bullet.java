@@ -120,13 +120,14 @@ public class HwpRecord_Bullet extends HwpRecord {
         this.parent = docInfo;
         
         NamedNodeMap attributes = node.getAttributes();
-        
+        boolean useImage = false;
+        int tempImageId = 0;
         for (int i=0; i<attributes.getLength(); i++) {
         	// [char="", id="1", useImage="0"]
             Node attr = attributes.item(i);
             switch(attr.getNodeName()) {
             case "id":
-            	// ID = Short.parseShort(attr.getNodeValue());
+                // ID = Short.parseShort(attr.getNodeValue());
                 break;
             case "char":
             	bulletChar = attr.getNodeValue().charAt(0);

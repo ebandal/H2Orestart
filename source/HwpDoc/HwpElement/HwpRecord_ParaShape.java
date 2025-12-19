@@ -265,6 +265,8 @@ public class HwpRecord_ParaShape extends HwpRecord {
                     breakLatinWord = 0; break;     // 0:단어,1:하이픈,2:글자
                 case "BREAK_WORD":
                 	breakLatinWord = 1; break;
+                case "HYPHENATION":
+                    breakLatinWord = 1; break;
                 default:
                 	log.warning("Not Implemented:" + childAttrs.getNamedItem("breakLatinWord").getNodeValue());
                 	if (log.isLoggable(Level.FINE)) {
