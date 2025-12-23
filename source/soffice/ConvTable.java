@@ -755,7 +755,7 @@ public class ConvTable {
                         } else {
                             xProps.setPropertyValue("VertOrient", VertOrientation.NONE); // 0:NONE=From top
                             // para상단으로부터 frame상단까지의 offset
-                            posY = Transform.translateHwp2Office(table.vertOffset);
+                            posY = Math.max(Transform.translateHwp2Office(table.vertOffset), 0); // 음수값일때 0으로 대체
                             xProps.setPropertyValue("VertOrientPosition", posY);
                         }
                         break;
@@ -971,7 +971,7 @@ public class ConvTable {
                 xPropSet.setPropertyValue("Opaque", true);
                 if (shape.treatAsChar == false) {
                 	try {
-                		xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
+                		xPropSet.setPropertyValue("AllowOverlap", false); // issue #65 수정
                 	} catch (UnknownPropertyException e) {
                         e.printStackTrace();
                 	}
