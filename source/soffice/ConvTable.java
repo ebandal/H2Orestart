@@ -435,9 +435,9 @@ public class ConvTable {
                     xProps.setPropertyValue("HoriOrient", HoriOrientation.RIGHT);
                     break;
                 case CENTER: // 가운데 정렬
+                case JUSTIFY: // 양쪽 정렬
                     xProps.setPropertyValue("HoriOrient", HoriOrientation.CENTER);
                     break;
-                case JUSTIFY: // 양쪽 정렬
                 case DISTRIBUTE: // 배분 정렬
                 case DISTRIBUTE_SPACE: // 나눔 정렬
                     xProps.setPropertyValue("HoriOrient", HoriOrientation.NONE);
