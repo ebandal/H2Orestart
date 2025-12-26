@@ -390,10 +390,12 @@ public class ConvPara {
             xStyleProps.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(paraShape.offsetLeft));
             // offsetRight                          // 문단 테두리 오른쪽 간격 (borders-padding-right)
             xStyleProps.setPropertyValue("RightBorderDistance", Transform.translateHwp2Office(paraShape.offsetRight));
+            // Hwp의 offsetTop, offsetBottom은 문단 간격에 영향을 주지 않는다. 다만 문단의 글자와 테두리 간격을 구분한다.
+            // 반면, LibreOffice BorderDistance는 문단 간격에 영향을 준다.
             // offsetTop                            // 문단 테두리 위쪽 간격 (borders-padding-top)
-            xStyleProps.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(paraShape.offsetTop));
+            // xStyleProps.setPropertyValue("TopBorderDistance", Transform.translateHwp2Office(paraShape.offsetTop));
             // offsetBottom                         // 문단 테두리 아래쪽 간격 (borders-padding-bottom)
-            xStyleProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(paraShape.offsetBottom));
+            // xStyleProps.setPropertyValue("BottomBorderDistance", Transform.translateHwp2Office(paraShape.offsetBottom));
             // 속성2 (5.0.1.7 버전 이상)
             // lineWrap;                            //  한줄로 입력
             // autoSpaceEAsianEng;                  //  한글과 영어 간격을 자동 조절
