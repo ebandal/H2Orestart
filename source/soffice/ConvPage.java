@@ -142,7 +142,7 @@ public class ConvPage {
             XToolkit xToolkit = UnoRuntime.queryInterface(XToolkit.class, o);
             XDevice device = xToolkit.createScreenCompatibleDevice(0, 0);
             FontDescriptor[] fds = device.getFontDescriptors();
-            
+
             // 장평 조정 대상 폰트가 시스템에서 지원하는 폰트인지 알기 위해 저장
             for (int i = 0; i < fds.length; i++) {
                 WriterContext.fontNameSet.add(fds[i].Name);
@@ -153,27 +153,27 @@ public class ConvPage {
             // 폰트(크기100)의 Ascent와 Descent 합이 130 이하이면 가중치 0.857. 예) 휴먼편지체
             // 폰트(크기100)의 Ascent와 Descent 합이 133 이하이면 가중치 0.764. 예) 함초롬*,한컴*
             // 폰트(크기100)의 Ascent와 Descent 합이 133 이상이면 가중치 0.752. 예) 맑은 고딕
-        	List<HwpRecord_FaceName> fontnameList = WriterContext.getFontNames();
-        	for (HwpRecord_FaceName fontname: fontnameList) {
-        		FontDescriptor fd = new FontDescriptor();
-        		fd.Name = fontname.faceName;
-        		fd.Height = 100;
+            List<HwpRecord_FaceName> fontnameList = WriterContext.getFontNames();
+            for (HwpRecord_FaceName fontname: fontnameList) {
+                FontDescriptor fd = new FontDescriptor();
+                fd.Name = fontname.faceName==null? fontname.substFace: fontname.faceName;
+                fd.Height = 100;
                 XFont xFont = device.getFont(fd);
                 SimpleFontMetric fontMetric = xFont.getFontMetric();
                 log.fine("Font[" + fd.Name + "] ascent="+fontMetric.Ascent+", descent="+fontMetric.Descent+", leading="+fontMetric.Leading);
-                
+
                 double fontAscDes = fontMetric.Ascent+fontMetric.Descent;
                 double fontLineSpaceAlpha = 0.870; // 기본 0.870
                 if (fontAscDes >= 117 && fontAscDes < 130) {
-                	fontLineSpaceAlpha = 0.857;
+                    fontLineSpaceAlpha = 0.857;
                 } else if (fontAscDes >= 130 && fontAscDes < 133) {
-                	fontLineSpaceAlpha = 0.764;
+                    fontLineSpaceAlpha = 0.764;
                 } else if (fontAscDes >= 133) {
-                	fontLineSpaceAlpha = 0.752;
+                    fontLineSpaceAlpha = 0.752;
                 }
                 WriterContext.setFontNameLineSpaceAlpha(fontname.faceName, fontLineSpaceAlpha);
-        	}
-        	
+            }
+            
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {
                 HwpRecord_CharShape font = (HwpRecord_CharShape) wContext.getDocInfo().charShapeList.get(i);
 
@@ -365,15 +365,15 @@ public class ConvPage {
 
             // BackColor,BackTransparent,
             if (secd.paras!=null) {
-            	Optional<Ctrl_ShapePic> picOp = secd.paras.stream()
-			            							.filter(para -> para.p!=null)
-				            						.flatMap(para -> para.p.stream())
-				            						.filter(ctrl -> (ctrl!=null) && (ctrl instanceof Ctrl_ShapePic))
-				            						.map(ctrl -> (Ctrl_ShapePic)ctrl)
-				            						.findFirst();
-            	if (picOp.isPresent()) {
-	            	setBackGraphic(wContext, xStyleProps, picOp.get());
-	            }
+                Optional<Ctrl_ShapePic> picOp = secd.paras.stream()
+                                                          .filter(para -> para.p!=null)
+                                                          .flatMap(para -> para.p.stream())
+                                                          .filter(ctrl -> (ctrl!=null) && (ctrl instanceof Ctrl_ShapePic))
+                                                          .map(ctrl -> (Ctrl_ShapePic)ctrl)
+                                                          .findFirst();
+                if (picOp.isPresent()) {
+                    setBackGraphic(wContext, xStyleProps, picOp.get());
+                }
             }
             // BackGraphicURL,BackGraphicFilter,BackGraphicLocation,
 
@@ -438,8 +438,8 @@ public class ConvPage {
         if (graphic == null) {
             log.severe("Error loading the image");
         } else {
-        	// pic.xGrpOffset, pic.yGrpOffset, pic.curWidth, pic.curHeight 로 계산하여, 
-        	// header, footer, full, Area, tile 여부를 결정
+            // pic.xGrpOffset, pic.yGrpOffset, pic.curWidth, pic.curHeight 로 계산하여, 
+            // header, footer, full, Area, tile 여부를 결정
             xStyleProps.setPropertyValue("BackGraphic", graphic);
             xStyleProps.setPropertyValue("BackTransparent", false);
             xStyleProps.setPropertyValue("BackGraphicLocation", GraphicLocation.MIDDLE_MIDDLE);
@@ -723,10 +723,10 @@ public class ConvPage {
                     headerCursorBoth.gotoStart(true);
                     headerCursorBoth.setString("");
                     headerCursorBoth.gotoEnd(false);
-                    
+
                     context2.mText = headerTextBoth;
                     context2.mTextCursor = headerCursorBoth;
-    
+
                     HwpCallback callbackBoth = new HwpCallback() {
                         @Override
                         public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {
@@ -759,17 +759,17 @@ public class ConvPage {
                                 e.printStackTrace();
                             }
                         };
-    
+
                         @Override
                         public boolean onTab(String info) {
                             return false;
                         };
-    
+
                         @Override
                         public boolean onText(String content, int charShapeId, int charPos, boolean append) {
                             return false;
                         }
-    
+
                         @Override
                         public boolean onParaBreak() {
                             return false;
@@ -900,136 +900,136 @@ public class ConvPage {
         }
     }
 
-	public static void putPageNum(WriterContext wContext, Ctrl_PageNumPos numPoz) {
-		try {
-			// get current style for page style family
-	        XStyleFamiliesSupplier xSupplier = UnoRuntime.queryInterface(XStyleFamiliesSupplier.class, wContext.mMyDocument);
-	        XNameAccess xFamilies
-	    		= (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, xSupplier.getStyleFamilies());
-	        XNameContainer xFamily
-	    		= (XNameContainer) UnoRuntime.queryInterface(XNameContainer.class, xFamilies.getByName("PageStyles"));
-	        String pageStyleName = pageStyleNameMap.get(secdIndex);
-	        XStyle xStyle = UnoRuntime.queryInterface(XStyle.class, xFamily.getByName(pageStyleName));
-	        XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xStyle);
+    public static void putPageNum(WriterContext wContext, Ctrl_PageNumPos numPoz) {
+        try {
+            // get current style for page style family
+            XStyleFamiliesSupplier xSupplier = UnoRuntime.queryInterface(XStyleFamiliesSupplier.class, wContext.mMyDocument);
+            XNameAccess xFamilies
+                = (XNameAccess) UnoRuntime.queryInterface(XNameAccess.class, xSupplier.getStyleFamilies());
+            XNameContainer xFamily
+                = (XNameContainer) UnoRuntime.queryInterface(XNameContainer.class, xFamilies.getByName("PageStyles"));
+            String pageStyleName = pageStyleNameMap.get(secdIndex);
+            XStyle xStyle = UnoRuntime.queryInterface(XStyle.class, xFamily.getByName(pageStyleName));
+            XPropertySet xStyleProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xStyle);
 
-	        XText footerText = null;
+            XText footerText = null;
 
-	        switch (numPoz.pos) {
-	        case NONE:
-	        	return;
-	        case LEFT_TOP:
-	        case CENTER_TOP:
-	        case RIGHT_TOP:
-	        case OUTER_TOP:
-	        case INNER_TOP:
-		        boolean headerOn = (boolean) xStyleProps.getPropertyValue("HeaderIsOn");
-		        if (headerOn == false) {
-		        	xStyleProps.setPropertyValue("HeaderIsOn", Boolean.TRUE);
-		        }
-		        footerText = UnoRuntime.queryInterface(XText.class, xStyleProps.getPropertyValue("HeaderText"));
-	        	break;
-	        case LEFT_BOTTOM:
-	        case BOTTOM_CENTER:
-	        case RIGHT_BOTTOM:
-	        case OUTER_BOTTOM:
-	        case INNER_BOTTOM:
-		        boolean footerOn = (boolean) xStyleProps.getPropertyValue("FooterIsOn");
-		        if (footerOn == false) {
-		        	xStyleProps.setPropertyValue("FooterIsOn", Boolean.TRUE);
-		        }
-		        footerText = UnoRuntime.queryInterface(XText.class, xStyleProps.getPropertyValue("FooterText"));
-	        	break;
-	        }
+            switch (numPoz.pos) {
+            case NONE:
+                return;
+            case LEFT_TOP:
+            case CENTER_TOP:
+            case RIGHT_TOP:
+            case OUTER_TOP:
+            case INNER_TOP:
+                boolean headerOn = (boolean) xStyleProps.getPropertyValue("HeaderIsOn");
+                if (headerOn == false) {
+                    xStyleProps.setPropertyValue("HeaderIsOn", Boolean.TRUE);
+                }
+                footerText = UnoRuntime.queryInterface(XText.class, xStyleProps.getPropertyValue("HeaderText"));
+                break;
+            case LEFT_BOTTOM:
+            case BOTTOM_CENTER:
+            case RIGHT_BOTTOM:
+            case OUTER_BOTTOM:
+            case INNER_BOTTOM:
+                boolean footerOn = (boolean) xStyleProps.getPropertyValue("FooterIsOn");
+                if (footerOn == false) {
+                    xStyleProps.setPropertyValue("FooterIsOn", Boolean.TRUE);
+                }
+                footerText = UnoRuntime.queryInterface(XText.class, xStyleProps.getPropertyValue("FooterText"));
+                break;
+            }
 
-	        XTextCursor footerCursor = footerText.createTextCursor();
-	
-	        /* set footer text properties via its cursor: font, font size, paragraph orientation    */
-	        XPropertySet xFootProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, footerCursor);
-	        // xFootProps.setPropertyValue("CharFontName", "맑은고딕");
-	        xFootProps.setPropertyValue("CharHeight", 10.0f);
-	        switch (numPoz.pos) {
-	        case NONE:
-	        	return;
-	        case LEFT_TOP:
-	        case LEFT_BOTTOM:
-		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.LEFT);
-		        break;
-	        case CENTER_TOP:
-	        case BOTTOM_CENTER:
-		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
-		        break;
-	        case RIGHT_TOP:
-	        case RIGHT_BOTTOM:
-		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.RIGHT);
-		        break;
-	        case OUTER_TOP:
-	        case OUTER_BOTTOM:
-	        case INNER_TOP:
-	        case INNER_BOTTOM:
-	        	/* 처리하지 못하므로 가운데 */
-		        xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
-		        break;
-	        }
-	
-	        Object oPageNum = wContext.mMSF.createInstance("com.sun.star.text.TextField.PageNumber");
-	        XTextField numField = UnoRuntime.queryInterface(XTextField.class, oPageNum);
-	        XPropertySet xNumProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, numField);
-	        switch(numPoz.numShape) {
-	        case DIGIT:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.ARABIC);
-		        break;
-	        case CIRCLE_DIGIT:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.CIRCLE_NUMBER);
-		        break;
-	        case ROMAN_CAPITAL:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.ROMAN_UPPER);
-		        break;
-	        case ROMAN_SMALL:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.ROMAN_LOWER);
-		        break;
-	        case LATIN_CAPITAL:
-	        case CIRCLED_LATIN_CAPITAL:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.CHARS_UPPER_LETTER);
-		        break;
-	        case LATIN_SMALL:
-	        case CIRCLED_LATIN_SMALL:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.CHARS_LOWER_LETTER);
-		        break;
-	        case HANGLE_SYLLABLE:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_SYLLABLE_KO);
-		        break;
-	        case CIRCLED_HANGUL_SYLLABLE:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_CIRCLED_SYLLABLE_KO);
-		        break;
-	        case HANGUL_JAMO:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_JAMO_KO);
-		        break;
-	        case CIRCLED_HANGUL_JAMO:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_CIRCLED_JAMO_KO);
-		        break;
-	        case HANGUL_PHONETIC:
-	        case IDEOGRAPH:
-	        case CIRCLED_IDEOGRAPH:
-	        case DECAGON_CIRCLE:
-	        case DECAGON_CRICLE_HANGJA:
-	        case SYMBOL:
-	        case USER_CHAR:
-        	default:
-		        xNumProps.setPropertyValue("NumberingType", NumberingType.ARABIC);
-		        break;
-	        }
-	        xNumProps.setPropertyValue("SubType", PageNumberType.CURRENT);
-	
-			// add text fields to the footer
-	        XText xText = footerCursor.getText();
-	        // 여러번 [쪽번호위치] 있더라도 이전 쪽번호를 대체 (expand=true)
-	        footerCursor.gotoStart(false);
-	        footerCursor.gotoEnd(true);
-	        xText.insertTextContent(footerCursor, numField, true);
-		} catch (Exception | IllegalArgumentException e) {
-			e.printStackTrace();
-		}
+            XTextCursor footerCursor = footerText.createTextCursor();
 
-	}  // end of setPageNumbers()
-	
+            /* set footer text properties via its cursor: font, font size, paragraph orientation    */
+            XPropertySet xFootProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, footerCursor);
+            // xFootProps.setPropertyValue("CharFontName", "맑은고딕");
+            xFootProps.setPropertyValue("CharHeight", 10.0f);
+            switch (numPoz.pos) {
+            case NONE:
+            	return;
+            case LEFT_TOP:
+            case LEFT_BOTTOM:
+                xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.LEFT);
+                break;
+            case CENTER_TOP:
+            case BOTTOM_CENTER:
+                xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
+                break;
+            case RIGHT_TOP:
+            case RIGHT_BOTTOM:
+                xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.RIGHT);
+                break;
+            case OUTER_TOP:
+            case OUTER_BOTTOM:
+            case INNER_TOP:
+            case INNER_BOTTOM:
+                /* 처리하지 못하므로 가운데 */
+                xFootProps.setPropertyValue("ParaAdjust", ParagraphAdjust.CENTER);
+                break;
+            }
+
+            Object oPageNum = wContext.mMSF.createInstance("com.sun.star.text.TextField.PageNumber");
+            XTextField numField = UnoRuntime.queryInterface(XTextField.class, oPageNum);
+            XPropertySet xNumProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, numField);
+            switch(numPoz.numShape) {
+            case DIGIT:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.ARABIC);
+                break;
+            case CIRCLE_DIGIT:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.CIRCLE_NUMBER);
+                break;
+            case ROMAN_CAPITAL:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.ROMAN_UPPER);
+                break;
+            case ROMAN_SMALL:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.ROMAN_LOWER);
+                break;
+            case LATIN_CAPITAL:
+            case CIRCLED_LATIN_CAPITAL:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.CHARS_UPPER_LETTER);
+                break;
+            case LATIN_SMALL:
+            case CIRCLED_LATIN_SMALL:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.CHARS_LOWER_LETTER);
+                break;
+            case HANGLE_SYLLABLE:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_SYLLABLE_KO);
+                break;
+            case CIRCLED_HANGUL_SYLLABLE:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_CIRCLED_SYLLABLE_KO);
+                break;
+            case HANGUL_JAMO:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_JAMO_KO);
+                break;
+            case CIRCLED_HANGUL_JAMO:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.HANGUL_CIRCLED_JAMO_KO);
+                break;
+            case HANGUL_PHONETIC:
+            case IDEOGRAPH:
+            case CIRCLED_IDEOGRAPH:
+            case DECAGON_CIRCLE:
+            case DECAGON_CRICLE_HANGJA:
+            case SYMBOL:
+            case USER_CHAR:
+            default:
+                xNumProps.setPropertyValue("NumberingType", NumberingType.ARABIC);
+                break;
+            }
+            xNumProps.setPropertyValue("SubType", PageNumberType.CURRENT);
+
+            // add text fields to the footer
+            XText xText = footerCursor.getText();
+            // 여러번 [쪽번호위치] 있더라도 이전 쪽번호를 대체 (expand=true)
+            footerCursor.gotoStart(false);
+            footerCursor.gotoEnd(true);
+            xText.insertTextContent(footerCursor, numField, true);
+        } catch (Exception | IllegalArgumentException e) {
+        	e.printStackTrace();
+        }
+
+    }  // end of setPageNumbers()
+
 }
