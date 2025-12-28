@@ -795,7 +795,9 @@ public class ConvGraphics {
             frameProps.setPropertyValue("FrameIsAutomaticHeight", false); // TextFrame을 그린 후에 automaticHeight를 조정해야..
                                                                           // embedded rect는 autoHeight=true로 했었는데, 임시로
                                                                           // false로 해보자.
-            frameProps.setPropertyValue("TextVerticalAdjust", Transform.toTextVertAlign(shape.textVerAlign.ordinal()));
+            if (shape.textVerAlign!=null) {
+                frameProps.setPropertyValue("TextVerticalAdjust", Transform.toTextVertAlign(shape.textVerAlign.ordinal()));
+            }
             wOuterContext.mTextCursor.gotoEnd(false);
 
             if (shape.paras != null) {

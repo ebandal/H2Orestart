@@ -521,7 +521,7 @@ public class CompoundFile {
 		minorVersion 					= buf[offset+1]<<8&0xFF00 | buf[offset]&0xFF;
 		offset += 2;
 		if (minorVersion != 0x003E) {
-			throw new CompoundDetectException(ErrCode.INVALID_MINORVERSION);
+			// throw new CompoundDetectException(ErrCode.INVALID_MINORVERSION);  // #68 이슈(0x003B 케이스) 수정
 		}
 		majorVersion 					= buf[offset+1]<<8&0xFF00 | buf[offset]&0xFF;
 		offset += 2;
