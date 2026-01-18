@@ -378,13 +378,16 @@ public class ConvPara {
             // borderFill                           // 테두리/배경 모양 ID(BorderFill ID) 참조 값
             HwpRecord_BorderFill borders = WriterContext.getBorderFill(paraShape.borderFill);
             if (borders!=null) {
-                xStyleProps.setPropertyValue("LeftBorder", Transform.toBorderLine(borders.left));
-                xStyleProps.setPropertyValue("RightBorder", Transform.toBorderLine(borders.right));
-                xStyleProps.setPropertyValue("TopBorder", Transform.toBorderLine(borders.top));
-                xStyleProps.setPropertyValue("BottomBorder", Transform.toBorderLine(borders.bottom));
-                if (borders.fill!=null && borders.fill.isColorFill()==true && borders.fill.faceColor!=-1) {
-                    xStyleProps.setPropertyValue("ParaBackColor", borders.fill.faceColor);
-                }
+            	if (paraShape.offsetLeft >= 0 && paraShape.offsetRight >= 0
+                    && paraShape.offsetTop >= 0 && paraShape.offsetBottom >= 0) {
+                    xStyleProps.setPropertyValue("LeftBorder", Transform.toBorderLine(borders.left));
+                    xStyleProps.setPropertyValue("RightBorder", Transform.toBorderLine(borders.right));
+                    xStyleProps.setPropertyValue("TopBorder", Transform.toBorderLine(borders.top));
+                    xStyleProps.setPropertyValue("BottomBorder", Transform.toBorderLine(borders.bottom));
+                    if (borders.fill!=null && borders.fill.isColorFill()==true && borders.fill.faceColor!=-1) {
+                        xStyleProps.setPropertyValue("ParaBackColor", borders.fill.faceColor);
+                    }
+            	}
             }
             // offsetLeft                           // 문단 테두리 왼쪽 간격 (borders-padding-left)
             xStyleProps.setPropertyValue("LeftBorderDistance", Transform.translateHwp2Office(paraShape.offsetLeft));
