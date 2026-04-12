@@ -38,6 +38,7 @@ import org.xml.sax.SAXException;
 
 import HwpDoc.HwpxFile;
 import HwpDoc.IContext;
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.section.NoteShape;
 import HwpDoc.section.Page;
@@ -374,7 +375,7 @@ public class Ctrl_SectionDef extends Ctrl {
 						        }
 							}
 						}
-					} catch (IOException|DataFormatException|SAXException|ParserConfigurationException e) {
+					} catch (IOException|DataFormatException|SAXException|ParserConfigurationException | HwpParseException e) {
 						e.printStackTrace();
 					}
                     

@@ -161,7 +161,7 @@ public class HwpComparer implements IContext {
             hwpxTemp.detect();
             detectingType = "HWPX";
             hwpxTemp.close();
-        } catch (IOException | HwpDetectException e1) {
+        } catch (IOException | HwpDetectException | HwpParseException e1) {
             try {
                 hwpxTemp.close();
             } catch (IOException e) {

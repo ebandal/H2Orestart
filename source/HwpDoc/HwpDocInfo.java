@@ -51,23 +51,23 @@ import HwpDoc.HwpElement.HwpRecord_TabDef;
 import HwpDoc.HwpElement.HwpTag;
 
 public class HwpDocInfo {
-	private static final Logger log = Logger.getLogger(HwpDocInfo.class.getName());
-	public HanType         hanType;
-	private HwpxFile       parentHwpx;
-	private HwpFile        parentHwp;
-	public List<HwpRecord> recordList;
-	
-	public LinkedHashMap<String, HwpRecord> binDataList;
-	public List<HwpRecord> faceNameList;
-	public List<HwpRecord> borderFillList;
-	public List<HwpRecord> charShapeList;
-	public List<HwpRecord> numberingList;
-	public List<HwpRecord> bulletList;
-	public List<HwpRecord> paraShapeList;
-	public List<HwpRecord> styleList;
-	public List<HwpRecord> tabDefList;
-	public CompatDoc       compatibleDoc;
-	
+    private static final Logger log = Logger.getLogger(HwpDocInfo.class.getName());
+    public HanType         hanType;
+    private HwpxFile       parentHwpx;
+    private HwpFile        parentHwp;
+    public List<HwpRecord> recordList;
+
+    public LinkedHashMap<String, HwpRecord> binDataList;
+    public List<HwpRecord> faceNameList;
+    public List<HwpRecord> borderFillList;
+    public List<HwpRecord> charShapeList;
+    public List<HwpRecord> numberingList;
+    public List<HwpRecord> bulletList;
+    public List<HwpRecord> paraShapeList;
+    public List<HwpRecord> styleList;
+    public List<HwpRecord> tabDefList;
+    public CompatDoc       compatibleDoc;
+
     public HwpDocInfo(HanType hanType) {
         recordList      = new ArrayList<HwpRecord>();
         binDataList     = new LinkedHashMap<String, HwpRecord>();
@@ -85,101 +85,106 @@ public class HwpDocInfo {
 
     public HwpDocInfo(HwpxFile parent) {
         this(HanType.HWPX);
-		this.parentHwpx = parent;
-	}
-    
+        this.parentHwpx = parent;
+    }
+
     public HwpDocInfo(HwpFile parent) {
         this(HanType.HWP);
         this.parentHwp = parent;
     }
-	
-	boolean parse(byte[] buf, int version) throws HwpParseException {
-		int off = 0;
-		while(off < buf.length) {
-			int header = buf[off+3]<<24&0xFF000000 | buf[off+2]<<16&0xFF0000 | buf[off+1]<<8&0xFF00 | buf[off]&0xFF;
-			int tagNum = header&0x3FF;				// 10 bits (0 - 9 bit)
-			int level = (header&0xFFC00)>>>10;		// 10 bits (10-19 bit)
-			int size =  (header&0xFFF00000)>>>20;	// 12 bits (20-31 bit)
-			
-			if (size==0xFFF) {
-				size = buf[off+7]<<24&0xFF000000 | buf[off+6]<<16&0xFF0000 | buf[off+5]<<8&0xFF00 | buf[off+4]&0xFF;
-				off += 8;
-			} else {
-				off += 4;
-			}
-			
-			HwpRecord record = null;
-			HwpTag tag = HwpTag.from(tagNum);
-			log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" ("+size+")");
-			switch(tag) {
-			case HWPTAG_DOCUMENT_PROPERTIES:
-				record = new HwpRecord_DocumentProperties(this, tagNum, level, size, buf, off, version);
-				recordList.add(record);
-				break;
-			case HWPTAG_ID_MAPPINGS:
-				record = new HwpRecord_IdMapping(this, tagNum, level, size, buf, off, version);
-				recordList.add(record);
-				break;
-			case HWPTAG_BIN_DATA:
-			    HwpRecord_BinData binRecord = new HwpRecord_BinData(this, tagNum, level, size, buf, off, version);
-				binDataList.put(binRecord.itemId, binRecord);
-				break;
-			case HWPTAG_FACE_NAME:
-				record = new HwpRecord_FaceName(this, tagNum, level, size, buf, off, version);
-				faceNameList.add(record);
-				break;
-			case HWPTAG_BORDER_FILL:
-				record = new HwpRecord_BorderFill(this, tagNum, level, size, buf, off, version);
-				borderFillList.add(record);
-				break;
-			case HWPTAG_CHAR_SHAPE:
-				record = new HwpRecord_CharShape(this, tagNum, level, size, buf, off, version);
-				charShapeList.add(record);
-				break;
-			case HWPTAG_TAB_DEF:
-				record = new HwpRecord_TabDef(this, tagNum, level, size, buf, off, version);
-				tabDefList.add(record);
-				break;
-			case HWPTAG_NUMBERING:
-				record = new HwpRecord_Numbering(this, tagNum, level, size, buf, off, version);
-				numberingList.add(record);
-				break;
-			case HWPTAG_BULLET:
-				record = new HwpRecord_Bullet(this, tagNum, level, size, buf, off, version);
-				bulletList.add(record);
-				break;
-			case HWPTAG_PARA_SHAPE:
-				record = new HwpRecord_ParaShape(this, tagNum, level, size, buf, off, version);
-				paraShapeList.add(record);
-				break;
-			case HWPTAG_STYLE:
-				record = new HwpRecord_Style(this, tagNum, level, size, buf, off, version);
-				styleList.add(record);
-				break;
+
+    boolean parse(byte[] buf, int version) throws HwpParseException {
+        int off = 0;
+        while(off < buf.length) {
+            int header = buf[off+3]<<24&0xFF000000 | buf[off+2]<<16&0xFF0000 | buf[off+1]<<8&0xFF00 | buf[off]&0xFF;
+            int tagNum = header&0x3FF;				// 10 bits (0 - 9 bit)
+            int level = (header&0xFFC00)>>>10;		// 10 bits (10-19 bit)
+            int size =  (header&0xFFF00000)>>>20;	// 12 bits (20-31 bit)
+
+            if (size==0xFFF) {
+                size = buf[off+7]<<24&0xFF000000 | buf[off+6]<<16&0xFF0000 | buf[off+5]<<8&0xFF00 | buf[off+4]&0xFF;
+                off += 8;
+            } else {
+                off += 4;
+            }
+
+            HwpRecord record = null;
+            HwpTag tag = HwpTag.from(tagNum);
+            log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" ("+size+")");
+            switch(tag) {
+            case HWPTAG_DOCUMENT_PROPERTIES:
+                record = new HwpRecord_DocumentProperties(this, tagNum, level, size, buf, off, version);
+                recordList.add(record);
+                break;
+            case HWPTAG_ID_MAPPINGS:
+                record = new HwpRecord_IdMapping(this, tagNum, level, size, buf, off, version);
+                recordList.add(record);
+                break;
+            case HWPTAG_BIN_DATA:
+                HwpRecord_BinData binRecord = new HwpRecord_BinData(this, tagNum, level, size, buf, off, version);
+                binDataList.put(binRecord.itemId, binRecord);
+                break;
+            case HWPTAG_FACE_NAME:
+                record = new HwpRecord_FaceName(this, tagNum, level, size, buf, off, version);
+                faceNameList.add(record);
+                break;
+            case HWPTAG_BORDER_FILL:
+                record = new HwpRecord_BorderFill(this, tagNum, level, size, buf, off, version);
+                borderFillList.add(record);
+                break;
+            case HWPTAG_CHAR_SHAPE:
+                record = new HwpRecord_CharShape(this, tagNum, level, size, buf, off, version);
+                charShapeList.add(record);
+                break;
+            case HWPTAG_TAB_DEF:
+                record = new HwpRecord_TabDef(this, tagNum, level, size, buf, off, version);
+                tabDefList.add(record);
+                break;
+            case HWPTAG_NUMBERING:
+                record = new HwpRecord_Numbering(this, tagNum, level, size, buf, off, version);
+                numberingList.add(record);
+                break;
+            case HWPTAG_BULLET:
+                record = new HwpRecord_Bullet(this, tagNum, level, size, buf, off, version);
+                bulletList.add(record);
+                break;
+            case HWPTAG_PARA_SHAPE:
+                record = new HwpRecord_ParaShape(this, tagNum, level, size, buf, off, version);
+                paraShapeList.add(record);
+                break;
+            case HWPTAG_STYLE:
+                record = new HwpRecord_Style(this, tagNum, level, size, buf, off, version);
+                styleList.add(record);
+                break;
             case HWPTAG_COMPATIBLE_DOCUMENT:
                 compatibleDoc = CompatDoc.from(buf[off+3]<<24&0xFF000000 | buf[off+2]<<16&0x00FF0000 | buf[off+1]<<8&0x0000FF00 | buf[off]&0x000000FF);
                 break;
             case HWPTAG_LAYOUT_COMPATIBILITY:
                 break;
-			case HWPTAG_DOC_DATA:
-			case HWPTAG_DISTRIBUTE_DOC_DATA:			    
-			case HWPTAG_TRACKCHANGE:
-			case HWPTAG_MEMO_SHAPE:
-			case HWPTAG_FORBIDDEN_CHAR:
-			case HWPTAG_TRACK_CHANGE:
-			case HWPTAG_TRACK_CHANGE_AUTHOR:
-				break;
-			default:
-			}
-			off += size;
-		}
-		
-		return true;
-	}
-	
-	boolean readContentHpf(Document document, int version) throws HwpParseException, NotImplementedException {
+            case HWPTAG_DOC_DATA:
+            case HWPTAG_DISTRIBUTE_DOC_DATA:
+            case HWPTAG_TRACKCHANGE:
+            case HWPTAG_MEMO_SHAPE:
+            case HWPTAG_FORBIDDEN_CHAR:
+            case HWPTAG_TRACK_CHANGE:
+            case HWPTAG_TRACK_CHANGE_AUTHOR:
+                break;
+            default:
+            }
+            off += size;
+        }
+
+        return true;
+    }
+
+    boolean readContentHpf(Document document, int version) throws HwpParseException, NotImplementedException {
         Element element = document.getDocumentElement();
-        
+
+        String distribution = element.getAttribute("hpf:distribution");
+        if (distribution.equals("1")) {
+            parentHwpx.fileHeader.bDistributable = true;
+        }
+
         NodeList nodeList = element.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
@@ -209,19 +214,18 @@ public class HwpDocInfo {
         }
         
         return true;
-	}
-	
-	boolean read(Document document, int version) throws HwpParseException, NotImplementedException {
-	    int off = 0;
-        
+    }
+
+    boolean read(Document document, int version) throws HwpParseException, NotImplementedException {
+        int off = 0;
+
         Element element = document.getDocumentElement();
-        
+
         // Node : [[hh:beginNum: null], [hh:refList: null], [hh:compatibleDocument: null], [hh:docOption: null], [hh:trackchageConfig: null]]
-        
         NodeList nodeList = element.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
-            
+
             HwpRecord record = null;
             switch(node.getNodeName()) {
             case "hh:beginNum":
@@ -242,15 +246,15 @@ public class HwpDocInfo {
             }
             
         }
-        
+
         return true;
     }
-    
+
     private boolean readRefList(Node rootNode, int version) throws HwpParseException, NotImplementedException {
         NodeList nodeList = rootNode.getChildNodes();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
-            
+
             HwpRecord record = null;
             switch(node.getNodeName()) {
             case "hh:fontfaces":
@@ -335,14 +339,14 @@ public class HwpDocInfo {
                 }
                 break;
             case "hh:bullets":
-            	{
+                {
                     NodeList children = node.getChildNodes();
                     for (int j=0; j<children.getLength(); j++) {
-                    	Node childNode = children.item(j);
-		                record = new HwpRecord_Bullet(this, childNode, version);
-		                bulletList.add(record);
+                        Node childNode = children.item(j);
+                        record = new HwpRecord_Bullet(this, childNode, version);
+                        bulletList.add(record);
                     }
-            	}
+                }
                 break;
             case "hh:paraProperties":
                 {
@@ -383,27 +387,27 @@ public class HwpDocInfo {
         
         return true;
     }
-    
+
     public void setFontNameLineSpaceAlpha(String fontName, double fontLineSpaceAlpha) {
-    	charShapeList.stream().filter(l -> l instanceof HwpRecord_CharShape)
-    				.filter(l -> {
-    						return Arrays.stream(((HwpRecord_CharShape)l).fontName).anyMatch(c -> c.equals(fontName));
-    					})
-    				.forEach(c -> {
-    						((HwpRecord_CharShape)c).lineSpaceAlpha = fontLineSpaceAlpha;	
-    					});
+        charShapeList.stream().filter(l -> l instanceof HwpRecord_CharShape)
+                    .filter(l -> {
+                        return Arrays.stream(((HwpRecord_CharShape)l).fontName).anyMatch(c -> c.equals(fontName));
+                    })
+                    .forEach(c -> {
+                        ((HwpRecord_CharShape)c).lineSpaceAlpha = fontLineSpaceAlpha;	
+                    });
     }
 
     public HwpFile getParentHwp() {
         return parentHwp;
     }
 
-	public static enum CompatDoc {
-	    HWP         (0x0),  // 한글문서(현재버전)
+    public static enum CompatDoc {
+        HWP         (0x0),  // 한글문서(현재버전)
         OLD_HWP     (0x1),  // 한글2007호환
         MS_WORD     (0x2),  // MS 워드 호환
         ;
-        
+
         private int num;
         private CompatDoc(int num) { 
             this.num = num;
@@ -415,6 +419,6 @@ public class HwpDocInfo {
             }
             return null;
         }
-	}
+    }
 
 }

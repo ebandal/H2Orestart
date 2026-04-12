@@ -135,7 +135,7 @@ public class OwpmlFile {
         return binData.orElse("");
     }
     
-    private byte[] unzip(byte[] input, int inLen) throws IOException, DataFormatException {
+    public byte[] unzip(byte[] input, int inLen) throws IOException, DataFormatException {
         Inflater decompressor = new Inflater(true);
         decompressor.setInput(input, 0, input.length);
         ByteArrayOutputStream bos = new ByteArrayOutputStream(inLen);

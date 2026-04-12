@@ -113,7 +113,7 @@ public class WriterContext implements IContext {
             detectingType = "HWPX";
             hwpxTemp.close();
             log.info("file detected as HWPX");
-        } catch (IOException | HwpDetectException e1) {
+        } catch (IOException | HwpDetectException | HwpParseException e1) {
             log.info("file detected not HWPX");
 
             try {
@@ -131,7 +131,7 @@ public class WriterContext implements IContext {
     }
 
     public void detect() throws HwpDetectException, CompoundDetectException, NotImplementedException, IOException,
-                                CompoundParseException, ParserConfigurationException, SAXException, DataFormatException {
+                                CompoundParseException, ParserConfigurationException, SAXException, DataFormatException, HwpParseException {
         switch (hType) {
         case HWP:
             hwp.detect();
