@@ -343,7 +343,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
 
             // 화면 갱신 resume
             // writerContext.mMyDocument.unlockControllers();
-        } catch (HwpDetectException e) {
+        } catch (HwpDetectException | HwpParseException e) {
             e.printStackTrace();
         }
 

@@ -54,6 +54,7 @@ import com.sun.star.text.XParagraphCursor;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecord_Bullet;
 import HwpDoc.HwpElement.HwpRecord_Numbering;
 import HwpDoc.HwpElement.HwpRecord_Numbering.Numbering;
@@ -327,7 +328,7 @@ public class ConvNumbering {
         numberingNumbersMap.put(hwpStyleName, curNumbers);
     }
 
-    public static void makeCustomBulletStyle(WriterContext wContext, int id, HwpRecord_Bullet bullet) {
+    public static void makeCustomBulletStyle(WriterContext wContext, int id, HwpRecord_Bullet bullet) throws HwpParseException {
         try {
             XStyle xListStyle = UnoRuntime.queryInterface(XStyle.class, wContext.mMSF.createInstance("com.sun.star.style.NumberingStyle"));
             XStyleFamiliesSupplier xSupplier = (XStyleFamiliesSupplier)UnoRuntime.queryInterface(XStyleFamiliesSupplier.class, wContext.mMyDocument);

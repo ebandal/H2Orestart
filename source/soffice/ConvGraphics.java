@@ -83,6 +83,7 @@ import com.sun.star.text.XTextFrame;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowSize;
 import HwpDoc.HwpElement.HwpRecordTypes.LineArrowStyle;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
@@ -118,7 +119,7 @@ public class ConvGraphics {
         autoNum = 0;
     }
 
-    public static void insertGraphic(WriterContext wContext, Ctrl_GeneralShape obj, short paraShapeID, int step) {
+    public static void insertGraphic(WriterContext wContext, Ctrl_GeneralShape obj, short paraShapeID, int step) throws HwpParseException {
         HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
@@ -166,8 +167,7 @@ public class ConvGraphics {
         }
     }
 
-    private static void insertPICTURE(WriterContext wContext, Ctrl_ShapePic pic, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertPICTURE(WriterContext wContext, Ctrl_ShapePic pic, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasCaption = pic.caption == null ? false : pic.caption.size() == 0 ? false : true;
 
         XTextFrame xFrame = null;
@@ -380,8 +380,7 @@ public class ConvGraphics {
 
     }
 
-    private static void insertVIDEO(WriterContext wContext, Ctrl_ShapeVideo vid, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertVIDEO(WriterContext wContext, Ctrl_ShapeVideo vid, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasCaption = vid.caption == null ? false : vid.caption.size() == 0 ? false : true;
 
         XTextFrame xFrame = null;
@@ -517,7 +516,7 @@ public class ConvGraphics {
 
     }
 
-    private static void insertMulti(WriterContext wContext, Ctrl_Container container, int step) {
+    private static void insertMulti(WriterContext wContext, Ctrl_Container container, int step) throws HwpParseException {
         boolean hasCaption = container.caption == null ? false : container.caption.size() == 0 ? false : true;
 
         XTextFrame xFrame = null;
@@ -709,7 +708,7 @@ public class ConvGraphics {
                                         Ctrl_GeneralShape shape,
                                         int step,
                                         int shapeWidth,
-                                        int shapeHeight) {
+                                        int shapeHeight) throws HwpParseException {
         try {
             Object oFrame = wOuterContext.mMSF.createInstance("com.sun.star.text.TextFrame");
             XTextFrame xInternalFrame = (XTextFrame) UnoRuntime.queryInterface(XTextFrame.class, oFrame);
@@ -848,7 +847,7 @@ public class ConvGraphics {
     }
 
     private static void insertRECTANGLE(WriterContext wOuterContext, Ctrl_GeneralShape shape, 
-                                        int step, int shapeWidth, int shapeHeight) {
+                                        int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         try {
             Object xObj = wOuterContext.mMSF.createInstance("com.sun.star.drawing.RectangleShape");
 
@@ -985,7 +984,7 @@ public class ConvGraphics {
         }
     }
     
-    private static void insertPictureRECTAGLE(WriterContext wOuterContext, Ctrl_ShapePic pic, int step, int shapeWidth, int shapeHeight) {
+    private static void insertPictureRECTAGLE(WriterContext wOuterContext, Ctrl_ShapePic pic, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasCaption = pic.caption == null ? false : pic.caption.size() == 0 ? false : true;
 
         XTextFrame xFrame = null;
@@ -1096,8 +1095,7 @@ public class ConvGraphics {
 
     }
 
-    private static void insertLINE(WriterContext wContext, Ctrl_ShapeLine shape, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertLINE(WriterContext wContext, Ctrl_ShapeLine shape, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasCaption = shape.caption == null ? false : shape.caption.size() == 0 ? false : true;
         XTextFrame xFrame = null;
         XText xFrameText = null;
@@ -1235,7 +1233,7 @@ public class ConvGraphics {
         }
     }
 
-    private static void insertELLIPSE(WriterContext wContext, Ctrl_ShapeEllipse ell, int step, int shapeWidth, int shapeHeight) {
+    private static void insertELLIPSE(WriterContext wContext, Ctrl_ShapeEllipse ell, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasParas = ell.paras == null ? false : ell.paras.size() == 0 ? false : true;
         boolean hasCaption = ell.caption == null ? false : ell.caption.size() == 0 ? false : true;
         XTextFrame xFrame = null;
@@ -1361,7 +1359,7 @@ public class ConvGraphics {
     }
 
     private static void insertPOLYGON(WriterContext wContext, Ctrl_ShapePolygon pol, int step, int shapeWidth,
-            int shapeHeight) {
+            int shapeHeight) throws HwpParseException {
         // check below URL first before make the code to draw shapes.
         // https://wiki.openoffice.org/wiki/Documentation/DevGuide/Drawings/Shape_Types
 
@@ -1497,7 +1495,7 @@ public class ConvGraphics {
         }
     }
 
-    private static void insertCURVE(WriterContext wContext, Ctrl_ShapeCurve cur, int step) {
+    private static void insertCURVE(WriterContext wContext, Ctrl_ShapeCurve cur, int step) throws HwpParseException {
         String shapeString = "com.sun.star.drawing.OpenBezierShape";
         if (cur.fill != null && cur.fill.fillType > 0) {
             shapeString = "com.sun.star.drawing.ClosedBezierShape";
@@ -1715,8 +1713,7 @@ public class ConvGraphics {
         }
     }
 
-    private static void insertARC(WriterContext wOuterContext, Ctrl_ShapeArc arc, int step, int shapeWidth,
-            int shapeHeight) {
+    private static void insertARC(WriterContext wOuterContext, Ctrl_ShapeArc arc, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
 
         boolean hasCaption = arc.caption == null ? false : arc.caption.size() == 0 ? false : true;
         XTextFrame xInternalFrame = null;
@@ -1945,7 +1942,7 @@ public class ConvGraphics {
     }
 
     static void addCaptionString(WriterContext wContext, XText xFrameText, XTextCursor xFrameCursor,
-            Ctrl_GeneralShape shape, int step) {
+            Ctrl_GeneralShape shape, int step) throws HwpParseException {
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, xFrameCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
 
@@ -2837,7 +2834,7 @@ public class ConvGraphics {
         }
     }
 
-    private static void setFillStyle(WriterContext wContext, XPropertySet xPropSet, Fill fill) throws Exception {
+    private static void setFillStyle(WriterContext wContext, XPropertySet xPropSet, Fill fill) throws Exception, HwpParseException {
         try {
             if (fill == null) {
                 xPropSet.setPropertyValue("FillStyle", com.sun.star.drawing.FillStyle.NONE);
@@ -3019,7 +3016,7 @@ public class ConvGraphics {
         return aHomogenMatrix3;
     }
 
-    public static void fillGraphic(WriterContext wContext, XPropertySet xPropSet, Fill fill) {
+    public static void fillGraphic(WriterContext wContext, XPropertySet xPropSet, Fill fill) throws HwpParseException {
         try {
             Object graphicProviderObject 
                 = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider",

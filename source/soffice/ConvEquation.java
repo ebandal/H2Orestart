@@ -39,6 +39,7 @@ import com.sun.star.text.XTextFrame;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.paragraph.Ctrl_EqEdit;
 
 
@@ -50,7 +51,7 @@ public class ConvEquation {
 		autoNum = 0;
 	}
 	
-	public static void addFormula(WriterContext wContext, Ctrl_EqEdit eq, int step) {
+	public static void addFormula(WriterContext wContext, Ctrl_EqEdit eq, int step) throws HwpParseException {
 		String formula = convertEquation(eq.eqn);
     	boolean hasCaption = eq.caption==null?false:eq.caption.size()==0?false:true;
     	XTextFrame xFrame = null;

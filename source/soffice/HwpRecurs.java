@@ -31,6 +31,7 @@ import com.sun.star.text.XTextCursor;
 import com.sun.star.text.XTextRange;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
@@ -63,7 +64,7 @@ public class HwpRecurs {
     private static final String PATTERN_STRING = "[\\u0000\\u000a\\u000d\\u0018-\\u001f]|[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017].{6}[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017]";
 
     // 컨트롤에 쓰기는 wContext로, 페이지에 쓰기는 parentWriterContext로 (각주,미주)
-    public static void printParaRecurs(WriterContext wContext, WriterContext parentWriterContext, HwpParagraph para, HwpCallback callback, int step) {
+    public static void printParaRecurs(WriterContext wContext, WriterContext parentWriterContext, HwpParagraph para, HwpCallback callback, int step) throws HwpParseException {
 
         // PARA_BREAK 후 return 되기 전에  default로 만들 필요 있음. 그래서 가장 먼저 한다.
         if (step<=1 && oldParaShapeID!=para.paraShapeID) {
