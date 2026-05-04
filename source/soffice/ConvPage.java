@@ -65,6 +65,7 @@ import com.sun.star.text.XTextField;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_FaceName;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
@@ -239,7 +240,7 @@ public class ConvPage {
     }
 
     // Hwp에 맞는 Page Style을 미리 등록해놓자.
-    public static String makeCustomPageStyle(WriterContext wContext, Ctrl_SectionDef secd) {
+    public static String makeCustomPageStyle(WriterContext wContext, Ctrl_SectionDef secd) throws HwpParseException {
         String styleName = null;
         try {
             XStyle xPageStyle = UnoRuntime.queryInterface(XStyle.class,
@@ -387,7 +388,7 @@ public class ConvPage {
         return styleName;
     }
 
-    private static void setBackGraphic(WriterContext wContext, XPropertySet xStyleProps, Ctrl_ShapePic pic) throws Exception {
+    private static void setBackGraphic(WriterContext wContext, XPropertySet xStyleProps, Ctrl_ShapePic pic) throws Exception, HwpParseException {
         // image ByteArray로 그림 그리기
         Object graphicProviderObject = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
         XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);
@@ -529,7 +530,7 @@ public class ConvPage {
         }
     }
 
-    public static void setHeaderFooter(WriterContext wContext, Ctrl_HeadFoot hf) {
+    public static void setHeaderFooter(WriterContext wContext, Ctrl_HeadFoot hf) throws HwpParseException {
         String styleName = null;
 
         try {

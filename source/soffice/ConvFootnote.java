@@ -32,6 +32,7 @@ import com.sun.star.text.XTextCursor;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
 import HwpDoc.HwpElement.HwpRecord_Style;
@@ -59,7 +60,7 @@ public class ConvFootnote {
         footnoteIndex = 0;
     }
 
-    protected static void insertFootnote(WriterContext wContext, Ctrl_Note note, int step) {
+    protected static void insertFootnote(WriterContext wContext, Ctrl_Note note, int step) throws HwpParseException {
         try {
             XFootnote xFootnote = UnoRuntime.queryInterface(XFootnote.class, wContext.mMSF.createInstance("com.sun.star.text.Footnote"));
             XTextContent xContent = UnoRuntime.queryInterface(XTextContent.class, xFootnote);

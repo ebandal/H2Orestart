@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 import com.sun.star.uno.*;
 import com.sun.star.uno.Exception;
 
+import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecord_BorderFill;
 import HwpDoc.HwpElement.HwpRecord_CharShape;
 import HwpDoc.HwpElement.HwpRecord_ParaShape;
@@ -92,8 +93,7 @@ public class ConvTable {
         xText.insertControlCharacter(cursor, ctrlChar, false);
     }
 
-    public static void insertTable(WriterContext wContext, Ctrl_Table table, short paraShapeID, HwpCallback callback,
-            int step) {
+    public static void insertTable(WriterContext wContext, Ctrl_Table table, short paraShapeID, HwpCallback callback, int step) throws HwpParseException {
         // 테이블 그리기 전, 문단모양 설정한다. 문단에 Frame을 넣기때문에 문단 margin에 맞게 여백이 들어가야 한다.
         HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
@@ -1020,13 +1020,12 @@ public class ConvTable {
         }
     }
 
-    static void addCaptionString(WriterContext wContext, XText xFrameText, XTextCursor xFrameCursor, Ctrl_Table table,
-            int step) {
+    static void addCaptionString(WriterContext wContext, XText xFrameText, XTextCursor xFrameCursor, Ctrl_Table table, int step) throws HwpParseException {
         addCaptionString(wContext, xFrameText, xFrameCursor, table, 0, 0, step);
     }
 
     static void addCaptionString(WriterContext wContext, XText xFrameText, XTextCursor xFrameCursor, Ctrl_Table table,
-            int leftSpacing, int rightSpacing, int step) {
+            int leftSpacing, int rightSpacing, int step) throws HwpParseException {
         if (table.caption == null || table.caption.size() == 0)
             return;
 
@@ -1127,7 +1126,7 @@ public class ConvTable {
     }
 
     private static void setCellPara(String cellName, TblCell cell, XTextTable xtable, Ctrl_Table table,
-            WriterContext wContext, HwpCallback cb, int step) {
+            WriterContext wContext, HwpCallback cb, int step) throws HwpParseException {
         XCell xCell = xtable.getCellByName(cellName);
         if (xCell == null) {
             log.fine("Can't get CellName:" + cellName);
@@ -1545,7 +1544,7 @@ public class ConvTable {
             return false;
     }
     
-    private static void setBackGraphic(WriterContext wContext, XPropertySet xStyleProps, String binDataID) throws Exception {
+    private static void setBackGraphic(WriterContext wContext, XPropertySet xStyleProps, String binDataID) throws Exception, HwpParseException {
         // image ByteArray로 그림 그리기
         Object graphicProviderObject = wContext.mMCF.createInstanceWithContext("com.sun.star.graphic.GraphicProvider", wContext.mContext);
         XGraphicProvider xGraphicProvider = UnoRuntime.queryInterface(XGraphicProvider.class, graphicProviderObject);

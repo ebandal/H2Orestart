@@ -181,7 +181,7 @@ public class HwpDocInfo {
         Element element = document.getDocumentElement();
 
         String distribution = element.getAttribute("hpf:distribution");
-        if (distribution.equals("1")) {
+        if (distribution != null && distribution.equals("1")) {
             parentHwpx.fileHeader.bDistributable = true;
         }
 

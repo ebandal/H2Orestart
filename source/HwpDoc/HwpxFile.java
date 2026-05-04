@@ -65,7 +65,7 @@ public class HwpxFile {
     public	HwpDocInfo 	docInfo;
     public  HwpxManifest manifest;
     public	List<HwpSection> sections;
-    
+
     // Let's have member that are needed for showing in LibreOffice
     public	List<DirectoryEntry> directoryBinData;
     public	List<HwpParagraph>  paraList;
@@ -92,11 +92,11 @@ public class HwpxFile {
     public OwpmlFile getOwpmlFile() {
         return owplmFile;
     }
-    
+
     public List<HwpSection> getSections() {
         return sections;
     }
-    
+
     public boolean detect() throws HwpDetectException, IOException, HwpParseException {
         // read CompoundFile structure
         try {
@@ -115,7 +115,7 @@ public class HwpxFile {
         log.fine("Header parsed");
         return true;
     }
-    
+
     public void open(IContext context) throws HwpDetectException, IOException, DataFormatException,  
                                 ParserConfigurationException, SAXException, OwpmlParseException, 
                                 HwpParseException, NotImplementedException {
@@ -123,41 +123,41 @@ public class HwpxFile {
             detect();
         }
         version = Integer.parseInt(fileHeader.version);
-        
+
         if (getDocInfo(version)==false) 
             throw new OwpmlParseException();
         log.fine("DocInfo parsed");
-        
+
         // Contents/SectionX.xml 을 읽는다.
         for (String section: owplmFile.getSections()) {
             readSection(section, version, context);
         }
     }
-    
+
     public boolean getFileHeader() throws HwpDetectException, IOException, ParserConfigurationException, SAXException, DataFormatException, HwpParseException {
         return fileHeader.parse(getDocument("version.xml"));
     }
-    
+
     public HwpDocInfo getDocInfo() {
         return docInfo;
     }
-    
+
     public boolean getDocInfo(int version) throws IOException, DataFormatException, ParserConfigurationException, SAXException, HwpParseException, NotImplementedException {
         manifest.parse(getDocument("META-INF/manifest.xml"));
         if (docInfo.readContentHpf(getDocument("Contents/content.hpf"), version)) {
-           	return docInfo.read(getDocument("Contents/header.xml"), version);
+            return docInfo.read(getDocument("Contents/header.xml"), version);
         } else {
             return false;
         }
     }
-    
+
     public boolean readSection(String name, int version, IContext context) throws IOException, DataFormatException, 
                                                                 ParserConfigurationException, SAXException, NotImplementedException, HwpParseException {
-    	Document document = getDocument(name);
-        
+        Document document = getDocument(name);
+
         HwpSection hwpSection = new HwpSection(this);
         hwpSection.read(document, version, context);
-            
+
         sections.add(hwpSection);
         return true;
     }
@@ -245,9 +245,9 @@ public class HwpxFile {
         }
         return baos.toByteArray();
     }
-    
+
     public InputStream decryptEntryStream(InputStream is, Map<String, String> entryManifestMap) throws HwpParseException, IOException {
-        
+
         byte[] salt = Base64.getDecoder().decode(entryManifestMap.get("salt"));
         byte[] iv = Base64.getDecoder().decode(entryManifestMap.get("iv"));
         byte[] expectedChecksum = Base64.getDecoder().decode(entryManifestMap.get("checksum"));
@@ -256,78 +256,116 @@ public class HwpxFile {
         int originalSize = Integer.parseInt(entryManifestMap.get("fileSize"));
 
         byte[] cipherText = toByteArray(is);
-        
+
         try {
             byte[] startKey = sha256(DISTRIBUTE_PASSWORD);
             byte[] derivedKey = pbkdf2HmacSha1(startKey, salt, iterations, keySize);
-            
+
             byte[] decrypted = aesDecrypt(cipherText, derivedKey, iv);
             byte[] plainText = deflateDecompress(decrypted, originalSize);
-            
+
             if (verifyChecksum(plainText, expectedChecksum)) {
                 return new ByteArrayInputStream(plainText);
             }
         } catch (Exception e) {
-            // ignore and try next password
+            log.severe("Decryption failed for entry");
+            throw new HwpParseException(e.getMessage());
         }
-        
-        log.severe("Decryption failed for entry");
+
         throw new HwpParseException("Decryption failed");
     }
 
-    
+    public byte[] decryptEntryBinary(byte[] cipherText, Map<String, String> entryManifestMap) throws HwpParseException, IOException {
+
+        byte[] salt = Base64.getDecoder().decode(entryManifestMap.get("salt"));
+        byte[] iv = Base64.getDecoder().decode(entryManifestMap.get("iv"));
+        byte[] expectedChecksum = Base64.getDecoder().decode(entryManifestMap.get("checksum"));
+        int iterations = Integer.parseInt(entryManifestMap.get("iterCount"));
+        int keySize = Integer.parseInt(entryManifestMap.get("keySize"));
+        int originalSize = Integer.parseInt(entryManifestMap.get("fileSize"));
+
+        try {
+            byte[] startKey = sha256(DISTRIBUTE_PASSWORD);
+            byte[] derivedKey = pbkdf2HmacSha1(startKey, salt, iterations, keySize);
+
+            byte[] decrypted = aesDecrypt(cipherText, derivedKey, iv);
+            byte[] plainText = deflateDecompress(decrypted, originalSize);
+
+            if (verifyChecksum(plainText, expectedChecksum)) {
+                return plainText;
+            }
+        } catch (Exception e) {
+            log.severe("Decryption failed for entry");
+            throw new HwpParseException(e.getMessage());
+        }
+
+        throw new HwpParseException("Decryption failed");
+    }
+
     public Document getDocument(String entryName) throws IOException, ParserConfigurationException, SAXException, DataFormatException, HwpParseException {
-        
+
         InputStream is = owplmFile.getInputStream(entryName);
-        
+
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         if (fileHeader.bDistributable == true && manifest.entryMap !=null && manifest.entryMap.get(entryName)!=null) {
-        	Map<String, String> entryManifestMap = manifest.entryMap.get(entryName);
-        	InputStream decryptedIs = decryptEntryStream(is, entryManifestMap);
-        	return builder.parse(decryptedIs);
+            Map<String, String> entryManifestMap = manifest.entryMap.get(entryName);
+            InputStream decryptedIs = decryptEntryStream(is, entryManifestMap);
+            return builder.parse(decryptedIs);
         } else {
-        	return builder.parse(is);
+            return builder.parse(is);
         }
     }
 
     public void close() throws IOException {
         owplmFile.close();
     }
-    
+
     public String findBinData(String shortName) {
         return owplmFile.getBinData(shortName);
     }
-    
-    public byte[] getBinDataByIDRef(String shortName) throws IOException, DataFormatException {
+
+    public byte[] getBinDataByIDRef(String shortName) throws IOException, DataFormatException, HwpParseException {
         String entry = owplmFile.getBinData(shortName);
-        return owplmFile.getBytes(entry);
+        
+        if (fileHeader.bDistributable == true && manifest.entryMap !=null && manifest.entryMap.get(entry)!=null) {
+            Map<String, String> entryManifestMap = manifest.entryMap.get(entry);
+            return decryptEntryBinary(owplmFile.getBytes(entry), entryManifestMap);
+        } else {
+            return owplmFile.getBytes(entry);
+        }
     }
-    
-    public byte[] getBinDataByEntry(String entry) throws IOException, DataFormatException {
-        return owplmFile.getBytes(entry);
+
+    public byte[] getBinDataByEntry(String entry) throws IOException, DataFormatException, HwpParseException {
+        
+        if (fileHeader.bDistributable == true && manifest.entryMap !=null && manifest.entryMap.get(entry)!=null) {
+            Map<String, String> entryManifestMap = manifest.entryMap.get(entry);
+            return decryptEntryBinary(owplmFile.getBytes(entry), entryManifestMap);
+        } else {
+            return owplmFile.getBytes(entry);
+        }
     }
-    
+
     public List<HwpParagraph> getParaList() {
         return paraList;
     }
-    
+
     public void addParaList(HwpParagraph para) {
         if (this.paraList == null) 
             this.paraList = new ArrayList<HwpParagraph>();
         this.paraList.add(para);
     }
-    
+
     public static class Rand {
         static int random_seed;
-        
+
         public static void srand(int seed) {
             random_seed = seed;
         }
-        
+
         public static int rand() {
             random_seed = (random_seed * 214013 + 2531011) & 0xFFFFFFFF;
             return ((random_seed >> 16) & 0x7FFF);
         }
     }
-} 
+}
