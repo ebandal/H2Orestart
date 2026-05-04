@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=LibreOffice Writer (HWP/HWPX)
+Exec=libreoffice --writer %U
+MimeType=application/x-hwp;application/vnd.haansoft-hwp;application/x-hwpx;application/hwp+zip;application/hwp+zip;application/vnd.hancom.hwpx;
+NoDisplay=true
+Icon=libreoffice-writer
