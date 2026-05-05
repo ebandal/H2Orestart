@@ -6,6 +6,8 @@ import java.util.Map;
 
 public class ConvHypua2Unicode {
 	private static Map<Integer, String> old2NewMap;
+	private static int START_HYPUA_CODE = 0xe0bc;
+	private static int END_HYPUA_CODE = 0xf8f7;
 
 	static {
 		Map<Integer, String> temp = new HashMap<>();
@@ -5679,6 +5681,15 @@ public class ConvHypua2Unicode {
 		temp.put(0xf8f5, "\u11f7"); // ᇷ
 		temp.put(0xf8f6, "\u11f8"); // ᇸ
 		temp.put(0xf8f7, "\u11f9"); // ᇹ
+	}
+	
+	public static boolean hasHypua(String text) {
+	    if (text == null || text.isEmpty()) {
+	        return false;
+	    } else if (text.codePoints().anyMatch(cp -> cp >= START_HYPUA_CODE && cp <= END_HYPUA_CODE)) {
+	        return true;
+	    }
+	    return false;
 	}
 
 	// 한 문장 변환

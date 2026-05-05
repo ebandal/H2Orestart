@@ -420,7 +420,7 @@ public class HwpRecurs {
                                         HwpRecord_ParaShape paraShape, HwpRecord_CharShape charShape, 
                                         boolean append, boolean ignoreNumbering, int step) {
 
-        if (content.codePoints().anyMatch(cp -> cp >= 0xE0BC && cp <= 0xF8F7)) {
+        if (ConvHypua2Unicode.hasHypua(content)) {
             // 옛한글 (Hanyang private use area code)코드를 첫가끝(Syllable-Initial-Peak-Final Encoding Approach)코드로 치환
         	content = ConvHypua2Unicode.convertText(content);
         }
