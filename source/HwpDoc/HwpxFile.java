@@ -143,7 +143,12 @@ public class HwpxFile {
     }
 
     public boolean getDocInfo(int version) throws IOException, DataFormatException, ParserConfigurationException, SAXException, HwpParseException, NotImplementedException {
-        manifest.parse(getDocument("META-INF/manifest.xml"));
+        try {
+            manifest.parse(getDocument("META-INF/manifest.xml"));
+        } catch (DataFormatException e) {
+            // META-INF/manifest.xml 없는 경우 있음 (smtech.go.kr 문서)
+            log.warning("no META-INF/manifest.xml");
+        }
         if (docInfo.readContentHpf(getDocument("Contents/content.hpf"), version)) {
             return docInfo.read(getDocument("Contents/header.xml"), version);
         } else {
