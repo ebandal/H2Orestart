@@ -1014,7 +1014,10 @@ public class ConvTable {
             	}
                 break;
             }
-            // xPropSet.setPropertyValue("ZOrder", shape.zOrder);
+            WriterContext active = WriterContext.getActiveContext();
+            if (active != null) {
+                active.registerShapeZOrder(xPropSet, shape.zOrder);
+            }
         } catch (UnknownPropertyException | PropertyVetoException  | WrappedTargetException e) {
             e.printStackTrace();
         }

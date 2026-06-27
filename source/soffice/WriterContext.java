@@ -43,6 +43,7 @@ import com.sun.star.text.XText;
 import com.sun.star.text.XTextCursor;
 import com.sun.star.text.XTextDocument;
 import com.sun.star.uno.XComponentContext;
+import com.sun.star.beans.XPropertySet;
 
 import HwpDoc.HanType;
 import HwpDoc.HwpDetectException;
@@ -443,6 +444,58 @@ public class WriterContext implements IContext {
     @Override
     public HwpxFile getHwpx() {
     	return hwpx;
+    }
+
+    public static class ShapeZOrder {
+        public XPropertySet xProps;
+        public int hwpZOrder;
+        
+        public ShapeZOrder(XPropertySet xProps, int hwpZOrder) {
+            this.xProps = xProps;
+            this.hwpZOrder = hwpZOrder;
+        }
+    }
+    
+    private final List<ShapeZOrder> shapeZOrders = new ArrayList<>();
+
+    public void registerShapeZOrder(XPropertySet xProps, int hwpZOrder) {
+        if (xProps != null) {
+            shapeZOrders.add(new ShapeZOrder(xProps, hwpZOrder));
+        }
+    }
+
+    public void adjustZOrders() {
+        if (shapeZOrders.isEmpty()) {
+            return;
+        }
+        
+        shapeZOrders.sort((a, b) -> Integer.compare(a.hwpZOrder, b.hwpZOrder));
+        
+        for (int i = 0; i < shapeZOrders.size(); i++) {
+            ShapeZOrder item = shapeZOrders.get(i);
+            try {
+                item.xProps.setPropertyValue("ZOrder", Integer.valueOf(i));
+            } catch (com.sun.star.beans.UnknownPropertyException | com.sun.star.beans.PropertyVetoException 
+                     | com.sun.star.lang.IllegalArgumentException | com.sun.star.lang.WrappedTargetException e) {
+                log.warning("Failed to set ZOrder: " + e.getMessage());
+            }
+        }
+        
+        shapeZOrders.clear();
+    }
+
+    private static final ThreadLocal<WriterContext> activeContext = new ThreadLocal<>();
+
+    public static WriterContext getActiveContext() {
+        return activeContext.get();
+    }
+
+    public static void setActiveContext(WriterContext context) {
+        activeContext.set(context);
+    }
+
+    public static void clearActiveContext() {
+        activeContext.remove();
     }
 
 }

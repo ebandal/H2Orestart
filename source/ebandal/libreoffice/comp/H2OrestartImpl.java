@@ -287,6 +287,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
     }
 
     private boolean impl_import(File file) {
+        WriterContext.setActiveContext(writerContext);
         try {
             writerContext.open(file, detectedFileExt);
         } catch (HwpDetectException | IOException | CompoundDetectException | NotImplementedException | CompoundParseException | DataFormatException | HwpParseException  e) {
@@ -341,10 +342,15 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 // context.mMyDocument.unlockControllers();
             }
 
+            // 모든 개체 로드가 끝난 후 Z-order 일괄 조정 수행
+            writerContext.adjustZOrders();
+
             // 화면 갱신 resume
             // writerContext.mMyDocument.unlockControllers();
         } catch (HwpDetectException | HwpParseException e) {
             e.printStackTrace();
+        } finally {
+            WriterContext.clearActiveContext();
         }
 
         XCloseable xCloseable = (XCloseable) UnoRuntime.queryInterface(XCloseable.class, writerContext.mMyDocument);

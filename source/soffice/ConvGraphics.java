@@ -2658,8 +2658,11 @@ public class ConvGraphics {
                     break;
                 }
                 // 한컴에 있는 ZOrder(317,318)를 set하고 나서 odf를 열었을때 ZOrder(1,0)가 반전되는 현상
-                // 이 현상 때문에 그림위에 있는 TextFrame이 보이지 않는다. ZOrder 없이 화면에 뿌리는 순서대로 유지하도록 한다.
-                // xPropSet.setPropertyValue("ZOrder", shape.zOrder);
+                // ZOrder에 context에 보관하고 있다가, 렌더링 맨 마지막에 개체별로 zorder 설정한다.
+                WriterContext active = WriterContext.getActiveContext();
+                if (active != null) {
+                    active.registerShapeZOrder(xPropSet, shape.zOrder);
+                }
             }
 
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
