@@ -30,6 +30,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
@@ -151,7 +152,7 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
             default:
                 log.fine(child.getNodeName() + "=" + child.getNodeValue());
                 if (log.isLoggable(Level.FINE)) {
-                    throw new NotImplementedException("Ctrl_ShapeEllipse");
+                	throw new NotImplementedException("Ctrl_ShapeEllipse unsupported element " + HwpRecord.describe(child));
                 }
             }
         }

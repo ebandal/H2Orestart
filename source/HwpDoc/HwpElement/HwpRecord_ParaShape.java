@@ -170,7 +170,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		if (offset-off-size != 0 && offset-off!=54) {
 			log.fine("[TAG]=" + tag.toString() + ", size=" + size + ", but currentSize=" + (offset-off));
 			dump(buf, off, size);
-			throw new HwpParseException();
+			throw new HwpParseException(parseError(buf, off, size, offset));
 		}
 	}
 

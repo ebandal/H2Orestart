@@ -36,10 +36,13 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 
 public class OwpmlFile {
+    private static final Logger log = Logger.getLogger(OwpmlFile.class.getName());
 
     private HashMap<String, Offset> offsetMap = new HashMap<>();
     private File file;
@@ -72,7 +75,7 @@ public class OwpmlFile {
                 zipInputStream.closeEntry();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 

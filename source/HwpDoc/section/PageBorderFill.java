@@ -26,6 +26,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 
@@ -143,7 +144,7 @@ public class PageBorderFill {
             );
 
         if (offset-off-size!=0) {
-            throw new HwpParseException();
+            throw new HwpParseException(HwpRecord.parseError("PageBorderFill[level="+level+"]", buf, off, size, offset));
         }
         
         return borderFill;

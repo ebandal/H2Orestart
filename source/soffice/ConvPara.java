@@ -22,6 +22,7 @@ package soffice;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.star.awt.FontRelief;
@@ -82,12 +83,12 @@ public class ConvPara {
                         try {
                             xParagraphFamily.removeByName(paragraphStyleNameMap.get(custIndex));
                         } catch (com.sun.star.lang.DisposedException e) {
-                            e.printStackTrace();
+                            log.log(Level.SEVERE, e.toString(), e);
                         }
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
         paragraphStyleNameMap.clear();
@@ -125,7 +126,7 @@ public class ConvPara {
             xCursorProps.setPropertyValue("ParaStyleName", "Standard");
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
     
@@ -154,7 +155,7 @@ public class ConvPara {
             xCursorProps.setPropertyValue("CharStyleName", "Standard");
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -192,7 +193,7 @@ public class ConvPara {
             xStyleProps.setPropertyValue("ParaBottomMargin", Transform.translateHwp2Office(paraShape.marginNext/2));
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         
     }
@@ -422,7 +423,7 @@ public class ConvPara {
             //	ParaHyphenationMaxTrailingChars,ParaVertAlignment,ParaUserDefinedAttributes,NumberingIsNumber,ParaIsConnectBorder,ListId,OutlineLevel,
             //	ContinueingPreviousSubTree,ListLabelString,ParaHyphenationNoCaps,
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -574,7 +575,7 @@ public class ConvPara {
             }
             
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -595,7 +596,7 @@ public class ConvPara {
             xStyleProps.setPropertyValue("BottomBorderDistance", 0);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -806,7 +807,7 @@ public class ConvPara {
             //	CharLeftBorder,CharRightBorder,CharTopBorder,CharBottomBorder,CharBorderDistance,CharLeftBorderDistance,CharRightBorderDistance,CharTopBorderDistance
             //	CharBottomBorderDistance,CharShadowFormat,CharHighlight,RubyPosition
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
     
@@ -977,7 +978,7 @@ public class ConvPara {
             //	CharLeftBorder,CharRightBorder,CharTopBorder,CharBottomBorder,CharBorderDistance,CharLeftBorderDistance,CharRightBorderDistance,CharTopBorderDistance
             //	CharBottomBorderDistance,CharShadowFormat,CharHighlight,RubyPosition
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
     
@@ -991,7 +992,7 @@ public class ConvPara {
             xParaProps.setPropertyValue ("NumberingStyleName", "default");
             xParaProps.setPropertyValue ("NumberingLevel", (short) 0);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 

@@ -32,6 +32,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.NotImplementedException;
 
 public class Ctrl_Common extends Ctrl {
@@ -281,7 +282,7 @@ public class Ctrl_Common extends Ctrl {
                     case "1":
                         treatAsChar = true;     break;
                     default:
-                        throw new NotImplementedException("Ctrl_Common");
+                        throw new NotImplementedException(HwpRecord.attrError("Ctrl_Common", child, childAttrs.getNamedItem("treatAsChar")));
                     }
                     
                     if (treatAsChar) {
@@ -291,7 +292,7 @@ public class Ctrl_Common extends Ctrl {
                         case "1":
                             affectLSpacing = true;  break;
                         default:
-                            throw new NotImplementedException("Ctrl_Common");
+                            throw new NotImplementedException(HwpRecord.attrError("Ctrl_Common", child, childAttrs.getNamedItem("affectLSpacing")));
                         }
                     } else {
                         switch(childAttrs.getNamedItem("allowOverlap").getNodeValue()) {
@@ -300,7 +301,7 @@ public class Ctrl_Common extends Ctrl {
                         case "1":
                             allowOverlap = true;  break;
                         default:
-                            throw new NotImplementedException("Ctrl_Common");
+                            throw new NotImplementedException(HwpRecord.attrError("Ctrl_Common", child, childAttrs.getNamedItem("allowOverlap")));
                         }
                     }
                     
@@ -322,7 +323,7 @@ public class Ctrl_Common extends Ctrl {
                         case "1":
                             flowWithText = true;  break;
                         default:
-                            throw new NotImplementedException("Ctrl_Common");
+                            throw new NotImplementedException(HwpRecord.attrError("Ctrl_Common", child, childAttrs.getNamedItem("flowWithText")));
                         }
                     }
                     

@@ -20,6 +20,7 @@
  */
 package soffice;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -105,9 +106,9 @@ public class ConvEquation {
   				ConvGraphics.addCaptionString(wContext, xFrameText, xFrameCursor, eq, step);
   			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.log(Level.SEVERE, e.toString(), e);
 		} catch (SkipDrawingException e) {
-		    e.printStackTrace();
+		    log.log(Level.SEVERE, e.toString(), e);
 		}
 	}
 	

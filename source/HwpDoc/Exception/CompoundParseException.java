@@ -31,8 +31,17 @@ public class CompoundParseException extends Exception {
 	}
 	
 	public CompoundParseException(ErrCode errCode) {
-		super();
+		super(errCode==null?null:errCode.toString());
 		this.errCode = errCode;
+	}
+
+	public CompoundParseException(ErrCode errCode, String message) {
+		super(message);
+		this.errCode = errCode;
+	}
+
+	public CompoundParseException(String message) {
+		this(ErrCode.UNDEFINED, message);
 	}
 	
 }

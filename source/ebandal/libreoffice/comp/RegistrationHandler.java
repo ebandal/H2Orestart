@@ -38,6 +38,8 @@
 package ebandal.libreoffice.comp;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -57,6 +59,7 @@ import com.sun.star.registry.XRegistryKey;
  */
 public class RegistrationHandler {
 	
+    private static final Logger log = Logger.getLogger(RegistrationHandler.class.getName());
 	/**
      * Get a component factory for the implementations handled by this class.
      * 
@@ -84,8 +87,7 @@ public class RegistrationHandler {
         			xFactory = (XSingleComponentFactory)o;
         		} catch (Exception e) {
         			// Nothing to do: skip
-        			System.err.println("Error happened");
-        			e.printStackTrace();
+        			log.log(Level.SEVERE, "Failed to get component factory. " + e.toString(), e);
         		}
         	}
         	i++;
@@ -120,7 +122,7 @@ public class RegistrationHandler {
         		success = success && ((Boolean)o).booleanValue();
         	} catch (Exception e) {
         		success = false;
-    			e.printStackTrace();
+    			log.log(Level.SEVERE, e.toString(), e);
         	}
         	i++;
         }
@@ -156,13 +158,13 @@ public class RegistrationHandler {
     					}
 
     				} catch (Exception e) {
-    					e.printStackTrace();
+    					log.log(Level.SEVERE, e.toString(), e);
     				}
     			}
     			line = reader.readLine();
     		}
     	} catch (IOException e) {
-    		e.printStackTrace();
+    		log.log(Level.SEVERE, e.toString(), e);
     	} finally {
     		try {
     			reader.close();

@@ -32,6 +32,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -126,24 +127,24 @@ public class HwpFile {
         version = Integer.parseInt(fileHeader.version);
         
         if (fileHeader.bPasswordEncrypted) {
-            throw new HwpParseException();
+            throw new HwpParseException("Password encrypted document is not supported. version=" + fileHeader.version);
         }
         
         if (getDocInfo(version)==false) 
-            throw new CompoundParseException();
+            throw new CompoundParseException("Failed to parse DocInfo. version=" + version);
         log.fine("DocInfo parsed");
         
         // 배포용 문서가 아니면 BodyText를 읽는다.
         if (fileHeader.bDistributable==false) {
             if (getBodyText(version)==false) 
-                throw new CompoundParseException();
+                throw new CompoundParseException("Failed to parse BodyText. version=" + version);
             log.fine("BodyText parsed");
         }
         
         // 배포용 문서면 ViewText를 읽는다.
         if (fileHeader.bDistributable) {
             if (getViewText(version)==false) 
-                throw new CompoundParseException();
+                throw new CompoundParseException("Failed to parse ViewText. version=" + version);
             log.fine("Distributable file. ViewText parsed");
         }
     }
@@ -181,7 +182,7 @@ public class HwpFile {
                         fos.write(oleFile.read(entry));
                     }
                 } catch (DataFormatException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
                 }
             }
         }
@@ -245,7 +246,7 @@ public class HwpFile {
                         fos.write(oleFile.read(targetEntry));
                     }
                 } catch (DataFormatException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
                 }
             }
         }
@@ -279,7 +280,7 @@ public class HwpFile {
                 try {
                     retBytes = unzip(oleFile.read(targetEntry));
                 } catch (IOException | DataFormatException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
                 }
             } else {
                 retBytes = oleFile.read(targetEntry);
@@ -321,10 +322,10 @@ public class HwpFile {
         
         HwpTag tag = HwpTag.from(tagNum);
         if (tag!=HwpTag.HWPTAG_DISTRIBUTE_DOC_DATA) {
-            throw new HwpParseException();
+            throw new HwpParseException("DistributeDocData expected, but tag=" + tag + "(" + tagNum + "), level=" + level + ", size=" + size);
         }
         if (size != 256) {
-            throw new HwpParseException();
+            throw new HwpParseException("DistributeDocData size must be 256, but size=" + size);
         }
         
         byte[] docData = new byte[256];
@@ -356,7 +357,7 @@ public class HwpFile {
             cipher.init(Cipher.DECRYPT_MODE, skey);
             output = cipher.doFinal(buf, offset, buf.length-offset);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         
         return output;

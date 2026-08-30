@@ -119,7 +119,7 @@ public class HwpRecord_FaceName extends HwpRecord {
                 + (attrExists == false ? "" : ",중간선=" + midLine) + (attrExists == false ? "" : ",X높이=" + xHeight));
 
         if (offset - off - size != 0) {
-            throw new HwpParseException();
+			throw new HwpParseException(parseError(buf, off, size, offset));
         }
     }
 
@@ -178,7 +178,7 @@ public class HwpRecord_FaceName extends HwpRecord {
                     case "binaryItemIDRef":
                         break;
                     default:
-                        throw new HwpParseException();
+                        throw new HwpParseException(attrError("HwpRecord_FaceName.substFont", grandChild, substAttr));
                     }
                 }
             } else if (grandChild.getNodeName().equals("hh:typeInfo")) {
@@ -220,7 +220,7 @@ public class HwpRecord_FaceName extends HwpRecord {
                         break;
                     default:
                         log.severe("unhandled attribute name=" + substAttr.getNodeName());
-                        throw new HwpParseException();
+                        throw new HwpParseException(attrError("HwpRecord_FaceName.typeInfo", grandChild, substAttr));
                     }
                 }
             }

@@ -125,7 +125,7 @@ public class HwpxFile {
         version = Integer.parseInt(fileHeader.version);
 
         if (getDocInfo(version)==false) 
-            throw new OwpmlParseException();
+            throw new OwpmlParseException("Failed to parse DocInfo. version=" + version);
         log.fine("DocInfo parsed");
 
         // Contents/SectionX.xml 을 읽는다.

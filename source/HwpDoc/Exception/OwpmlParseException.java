@@ -31,8 +31,17 @@ public class OwpmlParseException extends Exception {
 	}
 	
 	public OwpmlParseException(ErrCode errCode) {
-		super();
+		super(errCode==null?null:errCode.toString());
 		this.errCode = errCode;
+	}
+
+	public OwpmlParseException(ErrCode errCode, String message) {
+		super(message);
+		this.errCode = errCode;
+	}
+
+	public OwpmlParseException(String message) {
+		this(ErrCode.UNDEFINED, message);
 	}
 	
 }

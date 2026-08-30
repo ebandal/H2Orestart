@@ -31,8 +31,17 @@ public class CompoundDetectException extends Exception {
     }
     
     public CompoundDetectException(ErrCode errCode) {
-        super();
+        super(errCode==null?null:errCode.toString());
         this.errCode = errCode;
+    }
+
+    public CompoundDetectException(ErrCode errCode, String message) {
+        super(message);
+        this.errCode = errCode;
+    }
+
+    public CompoundDetectException(String message) {
+        this(ErrCode.UNDEFINED, message);
     }
     
     public ErrCode getReason() {

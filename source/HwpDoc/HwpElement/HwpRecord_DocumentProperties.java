@@ -25,8 +25,11 @@ import org.w3c.dom.Node;
 
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class HwpRecord_DocumentProperties extends HwpRecord {
+    private static final Logger log = Logger.getLogger(HwpRecord_DocumentProperties.class.getName());
 	private HwpDocInfo parent;
 	
 	public short sectionSize;			// 구역 갯수
@@ -72,7 +75,7 @@ public class HwpRecord_DocumentProperties extends HwpRecord {
 		offset += 4;
 		
 		if (offset-off!=26) {
-			throw new HwpParseException();
+			throw new HwpParseException(parseError(buf, off, size, offset));
 		}
 	}
 
@@ -105,8 +108,8 @@ public class HwpRecord_DocumentProperties extends HwpRecord {
                 eqStartNo = Short.parseShort(attr.getNodeValue());
                 break;
             default:
-                System.out.println("Cannot parse Hwpx. " + attr.getNodeName() + ":" + attr.getNodeValue());
-                throw new HwpParseException();
+                log.severe("Cannot parse Hwpx. " + attr.getNodeName() + ":" + attr.getNodeValue());
+                throw new HwpParseException(attrError("HwpRecord_DocumentProperties", node, attr));
             }
         }
     }

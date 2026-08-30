@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.HwpParseException;
 
 public class CharShape {
@@ -56,7 +57,7 @@ public class CharShape {
         
         if (offset-off!=size) {
             log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            throw new HwpParseException(HwpRecord.parseError("CharShape[tag="+tagNum+",level="+level+"]", buf, off, size, offset));
         }
         return charShapeList;
     }

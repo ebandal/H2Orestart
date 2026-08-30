@@ -29,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -95,7 +96,7 @@ public class ConvNumbering {
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
         numberingStyleNameMap.clear();
@@ -258,7 +259,7 @@ public class ConvNumbering {
             XPropertySet xCursorProps = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
             xCursorProps.setPropertyValue("NumberingRules", xReplace);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -498,7 +499,7 @@ public class ConvNumbering {
                                 newPropsReady = true;
                             }
                         } catch (IOException e) {
-                        	e.printStackTrace();
+				            log.log(Level.SEVERE, e.toString(), e);
                         }
                     }
                 }
@@ -509,6 +510,7 @@ public class ConvNumbering {
                     try {
                         Files.delete(path);
                     } catch (IOException e) {
+			            log.log(Level.SEVERE, e.toString(), e);
                     }
                 }
             }
@@ -517,7 +519,7 @@ public class ConvNumbering {
             xCursorProps.setPropertyValue("NumberingRules", xReplace);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -537,7 +539,7 @@ public class ConvNumbering {
             xParaProps.setPropertyValue("NumberingLevel", (short) 0);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -551,7 +553,7 @@ public class ConvNumbering {
             xParaProps.setPropertyValue("NumberingLevel", (short) 0);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }

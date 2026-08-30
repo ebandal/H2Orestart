@@ -32,6 +32,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.star.awt.XBitmap;
@@ -83,7 +84,7 @@ public class ConvUtil {
                             wContext.mMCF.createInstanceWithContext("com.sun.star.ucb.FileContentProvider", wContext.mContext));
             sURL = xFileConverter.getFileURLFromSystemPath(sBase, sSystemPath );
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         return sURL;
     }
@@ -97,7 +98,7 @@ public class ConvUtil {
                             wContext.mMCF.createInstanceWithContext("com.sun.star.ucb.FileContentProvider", wContext.mContext));
             systemPath = xFileConverter.getSystemPathFromFileURL(fileURL);
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         return systemPath;
     }
@@ -110,11 +111,11 @@ public class ConvUtil {
                                                 wContext.mMCF.createInstanceWithContext("com.sun.star.ucb.SimpleFileAccess", wContext.mContext));
             bExists = xSFA.exists(aURL) && !xSFA.isFolder(aURL);
         } catch (com.sun.star.ucb.CommandAbortedException ex){
-            ex.printStackTrace();
+            log.log(Level.SEVERE, ex.toString(), ex);
         } catch (com.sun.star.uno.Exception ex){
-            ex.printStackTrace();
+            log.log(Level.SEVERE, ex.toString(), ex);
         } catch (java.lang.Exception ex){
-            ex.printStackTrace();
+            log.log(Level.SEVERE, ex.toString(), ex);
         }
         return bExists;
     }
@@ -169,7 +170,7 @@ public class ConvUtil {
                 c = c.getSuperclass();
             }
         } catch (IllegalArgumentException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         sb.append("}");
         return sb.toString();
@@ -214,7 +215,7 @@ public class ConvUtil {
                 sb.append("{"+value+"}");
             }
         } catch (IllegalArgumentException | SecurityException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         sb.append("]");
         
@@ -422,7 +423,7 @@ public class ConvUtil {
                 
                 log.finest(property.Name+"="+value);
             } catch (UnknownPropertyException | IllegalArgumentException | WrappedTargetException e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
     }
@@ -504,7 +505,7 @@ public class ConvUtil {
                 // Name=ooSetupVersionAboutBoxSuffix,Value=
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
             log.severe(e.getMessage());
         }
         return version;

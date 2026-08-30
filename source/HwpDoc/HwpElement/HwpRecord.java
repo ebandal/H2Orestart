@@ -83,6 +83,72 @@ public class HwpRecord {
 	    }
 	}
 
+	/** 예외 메시지에 담을 원본 바이트의 최대 개수 */
+	private static final int RAW_DUMP_LIMIT = 128;
+
+	/**
+	 * 레코드를 파싱하지 못했을 때 원인을 추적할 수 있도록 태그, 크기, 소비한 바이트 수, 원본 바이트를
+	 * 문자열로 만든다. 예외 메시지에 담아서 사용자의 로그 파일에 root cause 가 남도록 하기 위한 것이다.
+	 */
+	protected String parseError(byte[] buf, int off, int size, int offset) {
+		return parseError(getClass().getSimpleName()+"[tag="+tag+",level="+level+"]", buf, off, size, offset);
+	}
+
+	public static String parseError(String where, byte[] buf, int off, int size, int offset) {
+		return where + " size=" + size + ", off=" + off
+				+ ", consumed=" + (offset-off) + ", remained=" + (size-(offset-off))
+				+ ", raw=" + toHexString(buf, off, size);
+	}
+
+	/** 처리하지 못한 XML 속성의 이름과 값을, 해당 요소의 전체 속성과 함께 문자열로 만든다. */
+	public static String attrError(String where, Node node, Node attr) {
+		return where + " unsupported attribute "
+				+ (attr==null ? "?" : attr.getNodeName()+"="+attr.getNodeValue())
+				+ (node==null ? "" : " in " + describe(node));
+	}
+
+	/** 노드 이름과 모든 속성명, 속성값을 로그용 한 줄 문자열로 만든다. */
+	public static String describe(Node node) {
+		if (node==null) {
+			return "null";
+		}
+		StringBuffer sb = new StringBuffer(node.getNodeName());
+		sb.append("[");
+		NamedNodeMap attrs = node.getAttributes();
+		if (attrs!=null) {
+			for (int i=0; i<attrs.getLength(); i++) {
+				Node attr = attrs.item(i);
+				if (i>0) {
+					sb.append(", ");
+				}
+				sb.append(attr.getNodeName()).append("=").append(attr.getNodeValue());
+			}
+		}
+		sb.append("]");
+		return sb.toString();
+	}
+
+	/** off 위치부터 len 바이트를 16진수 문자열로 만든다. 너무 길면 잘라낸다. */
+	public static String toHexString(byte[] buf, int off, int len) {
+		if (buf==null) {
+			return "";
+		}
+		int from = off<0 ? 0 : off;
+		int to = off+len>buf.length ? buf.length : off+len;
+		int count = to-from;
+		if (count<=0) {
+			return "";
+		}
+		int printed = count>RAW_DUMP_LIMIT ? RAW_DUMP_LIMIT : count;
+		char[] hexChars = new char[printed*2];
+		for (int i=0; i<printed; i++) {
+			int v = buf[from+i] & 0xFF;
+			hexChars[i*2] = HEX_ARRAY[v >>> 4];
+			hexChars[i*2+1] = HEX_ARRAY[v & 0x0F];
+		}
+		return new String(hexChars) + (count>printed ? "...(" + count + " bytes)" : "");
+	}
+
 	public static String toHexString(byte[] buf) {
 		char[] hexChars = new char[buf.length*2];
 		for (int i=0;i<buf.length;i++) {

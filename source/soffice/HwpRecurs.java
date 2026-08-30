@@ -20,7 +20,7 @@
  */
 package soffice;
 
-import java.util.ListIterator;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -398,7 +398,7 @@ public class HwpRecurs {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
     }
@@ -456,7 +456,7 @@ public class HwpRecurs {
                 }
                 
             } catch (Exception e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
 
@@ -494,7 +494,7 @@ public class HwpRecurs {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
         log.finest("Text=" + content);

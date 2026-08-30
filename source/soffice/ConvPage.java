@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.star.awt.FontDescriptor;
@@ -234,8 +235,7 @@ public class ConvPage {
                 }
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -379,7 +379,7 @@ public class ConvPage {
             // BackGraphicURL,BackGraphicFilter,BackGraphicLocation,
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
         pageStyleNameMap.put(customIndex, styleName);
@@ -526,7 +526,7 @@ public class ConvPage {
             xCurrentPageStyleProps.setPropertyValue("TextColumns", xColumns);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -605,7 +605,7 @@ public class ConvPage {
                             headerTextRight.insertTextContent(headerCursorRight, numField, false);
                             headerCursorRight.gotoEnd(false);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.log(Level.SEVERE, e.toString(), e);
                         }
                     };
 
@@ -679,7 +679,7 @@ public class ConvPage {
                             headerTextLeft.insertTextContent(headerCursorLeft, numField, false);
                             headerCursorLeft.gotoEnd(false);
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            log.log(Level.SEVERE, e.toString(), e);
                         }
                     };
 
@@ -757,7 +757,7 @@ public class ConvPage {
                                 headerTextBoth.insertTextContent(headerCursorBoth, numField, false);
                                 headerCursorBoth.gotoEnd(false);
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                log.log(Level.SEVERE, e.toString(), e);
                             }
                         };
 
@@ -800,7 +800,7 @@ public class ConvPage {
             // PC.NumberingType=4
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -814,7 +814,7 @@ public class ConvPage {
             props.setPropertyValue("BreakType", BreakType.PAGE_BEFORE);
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -824,7 +824,7 @@ public class ConvPage {
             props.setPropertyValue("BreakType", BreakType.COLUMN_BEFORE);
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -856,7 +856,7 @@ public class ConvPage {
             setPageMargin(wContext.mMyDocument, wContext.mTextCursor, leftMargin, rightMargin, topMargin, bottomMargin);
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -878,15 +878,15 @@ public class ConvPage {
             xStyleProps.setPropertyValue("TopMargin", Short.valueOf((short) top));
             xStyleProps.setPropertyValue("BottomMargin", Short.valueOf((short) buttom));
         } catch (UnknownPropertyException e1) {
-            e1.printStackTrace();
+            log.log(Level.SEVERE, e1.toString(), e1);
         } catch (WrappedTargetException e1) {
-            e1.printStackTrace();
+            log.log(Level.SEVERE, e1.toString(), e1);
         } catch (NoSuchElementException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (PropertyVetoException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -897,7 +897,7 @@ public class ConvPage {
             // props.setPropertyValue("PageNumberOffset", (short)1 );
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -1028,7 +1028,7 @@ public class ConvPage {
             footerCursor.gotoEnd(true);
             xText.insertTextContent(footerCursor, numField, true);
         } catch (Exception | IllegalArgumentException e) {
-        	e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }  // end of setPageNumbers()

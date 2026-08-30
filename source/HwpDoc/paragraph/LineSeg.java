@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.HwpParseException;
 
 public class LineSeg {
@@ -66,7 +67,7 @@ public class LineSeg {
         
         if (offset-off-size != 0 && offset-off!=36) {
             log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
-            throw new HwpParseException();
+            throw new HwpParseException(HwpRecord.parseError("LineSeg[tag="+tagNum+",level="+level+"]", buf, off, size, offset));
         }
     }
     

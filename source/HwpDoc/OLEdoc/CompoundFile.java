@@ -178,7 +178,7 @@ public class CompoundFile {
 					buff_offset += readLen;
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					log.log(Level.SEVERE, e1.toString(), e1);
 				}
 			}
 		} else {									 // normal Stream
@@ -197,7 +197,7 @@ public class CompoundFile {
 					System.arraycopy(b, 0, buf, buff_offset, readLen);
 					buff_offset += readLen;
 				} catch (IOException e1) {
-					e1.printStackTrace();
+					log.log(Level.SEVERE, e1.toString(), e1);
 				}
 			}
 		}

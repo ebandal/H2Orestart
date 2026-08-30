@@ -78,7 +78,7 @@ public class HwpRecord_IdMapping extends HwpRecord {
 		 	);
 
 		if (offset-off-size!=0) {
-			throw new HwpParseException();
+			throw new HwpParseException(parseError(buf, off, size, offset));
 		}
 	}
 	

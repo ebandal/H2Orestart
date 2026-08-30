@@ -84,7 +84,7 @@ public class HwpRecord_Style extends HwpRecord {
 		if (offset-off-size!=0 && offset-off!=12+styleNameLen1+styleNameLen2) {
 			log.fine("[TAG]=" + tag.toString() + ", size=" + size + ", but currentSize=" + (offset-off));
 			dump(buf, off, size);
-			throw new HwpParseException();
+			throw new HwpParseException(parseError(buf, off, size, offset));
 		}
 	}
 

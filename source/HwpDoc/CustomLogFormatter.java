@@ -37,7 +37,7 @@ public class CustomLogFormatter extends Formatter {
 		dat.setTime(record.getMillis());
 		
 		buf.append("[").append(dateFormat.format(dat)).append("] ")
-			.append("(").append(record.getSourceClassName().substring(record.getSourceClassName().length()-12)+"."+record.getSourceMethodName().substring(0,4)).append(") ")
+			.append("(").append(shortenClass(record.getSourceClassName())+"."+shortenMethod(record.getSourceMethodName())).append(") ")
 			.append(record.getLevel()).append(": ").append(formatMessage(record));
 	    if (record.getThrown() != null) {
 	        StringWriter sw = new StringWriter();
@@ -50,5 +50,21 @@ public class CustomLogFormatter extends Formatter {
 		buf.append("\n");
 
 		return buf.toString();
+	}
+
+	/** 소스 클래스명이 12자보다 짧거나 없는 경우에도 예외 없이 로그가 기록되도록 한다. */
+	private static String shortenClass(String className) {
+		if (className==null) {
+			return "?";
+		}
+		return className.length()>12 ? className.substring(className.length()-12) : className;
+	}
+
+	/** 소스 메소드명이 4자보다 짧거나 없는 경우에도 예외 없이 로그가 기록되도록 한다. */
+	private static String shortenMethod(String methodName) {
+		if (methodName==null) {
+			return "?";
+		}
+		return methodName.length()>4 ? methodName.substring(0,4) : methodName;
 	}
 }

@@ -21,6 +21,7 @@
 package soffice;
 
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.sun.star.container.XIndexAccess;
@@ -157,7 +158,7 @@ public class ConvFootnote {
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
         setFootnoteIndex(getFootnoteIndex() + 1);
     }

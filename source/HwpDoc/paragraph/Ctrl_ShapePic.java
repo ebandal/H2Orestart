@@ -32,6 +32,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpFile;
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
@@ -486,7 +487,7 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             offset += color.getSize();
             
             if (offset-off-size != 0 && offset-off-size+1 != 0) {
-                throw new HwpParseException();
+                throw new HwpParseException(HwpRecord.parseError("Ctrl_ShapePic.Shadow[type="+typeNum+"]", buf, off, size, offset));
             }
             this.size = offset-off;
         }

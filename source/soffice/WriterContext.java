@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.DataFormatException;
@@ -100,7 +101,7 @@ public class WriterContext implements IContext {
             sections = hwpx.getSections();
             break;
         case NONE:
-            throw new HwpDetectException();
+            throw new HwpDetectException("Cannot get sections. Hancom document type is not detected.");
         }
         return sections;
     }
@@ -141,7 +142,7 @@ public class WriterContext implements IContext {
             hwpx.detect();
             break;
         case NONE:
-            throw new HwpDetectException();
+            throw new HwpDetectException("Cannot detect. Hancom document type is not detected.");
         }
     }
 
@@ -161,7 +162,7 @@ public class WriterContext implements IContext {
             hwpx.open(this);
             break;
         default:
-            throw new HwpDetectException();
+            throw new HwpDetectException("Unknown Hancom document type. hanTypeStr=" + hanTypeStr);
         }
     }
 
@@ -181,7 +182,7 @@ public class WriterContext implements IContext {
             hwpx.open(this);
             break;
         default:
-            throw new HwpDetectException();
+            throw new HwpDetectException("Unknown Hancom document type. hanTypeStr=" + hanTypeStr);
         }
     }
 
@@ -195,7 +196,7 @@ public class WriterContext implements IContext {
                 hwpx.close();
                 break;
             case NONE:
-                throw new HwpDetectException();
+                throw new HwpDetectException("Cannot close. Hancom document type is not detected.");
             }
         }
         fontNameSet.clear();
@@ -347,14 +348,14 @@ public class WriterContext implements IContext {
                         try {
                             imageBytes = Files.readAllBytes(file.toPath());
                         } catch (IOException e) {
-                            e.printStackTrace();
+	                        log.log(Level.SEVERE, e.toString(), e);
                         }
                     } else {
                         String compoundFileName = String.format("BIN%04X.%s", binData.binDataID, binData.format);
                         try {
                             imageBytes = hwp.getChildBytes(compoundFileName, binData.compressed);
                         } catch (IOException e) {
-                            e.printStackTrace();
+	                        log.log(Level.SEVERE, e.toString(), e);
                         }
                     }
                 }
@@ -369,7 +370,7 @@ public class WriterContext implements IContext {
                         String binShortName = binData.aPath.replaceAll("BinData/(.*)\\..*", "$1");
                         imageBytes = hwpx.getBinDataByIDRef(binShortName);
                     } catch (IOException | DataFormatException e) {
-                        e.printStackTrace();
+	                    log.log(Level.SEVERE, e.toString(), e);
                     }
                 }
             }

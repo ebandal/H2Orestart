@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -310,7 +311,7 @@ public class ConvGraphics {
                             graphic = xGraphicProvider.queryGraphic(pv);
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                     }
                 }
                 xPropSet.setPropertyValue("Graphic", graphic);
@@ -373,9 +374,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }
@@ -509,9 +510,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }
@@ -632,9 +633,9 @@ public class ConvGraphics {
                 addCaptionString(wContext, xFrameText, xFrameCursor, container, step);
             }
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -697,9 +698,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }
@@ -839,9 +840,9 @@ public class ConvGraphics {
                 }
             }
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }
@@ -978,9 +979,9 @@ public class ConvGraphics {
                 }
             }
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
     
@@ -1088,9 +1089,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
 
     }
@@ -1227,9 +1228,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -1352,9 +1353,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -1489,9 +1490,9 @@ public class ConvGraphics {
             }
 
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -1707,9 +1708,9 @@ public class ConvGraphics {
                 addCaptionString(wContext, xFrameText, xFrameCursor, cur, step);
             }
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -1859,9 +1860,9 @@ public class ConvGraphics {
                 addCaptionString(wOuterContext, xInternalFrameText, xInternalFrameCursor, arc, step);
             }
         } catch (com.sun.star.uno.Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -2002,7 +2003,7 @@ public class ConvGraphics {
                 xFrameText.insertString(xFrameCursor, cap, false);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -2497,7 +2498,7 @@ public class ConvGraphics {
             }
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -2667,7 +2668,7 @@ public class ConvGraphics {
 
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -2747,7 +2748,7 @@ public class ConvGraphics {
 
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -2833,7 +2834,7 @@ public class ConvGraphics {
             xPropSet.setPropertyValue(head ? "LineStartCenter" : "LineEndCenter", false);
         } catch (Exception e) {
             log.severe(e.getMessage());
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -2948,7 +2949,7 @@ public class ConvGraphics {
             }
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         } // Open Bezier 이므로 Fill 하지 않는다.
     }
 
@@ -3095,7 +3096,7 @@ public class ConvGraphics {
                 }
             }
         } catch (IllegalArgumentException | Exception e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 

@@ -23,6 +23,7 @@ package soffice;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -299,7 +300,7 @@ public class ConvTable {
                                 log.finest("Merge=" + ret);
                             }
                         } catch (com.sun.star.uno.RuntimeException e1) {
-                            e1.printStackTrace();
+                            log.log(Level.SEVERE, e1.toString(), e1);
                         }
                     }
 
@@ -346,14 +347,14 @@ public class ConvTable {
                         }
                     } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                             | WrappedTargetException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                     }
 
                     setCellPara(cellAddr, cell, xTextTable, table, wContext, callback, step);
                 }
             }
         } catch (IllegalArgumentException | Exception e3) {
-            e3.printStackTrace();
+            log.log(Level.SEVERE, e3.toString(), e3);
         }
     }
 
@@ -445,7 +446,7 @@ public class ConvTable {
                 }
             } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                     | WrappedTargetException e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         } else {
             try {
@@ -471,7 +472,7 @@ public class ConvTable {
                 }
             } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                     | WrappedTargetException e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
 
             try {
@@ -580,7 +581,7 @@ public class ConvTable {
                 }
             } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                     | WrappedTargetException e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
     }
@@ -621,7 +622,7 @@ public class ConvTable {
             }
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -925,7 +926,7 @@ public class ConvTable {
             }
         } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                 | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -958,13 +959,13 @@ public class ConvTable {
                 	try {
                 		xPropSet.setPropertyValue("SurroundContour", false);// contour는 THROUGH에서는 효과 없음
                 	} catch (UnknownPropertyException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                 	}
                 }
             	try {
             		xPropSet.setPropertyValue("TextWrap", wrapText);
             	} catch (UnknownPropertyException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
             	}
                 break;
             case TOP_AND_BOTTOM: // 자리차지
@@ -973,13 +974,13 @@ public class ConvTable {
                 	try {
                 		xPropSet.setPropertyValue("AllowOverlap", false); // issue #65 수정
                 	} catch (UnknownPropertyException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                 	}
                 }
                 try {
                 	xPropSet.setPropertyValue("TextWrap", WrapTextMode.NONE);
             	} catch (UnknownPropertyException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
             	}
                 break;
             case BEHIND_TEXT: // 글 뒤로
@@ -989,13 +990,13 @@ public class ConvTable {
 	                    xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
 	                    xPropSet.setPropertyValue("IsAutomaticContour", false);
                 	} catch (UnknownPropertyException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                 	}
                 }
                 try {
                 	xPropSet.setPropertyValue("TextWrap", WrapTextMode.THROUGH);
             	} catch (UnknownPropertyException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
             	}
                 break;
             case IN_FRONT_OF_TEXT: // 글 앞으로
@@ -1004,13 +1005,13 @@ public class ConvTable {
                 	try {
                 		xPropSet.setPropertyValue("AllowOverlap", true); // THROUGH에서는 효과 없음.
                 	} catch (UnknownPropertyException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                 	}
                 }
                 try {
                 	xPropSet.setPropertyValue("TextWrap", WrapTextMode.DYNAMIC);
             	} catch (UnknownPropertyException e) {
-                    e.printStackTrace();
+                    log.log(Level.SEVERE, e.toString(), e);
             	}
                 break;
             }
@@ -1019,7 +1020,7 @@ public class ConvTable {
                 active.registerShapeZOrder(xPropSet, shape.zOrder);
             }
         } catch (UnknownPropertyException | PropertyVetoException  | WrappedTargetException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, e.toString(), e);
         }
     }
 
@@ -1094,7 +1095,7 @@ public class ConvTable {
                     xFrameText.insertString(xFrameCursor, cap, false);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.log(Level.SEVERE, e.toString(), e);
             }
         }
     }
@@ -1169,14 +1170,14 @@ public class ConvTable {
 
             short[] charShapeID = new short[1];
             if (para.p != null) {
-            	Optional<Ctrl> ctrlOp = para.p.stream().filter(ctrl -> ctrl!=null).findFirst();
+                Optional<Ctrl> ctrlOp = para.p.stream().filter(ctrl -> ctrl!=null).findFirst();
                 if (ctrlOp.isPresent()) {
-                	Ctrl ctrl = ctrlOp.get();
-                	if (ctrl instanceof ParaText) {
+                    Ctrl ctrl = ctrlOp.get();
+                    if (ctrl instanceof ParaText) {
                         charShapeID[0] = (short) ((ParaText) ctrlOp.get()).charShapeId;
-                	} else if (ctrl instanceof Ctrl_Character) {
-                		charShapeID[0] = (short) ((Ctrl_Character) ctrlOp.get()).charShapeId;
-                	}
+                    } else if (ctrl instanceof Ctrl_Character) {
+                        charShapeID[0] = (short) ((Ctrl_Character) ctrlOp.get()).charShapeId;
+                    }
                 }
             }
             HwpRecord_Style paraStyle = wContext.getParaStyle(para.paraStyleID);
@@ -1217,7 +1218,7 @@ public class ConvTable {
                             paraShapeTemp.lineSpacingType = 0x3;
                         }
                     } catch (java.lang.ClassNotFoundException | IOException e) {
-                        e.printStackTrace();
+                        log.log(Level.SEVERE, e.toString(), e);
                     }
                     HwpRecord_CharShape charShapeTemp = HwpRecord_CharShape.clone(wContext.getCharShape((short) charShapeId));
                     // 테이블내에서는 자간을 원래(-50%~50%)보다 작게(-60%~47%) 변경해서 쓴다. 육안으로 크게 차이가 나지 않는 범위내에서 테이블 셀에 가능한 모두 보이도록 하기 위함
@@ -1479,8 +1480,8 @@ public class ConvTable {
         int[] rowHeight = new int[nRow];
 
         if (nRow == 1) {
-        	rowHeight[0] = Arrays.stream(cellArray[0]).filter(c -> c!=null)
-        			             .mapToInt(c -> c.height).min().orElse(0); 
+            rowHeight[0] = Arrays.stream(cellArray[0]).filter(c -> c!=null)
+                                 .mapToInt(c -> c.height).min().orElse(0); 
         }
         // print
         for (int row = 0; row < cellArray.length; row++) {

@@ -190,7 +190,7 @@ public class HwpRecord_ParaText extends HwpRecord {
 		if (offset-off-size != 0) {
 			log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
 			dump(buf, off, size);
-			throw new HwpParseException();
+			throw new HwpParseException(parseError("HwpRecord_ParaText.parse[tag="+tagNum+",level="+level+"]", buf, off, size, offset));
 		}
 		return paras;
 	}
@@ -207,7 +207,7 @@ public class HwpRecord_ParaText extends HwpRecord {
         if (offset-off-size != 0) {
             log.fine("[TAG]=" + tagNum + ", size=" + size + ", but currentSize=" + (offset-off));
             dump(buf, off, size);
-            throw new HwpParseException();
+            throw new HwpParseException(parseError("HwpRecord_ParaText.getText[tag="+tagNum+",level="+level+"]", buf, off, size, offset));
         }
         return text;
     }

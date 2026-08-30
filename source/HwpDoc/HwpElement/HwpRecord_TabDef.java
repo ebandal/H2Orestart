@@ -55,7 +55,7 @@ public class HwpRecord_TabDef extends HwpRecord {
         offset += 4;
 
         if (size-(offset-off)!=count*8) {
-            throw new HwpParseException();
+            throw new HwpParseException(parseError(buf, off, size, offset) + ", tabCount=" + count);
         }
         tabs = new ArrayList<Tab>();
 
@@ -90,7 +90,7 @@ public class HwpRecord_TabDef extends HwpRecord {
             );
 
         if (offset-off-size!=0) {
-            throw new HwpParseException();
+            throw new HwpParseException(parseError(buf, off, size, offset));
         }
     }
 	

@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import org.w3c.dom.Node;
 
+import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecordTypes.LineStyle1;
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
@@ -97,7 +98,7 @@ public class NoteShape {
             );
 
         if (offset-off-size!=0) {
-            throw new HwpParseException();
+            throw new HwpParseException(HwpRecord.parseError("NoteShape[level="+level+"]", buf, off, size, offset));
         }
         
         return noteShape;
