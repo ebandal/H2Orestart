@@ -131,7 +131,8 @@ public class HwpRecord_Numbering extends HwpRecord {
 
         if (offset-off-size != 0) {
             dump(buf, off, size);
-            throw new HwpParseException();
+            // (한컴 작성 아닌 문서? AI 작성?) 파일형식이 틀려도 예외로 처리하지 않도록 함. 한컴에서도 파일형식이 틀리다고 멈추진 안음.
+            // throw new HwpParseException();
         }
     }
 	
