@@ -87,7 +87,10 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
                 // childAttrs.getNamedItem("x2").getNodeValue();
                 // childAttrs.getNamedItem("y2").getNodeValue();
                 break;
+            case "#text":   // issue #79 대응
+                break;
             default:
+                log.fine(child.getNodeName() + "=" + child.getNodeValue());
                 if (log.isLoggable(Level.FINE)) {
                     throw new NotImplementedException("Ctrl_ShapeCurve");
                 }

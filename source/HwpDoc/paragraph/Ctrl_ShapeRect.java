@@ -135,11 +135,13 @@ public class Ctrl_ShapeRect extends Ctrl_GeneralShape {
             case "hp:outMargin":
                 
                 break;
+            case "#text": // issue #79 대응
+                break;
             default:
-            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
-            	if (log.isLoggable(Level.FINE)) {
-            		throw new NotImplementedException("Ctrl_ShapeRect");
-            	}
+                log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapeRect");
+                }
             }
         }
     }

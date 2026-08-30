@@ -95,11 +95,13 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
                     extentY = Integer.parseInt(numStr);
                 }
                 break;
-            default:
-                if (log.isLoggable(Level.FINE)) {
-                    throw new NotImplementedException("ShpaeOLE");
-                }
+            case "#text":   // issue #79 대응
                 break;
+            default:
+                log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapeOle");
+                }
             }
         }
     }

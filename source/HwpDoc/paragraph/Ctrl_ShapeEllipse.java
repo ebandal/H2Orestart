@@ -146,9 +146,13 @@ public class Ctrl_ShapeEllipse extends Ctrl_GeneralShape {
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 endY2 = Integer.parseInt(numStr);
                 break;
+            case "#text":   // issue #79 대응
+                break;
             default:
-            	log.fine(child.getNodeName() + "=" + child.getNodeValue());
-                throw new NotImplementedException("Ctrl_ShapeEllipse");
+                log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapeEllipse");
+                }
             }
         }
     }

@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -124,8 +125,13 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
                 }
                 node.removeChild(child);
                 break;
+            case "#text":   // issue #79 대응
+                break;
             default:
-            	break;
+                log.fine(child.getNodeName() + "=" + child.getNodeValue());
+                if (log.isLoggable(Level.FINE)) {
+                    throw new NotImplementedException("Ctrl_ShapeConnectLine");
+                }
             }
         }
     }
