@@ -112,11 +112,6 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
     private static Logger rootLogger;
     private static String tmpFilePath;
 
-    /** 변환 실패 시 soffice를 비정상 종료시킬지 결정하는 환경변수. */
-    private static final String EXIT_ON_ERROR_ENV = "H2ORESTART_EXIT_ON_ERROR";
-    /** 변환 실패로 soffice를 종료시킬 때 사용하는 종료코드. */
-    private static final int EXIT_CODE_CONVERSION_FAILED = 1;
-
     public H2OrestartImpl( XComponentContext context ) {
         writerContext = new WriterContext();
         writerContext.mContext = context;
@@ -205,9 +200,6 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                  + ", detectedType=" + detectedFileExt + ", LibreOffice=" + WriterContext.version);
 
         boolean imported = impl_import(file);
-        if (imported==false) {
-            abortIfRequested();
-        }
         return imported;
     }
 
@@ -386,29 +378,6 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
     }
 
     /**
-     * 문서를 변환하지 못했을 때 soffice 프로세스를 비정상 종료시킨다.
-     * GUI 로 사용 중인 LibreOffice 가 통째로 종료되는 것을 막기 위해,
-     * H2ORESTART_EXIT_ON_ERROR 환경변수가 설정된 경우에만 동작한다.
-     * 헤드리스 일괄 변환(docker, CI 등)에서 변환 실패를 종료코드로 감지하기 위한 용도이다.
-     */
-    private void abortIfRequested() {
-        String env = System.getenv(EXIT_ON_ERROR_ENV);
-        if (env==null || !(env.equals("1") || env.equalsIgnoreCase("true"))) {
-            log.info("Document is not converted. " + EXIT_ON_ERROR_ENV + " is not set, so soffice keeps running.");
-            return;
-        }
-
-        log.severe("Document is not converted. Terminating soffice with exit code " + EXIT_CODE_CONVERSION_FAILED + ".");
-        // halt()는 로그를 flush하지 않으므로 직접 flush한다.
-        if (rootLogger!=null) {
-            for (Handler handler: rootLogger.getHandlers()) {
-                handler.flush();
-            }
-        }
-        Runtime.getRuntime().halt(EXIT_CODE_CONVERSION_FAILED);
-    }
-
-    /**
      * 변환에 실패한 예외를 스택트레이스와 함께 로그 파일에 남긴다.
      * 원인 예외가 감싸여 있는 경우 최초 원인(root cause)도 함께 기록한다.
      */
@@ -428,8 +397,7 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         log.info("H2Orestart=" + getExtensionVersion()
                  + ", OS=" + System.getProperty("os.name") + " " + System.getProperty("os.version")
                  + " (" + System.getProperty("os.arch") + ")"
-                 + ", Java=" + System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")"
-                 + ", " + EXIT_ON_ERROR_ENV + "=" + System.getenv(EXIT_ON_ERROR_ENV));
+                 + ", Java=" + System.getProperty("java.version") + " (" + System.getProperty("java.vendor") + ")");
     }
 
     /** 설치된 확장의 description.xml 에서 확장 버전을 읽는다. 읽지 못하면 unknown 을 돌려준다. */
