@@ -52,12 +52,12 @@ public class CustomLogFormatter extends Formatter {
 		return buf.toString();
 	}
 
-	/** 소스 클래스명이 12자보다 짧거나 없는 경우에도 예외 없이 로그가 기록되도록 한다. */
+	/** 소스 클래스명이 20자보다 짧거나 없는 경우에도 예외 없이 로그가 기록되도록 한다. */
 	private static String shortenClass(String className) {
 		if (className==null) {
 			return "?";
 		}
-		return className.length()>12 ? className.substring(className.length()-12) : className;
+		return className.length()>20 ? className.substring(className.length()-20) : className;
 	}
 
 	/** 소스 메소드명이 4자보다 짧거나 없는 경우에도 예외 없이 로그가 기록되도록 한다. */
