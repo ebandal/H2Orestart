@@ -95,9 +95,11 @@ public class HwpRecord {
 	}
 
 	public static String parseError(String where, byte[] buf, int off, int size, int offset) {
+		int consumed = offset - off;
+		int remained = size - consumed;
 		return where + " size=" + size + ", off=" + off
-				+ ", consumed=" + (offset-off) + ", remained=" + (size-(offset-off))
-				+ ", raw=" + toHexString(buf, off, size);
+				+ ", consumed=" + consumed + ", remained=" + remained
+				+ "\nraw=\n" + toHexDump(buf, off, size, consumed);
 	}
 
 	/** 처리하지 못한 XML 속성의 이름과 값을, 해당 요소의 전체 속성과 함께 문자열로 만든다. */
@@ -157,6 +159,91 @@ public class HwpRecord {
 	        hexChars[i*2+1] = HEX_ARRAY[v & 0x0F];
 		}
 		return new String(hexChars);
+	}
+
+	/**
+	 * 버퍼의 내용을 Hex Editor(16바이트 단위 가로폭, 오프셋, Hex 값, ASCII 표현) 형식의 문자열로 만든다.
+	 */
+	public static String toHexDump(byte[] buf, int off, int len) {
+		return toHexDump(buf, off, len, -1);
+	}
+
+	public static String toHexDump(byte[] buf) {
+		return buf == null ? "" : toHexDump(buf, 0, buf.length, -1);
+	}
+
+	/**
+	 * 버퍼의 내용을 Hex Editor 형식으로 만들며, highlightOffset 위치에 에러 포인터 커서를 표시한다.
+	 */
+	public static String toHexDump(byte[] buf, int off, int len, int highlightOffset) {
+		if (buf == null) {
+			return "";
+		}
+		int from = off < 0 ? 0 : off;
+		int to = off + len > buf.length ? buf.length : off + len;
+		int count = to - from;
+		if (count <= 0) {
+			return "";
+		}
+
+		int printed = count > RAW_DUMP_LIMIT ? RAW_DUMP_LIMIT : count;
+		StringBuilder sb = new StringBuilder();
+		final int BYTES_PER_LINE = 16;
+
+		for (int i = 0; i < printed; i += BYTES_PER_LINE) {
+			int lineLen = (i + BYTES_PER_LINE <= printed) ? BYTES_PER_LINE : (printed - i);
+
+			// 오프셋 (4자리 16진수)
+			sb.append(String.format("%04X: ", i));
+
+			// Hex 영역 (16바이트 기준 일정 폭 유지)
+			for (int j = 0; j < BYTES_PER_LINE; j++) {
+				if (j == 8) {
+					sb.append(" ");
+				}
+				if (j < lineLen) {
+					int v = buf[from + i + j] & 0xFF;
+					sb.append(HEX_ARRAY[v >>> 4]);
+					sb.append(HEX_ARRAY[v & 0x0F]);
+					sb.append(" ");
+				} else {
+					sb.append("   ");
+				}
+			}
+
+			sb.append(" |");
+			// ASCII 영역
+			for (int j = 0; j < lineLen; j++) {
+				int v = buf[from + i + j] & 0xFF;
+				if (v >= 0x20 && v <= 0x7E) {
+					sb.append((char) v);
+				} else {
+					sb.append('.');
+				}
+			}
+			sb.append("|");
+
+			// highlightOffset이 현재 라인에 위치할 경우 바로 아래 줄에 포인터 표시
+			if (highlightOffset >= i && highlightOffset < i + lineLen) {
+				int posInLine = highlightOffset - i;
+				int spaces = 6 + (posInLine * 3) + (posInLine >= 8 ? 1 : 0);
+				sb.append("\n");
+				for (int s = 0; s < spaces; s++) {
+					sb.append(" ");
+				}
+				sb.append(String.format("^^-- [error at offset +%d (0x%04X)]", highlightOffset, highlightOffset));
+			}
+
+			if (i + BYTES_PER_LINE < printed || count > printed) {
+				sb.append("\n");
+			}
+		}
+
+		if (count > printed) {
+			sb.append("...(").append(count).append(" bytes)");
+		}
+
+		return sb.toString();
 	}
 
 }
