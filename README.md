@@ -38,6 +38,20 @@ https://packages.ubuntu.com/h2orestart
 ### 직접 설치 (Manual installation)
 Release에서 직접 oxt 파일 다운로드 후 LibreOffice 확장 관리자를 통해 설치
 
+## 버그 신고
+
+변환에 실패하거나 결과가 이상하면, 1) 아래 로그 폴더를 **통째로 압축해서**, 2) 원본 한컴 파일을 issue 에 첨부해주세요.
+예외가 발생한 위치와 원인(레코드 태그, 속성명, 속성값, 원본 바이트)이 로그에 기록됩니다.
+
+| OS | 로그 폴더 |
+|---|---|
+| Linux | `$XDG_CACHE_HOME/H2Orestart/` 또는 `~/.cache/H2Orestart/` |
+| macOS | `~/Library/Caches/H2Orestart/` |
+| Windows | `%USERPROFILE%\.H2Orestart\` |
+
+문서를 열지 못한 경우, 로그에는 파싱에 실패한 지점의 정보가 됩니다. 문서 내용 일부가 로그에 남을 수 있으니, 민감한 문서라면 첨부 전에 확인해주세요.
+원본 한컴 파일도 첨부 전에 개인정보, 민감정보를 삭제하고 첨부해주세요.
+
 ## 버전정보
 [Release](https://github.com/ebandal/H2Orestart/releases)에 별도 표기합니다.
 
