@@ -245,10 +245,10 @@ public class ConvTable {
                 if (hasNullRow(rowHeight, table.height) == false) {
                     for (int row = 0; row < xTableRows.getCount(); row++) {
                         Object aRowObj = xTableRows.getByIndex(row);
-                        XPropertySet tableRowProps = UnoRuntime.queryInterface(com.sun.star.beans.XPropertySet.class,
-                                aRowObj);
-                        tableRowProps.setPropertyValue("IsAutoHeight", false);
+                        XPropertySet tableRowProps = UnoRuntime.queryInterface(com.sun.star.beans.XPropertySet.class, aRowObj);
+                        // IsAutoHeight=true 는 Variable(높이 무시)이 되므로 SizeType.MIN 으로 최소 높이(style:min-row-height)를 지정
                         tableRowProps.setPropertyValue("Height", Transform.translateHwp2Office(rowHeight[row]));
+                        tableRowProps.setPropertyValue("SizeType", SizeType.MIN);
                     }
                 }
             }
