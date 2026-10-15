@@ -486,6 +486,10 @@ public class HwpRecurs {
                                            HwpRecord_ParaShape paraShape, HwpRecord_CharShape charShape, 
                                            boolean append, boolean ignoreNumbering, int step) {
 
+        if (ConvHypua2Unicode.hasHypua(content)) {
+            content = ConvHypua2Unicode.convertText(content);
+        }
+
         wContext.mTextCursor.gotoEnd(false);
         XTextRange xTextRange = (XTextRange)UnoRuntime.queryInterface(XTextRange.class, wContext.mTextCursor);
         XPropertySet xTextPropSet = (XPropertySet)UnoRuntime.queryInterface(XPropertySet.class, xTextRange);

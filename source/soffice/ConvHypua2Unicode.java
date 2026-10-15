@@ -13,7 +13,21 @@ public class ConvHypua2Unicode {
 		Map<Integer, String> temp = new HashMap<>();
 		initPart1(temp);
 		initPart2(temp);
+		initSymbolBox(temp);
 		old2NewMap = Collections.unmodifiableMap(temp);
+	}
+
+	// 기호 폰트(Wingdings) 영역(U+F020~F0FF)의 상자 기호를 유니코드 기호로 바꾼다.
+	// 리브레오피스 버전에 따라 Wingdings로 대체되지 않아 빈 상자로 표시되는 문제 (issue #82)
+	private static void initSymbolBox(Map<Integer, String> temp) {
+		temp.put(0xf06e, "■"); // ■
+		temp.put(0xf06f, "☐"); // ☐
+		temp.put(0xf071, "❑"); // ❑
+		temp.put(0xf072, "❒"); // ❒
+		temp.put(0xf0a7, "▪"); // ▪
+		temp.put(0xf0a8, "□"); // □
+		temp.put(0xf0fd, "☒"); // ☒
+		temp.put(0xf0fe, "☑"); // ☑
 	}
 
 	private static void initPart1(Map<Integer, String> temp) {
