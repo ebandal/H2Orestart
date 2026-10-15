@@ -404,6 +404,8 @@ public class ConvPara {
             // lineWrap;                            //  한줄로 입력
             // autoSpaceEAsianEng;                  //  한글과 영어 간격을 자동 조절
             // autoSpaceEAsianNum;                  //  한글과 숫자 간격을 자동 조절
+            // LibreOffice는 기본으로 한글과 영어/숫자 사이에 간격을 넣으므로, 한컴에서 끈 경우에는 끈다.
+            xStyleProps.setPropertyValue("ParaIsCharacterDistance", paraShape.autoSpaceEAsianEng || paraShape.autoSpaceEAsianNum);
 
             // 테이블 이후 첫문단의 테이블과의 간격을 임의로 조정
             if (paraShape.firstAfterTable) {
@@ -600,6 +602,16 @@ public class ConvPara {
         }
     }
 
+    /**
+     * 한컴 자간(%)은 글자 크기에 대한 비율. 리브레오피스 자간거리(pt) = 폰트크기(pt) * 한컴자간(%)
+     * @return CharKerning (1/100 mm)
+     */
+    static short getCharKerning(HwpRecord_CharShape charShape) {
+        double spacing = charShape.height / 100.0 * (charShape.spacing[0] / 100.0);   // pt
+        // 1pt = 0.35278mm = 35.278 (1/100 mm)
+        return (short) Math.round(spacing * 35.278);
+    }
+
     static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, 
                                         HwpRecord_BorderFill borderFill, int step) {
         try {
@@ -620,11 +632,7 @@ public class ConvPara {
             }
             
             // charShape.spacing[0];                // 언어별 자간, -50%~50%         // s#
-            // 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)* 한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
-            double spacing = ((double)charShape.height)/100 * (charShape.spacing[0]/100.0f) * 0.8 + 0.4;
-            // 1pt = 0.35278mm = 35.278 (1/100 mm)
-            spacing *= 35.278;
-            xStyleProps.setPropertyValue("CharKerning", (short)Math.round(spacing));
+            xStyleProps.setPropertyValue("CharKerning", getCharKerning(charShape));
             // charShape.relSize[0];                // 언어별 상대 크기, 10%~250%	     // e#
             // charShape.charOffset[0];             // 언어별 글자 위치, -100%~100%   // o#
             // charShape.height;                    // 기준 크기, 0pt~4096pt        // he
@@ -823,11 +831,7 @@ public class ConvPara {
             log.finest("CharWidth="+charShape.ratio[0]);
             xStyleProps.setPropertyValue("CharScaleWidth", charShape.ratio[0]);
             // charShape.spacing[0];                // 언어별 자간, -50%~50%         // s#
-            // 리브레오피스 자간거리(pt) = y ; (폰트크기(pt)*한컴자간(%) = x ; 가중치 a = 0.85 ; 절편 b = 0.5
-            double spacing = ((double)charShape.height)/100 * (charShape.spacing[0] / 100.0f) * 0.8 + 0.4; 
-            // 1pt = 0.35278mm = 35.278 (1/100 mm)
-            spacing *= 35.278;
-            xStyleProps.setPropertyValue("CharKerning", (short)Math.round(spacing));
+            xStyleProps.setPropertyValue("CharKerning", getCharKerning(charShape));
             // charShape.relSize[0];                // 언어별 상대 크기, 10%~250%	     // e#
             // charShape.charOffset[0];             // 언어별 글자 위치, -100%~100%   // o#
             // charShape.height;                    // 기준 크기, 0pt~4096pt        // he

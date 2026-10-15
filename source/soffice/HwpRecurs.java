@@ -461,7 +461,13 @@ public class HwpRecurs {
         }
 
         log.finest("Text=" + content);
-        wContext.mText.insertString(wContext.mTextCursor, content, false);
+        if (charShape!=null && charShape.origFontName!=null && paraCursor!=null) {
+            // 대체폰트(나눔고딕)는 글자 종류별 자간으로 한컴 글자 폭에 맞춘다.
+            XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
+            FontWidthCorrection.insertString(wContext.mText, wContext.mTextCursor, paraProps, content, charShape, paraShape);
+        } else {
+            wContext.mText.insertString(wContext.mTextCursor, content, false);
+        }
     }
 
     public static void insertDrawingString(WriterContext wContext, String content,  
@@ -498,6 +504,10 @@ public class HwpRecurs {
         }
 
         log.finest("Text=" + content);
-        wContext.mText.insertString(wContext.mTextCursor, content, false);
+        if (charShape!=null && charShape.origFontName!=null) {
+            FontWidthCorrection.insertString(wContext.mText, wContext.mTextCursor, xTextPropSet, content, charShape, paraShape);
+        } else {
+            wContext.mText.insertString(wContext.mTextCursor, content, false);
+        }
     }
 }

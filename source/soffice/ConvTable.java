@@ -1220,13 +1220,9 @@ public class ConvTable {
                     } catch (java.lang.ClassNotFoundException | IOException e) {
                         log.log(Level.SEVERE, e.toString(), e);
                     }
-                    HwpRecord_CharShape charShapeTemp = HwpRecord_CharShape.clone(wContext.getCharShape((short) charShapeId));
-                    // 테이블내에서는 자간을 원래(-50%~50%)보다 작게(-60%~47%) 변경해서 쓴다. 육안으로 크게 차이가 나지 않는 범위내에서 테이블 셀에 가능한 모두 보이도록 하기 위함
-                    for (int i=0; i<charShapeTemp.spacing.length; i++) {
-                        charShapeTemp.spacing[i] -= ((100-charShapeTemp.spacing[i])/15);
-                    }
+                    HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
-                                               paraShapeTemp, charShapeTemp, append, true, step);
+                                               paraShapeTemp, charShape, append, true, step);
                     return true;
                 }
 

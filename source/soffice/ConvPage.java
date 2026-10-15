@@ -137,6 +137,56 @@ public class ConvPage {
         pageMap.clear();
     }
 
+    // 시스템에 따라 같은 폰트가 한글명 또는 영문명으로만 등록되므로, 두 이름을 모두 확인한다.
+    private static final String[][] FONT_NAME_ALIASES = {
+        { "굴림", "Gulim" },
+        { "굴림체", "GulimChe" },
+        { "돋움", "Dotum" },
+        { "돋움체", "DotumChe" },
+        { "바탕", "Batang" },
+        { "바탕체", "BatangChe" },
+        { "궁서", "Gungsuh" },
+        { "궁서체", "GungsuhChe" },
+        { "새굴림", "New Gulim" },
+        { "맑은 고딕", "Malgun Gothic" },
+        { "나눔고딕", "NanumGothic" },
+        { "나눔명조", "NanumMyeongjo" },
+        { "나눔고딕코딩", "NanumGothicCoding" },
+        { "나눔바른고딕", "NanumBarunGothic" },
+        { "나눔바른펜", "NanumBarunpen" },
+        { "함초롬바탕", "HCR Batang" },
+        { "함초롬돋움", "HCR Dotum" },
+    };
+
+    /**
+     * 설치된 폰트 이름을 찾는다. 주어진 이름이 없으면 같은 폰트의 다른 이름(한글명/영문명)을 확인한다.
+     * @return 설치된 폰트 이름, 없으면 null
+     */
+    static String findInstalledFontName(String fontName) {
+        if (fontName == null) {
+            return null;
+        }
+        if (WriterContext.fontNameSet.contains(fontName)) {
+            return fontName;
+        }
+        for (String[] aliases : FONT_NAME_ALIASES) {
+            boolean matched = false;
+            for (String alias : aliases) {
+                if (alias.equalsIgnoreCase(fontName)) {
+                    matched = true;
+                }
+            }
+            if (matched) {
+                for (String alias : aliases) {
+                    if (WriterContext.fontNameSet.contains(alias)) {
+                        return alias;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     public static void adjustFontIfNotExists(WriterContext wContext) {
     	
         try {
@@ -179,11 +229,23 @@ public class ConvPage {
             for (int i = 0; i < wContext.getDocInfo().charShapeList.size(); i++) {
                 HwpRecord_CharShape font = (HwpRecord_CharShape) wContext.getDocInfo().charShapeList.get(i);
 
+                // 같은 폰트가 다른 이름(한글명/영문명)으로 설치되어 있으면 설치된 이름으로 바꾼다.
+                for (int j = 0; j < font.fontName.length; j++) {
+                    if (font.fontName[j]!=null && WriterContext.fontNameSet.contains(font.fontName[j])==false) {
+                        String installedName = findInstalledFontName(font.fontName[j]);
+                        if (installedName != null) {
+                            log.fine("Font[" + font.fontName[j] + "] is installed as Font[" + installedName + "]");
+                            font.fontName[j] = installedName;
+                        }
+                    }
+                }
+
                 if (font.fontName[0]!=null && WriterContext.fontNameSet.contains(font.fontName[0])==false) {
                     String replaceFontName = null;
 
                     // 한컴 전용폰트이므로, 대체폰트로 교체.
-                    switch (font.fontName[0]) {
+                    // 글자 폭을 측정한 폰트는 나눔고딕으로 대체하고 FontWidthCorrection 으로 폭을 맞춘다.
+                    switch (FontWidthCorrection.hasHancomWidths(font.fontName[0]) ? "" : font.fontName[0]) {
                     case "한컴 윤고딕 720":
                         replaceFontName = "나눔스퀘어 Light";
                         break;
@@ -213,7 +275,6 @@ public class ConvPage {
                         replaceFontName = "궁서";
                         break;
                     case "HY그래픽":
-                    case "휴먼고딕":
                         replaceFontName = "나눔고딕코딩";
                         break;
                     case "휴먼옛체":
@@ -223,13 +284,21 @@ public class ConvPage {
                         replaceFontName = "나눔명조 ExtraBold";
                         break;
                     default:
-                        replaceFontName = "나눔고딕";
+                        replaceFontName = null;
+                    }
+                    String installedReplaceName = findInstalledFontName(replaceFontName);
+                    if (installedReplaceName == null) {
+                        // 나눔고딕으로 대체. 글자 폭 차이는 FontWidthCorrection 이 글자 종류별 자간으로 보정한다.
+                        installedReplaceName = findInstalledFontName(FontWidthCorrection.SUBST_FONT_NAME);
+                        if (installedReplaceName != null) {
+                            font.origFontName = font.fontName.clone();
+                        }
                     }
                     for (int j = 0; j < font.fontName.length; j++) {
-                        if (WriterContext.fontNameSet.contains(replaceFontName)) {
+                        if (installedReplaceName != null) {
                             log.fine("Font[" + font.fontName[j] + "] does not exist. so replacing with basic Font["
-                                    + replaceFontName + "]");
-                            font.fontName[j] = replaceFontName;
+                                    + installedReplaceName + "]");
+                            font.fontName[j] = installedReplaceName;
                         }
                     }
                 }

@@ -69,6 +69,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 	public int			strikeOutColor;							// 취소선 색
 	
 	public double		lineSpaceAlpha = 0.87;					// 한컴 vs. 리브레오피스 폰트에 따른 행간거리 보정 값. 디폴트 0.87
+	public String[]		origFontName;							// 대체폰트로 바뀐 경우 원래 언어별 글꼴명. 대체되지 않았으면 null
 	
 	HwpRecord_CharShape(int tagNum, int level, int size) {
 		super(tagNum, level, size);
@@ -478,7 +479,8 @@ public class HwpRecord_CharShape extends HwpRecord {
 		cloned.shadowColor     = source.shadowColor;
 		cloned.borderFillIDRef = source.borderFillIDRef;
 		cloned.strikeOutColor  = source.strikeOutColor;
-		
+		cloned.origFontName    = source.origFontName;
+
 		return cloned;
 	}
 	
