@@ -34,6 +34,7 @@ import java.util.logging.LogManager;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import HwpDoc.HwpDocInfo;
 import HwpDoc.HwpFile;
 import HwpDoc.HwpSection;
 import HwpDoc.HwpxFile;
@@ -134,7 +135,8 @@ public class PairCompare {
                 }
             }
             if (left != null && right != null) {
-                diff = new ModelDiff(maxDiffsPerDoc);
+                diff = new ModelDiff(maxDiffsPerDoc, resolver((HwpDocInfo) left.docInfo, true),
+                                                     resolver((HwpDocInfo) right.docInfo, false));
                 diff.compare("docInfo", left.docInfo, right.docInfo);
                 diff.compare("sections", left.sections, right.sections);
                 Set<String> seenInDoc = new HashSet<String>();
@@ -206,6 +208,38 @@ public class PairCompare {
 
     static String describe(Throwable t) {
         return CorpusScan.describe(t);
+    }
+
+    /** ID -> 객체. 변환기(WriterContext)와 같은 방식으로 찾는다 */
+    static ModelDiff.Resolver resolver(final HwpDocInfo d, final boolean hwp) {
+        return new ModelDiff.Resolver() {
+            @Override public Object resolve(String list, int base, Object rawId) {
+                if (rawId == null) return null;
+                try {
+                    if ("binDataList".equals(list)) {
+                        if (hwp) {      // HWP: 등록 순서의 위치
+                            List<String> keys = new ArrayList<String>(d.binDataList.keySet());
+                            int i = Integer.parseInt(rawId.toString());
+                            return i >= 0 && i < keys.size() ? d.binDataList.get(keys.get(i)) : null;
+                        }
+                        return d.binDataList.get(rawId.toString());     // HWPX: 아이디
+                    }
+                    List<?> l;
+                    switch (list) {
+                    case "charShapeList":  l = d.charShapeList; break;
+                    case "paraShapeList":  l = d.paraShapeList; break;
+                    case "styleList":      l = d.styleList; break;
+                    case "tabDefList":     l = d.tabDefList; break;
+                    case "borderFillList": l = d.borderFillList; break;
+                    default: return null;
+                    }
+                    int i = Integer.parseInt(rawId.toString()) - base;
+                    return l != null && i >= 0 && i < l.size() ? l.get(i) : null;
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+        };
     }
 
     static Parsed parseHwp(File f) throws Exception {

@@ -33,8 +33,59 @@ public class ModelDiff {
             "hanType",       // HWP / HWPX 구분
             "recordList",    // 바이너리 원본 레코드 목록
             "fullfilled",
+            "parent",        // 상위 객체 역참조 (HwpDocInfo, HwpParagraph)
             "parentHwp", "parentHwpx", "hwp", "hwpx", "docInfo"
     ));
+
+    /** 비교하지 않는 차이 키 (형식마다 원래 표현이 다른 값) */
+    static final Set<String> IGNORE_KEYS = new HashSet<String>(Arrays.asList(
+            "HwpElement.HwpRecord_BinData.aPath",       // BIN0001.jpg  vs BinData/image1.jpg
+            "HwpElement.HwpRecord_BinData.itemId",      // "1"          vs "image1"
+            "HwpElement.HwpRecord_BinData.binDataID",
+            "HwpElement.HwpRecord_BinData.compressed",
+            "HwpElement.HwpRecord_BinData.state"
+    ));
+
+    /**
+     * ID 참조 필드 -> {참조하는 목록, ID 기준값}. 비교할 때 ID 값 대신 가리키는 객체의 내용을 비교한다.
+     * 기준값은 변환기(WriterContext)의 접근 방식과 같다 (borderFill 은 1부터, 나머지는 0부터).
+     */
+    static final Map<String, String[]> REFS = new java.util.HashMap<String, String[]>();
+    static {
+        ref("paragraph.HwpParagraph.paraShapeID", "paraShapeList", 0);
+        ref("paragraph.HwpParagraph.paraStyleID", "styleList", 0);
+        ref("paragraph.ParaText.charShapeId", "charShapeList", 0);
+        ref("paragraph.Ctrl_Character.charShapeId", "charShapeList", 0);
+        ref("paragraph.CharShape.charShapeID", "charShapeList", 0);
+        ref("HwpElement.HwpRecord_Style.paraShape", "paraShapeList", 0);
+        ref("HwpElement.HwpRecord_Style.charShape", "charShapeList", 0);
+        ref("HwpElement.HwpRecord_Style.nextStyle", "styleList", 0);
+        ref("HwpElement.HwpRecord_Numbering$ParaHeadInfo.charShape", "charShapeList", 0);
+        ref("HwpElement.HwpRecord_ParaShape.tabDef", "tabDefList", 0);
+        ref("HwpElement.HwpRecord_ParaShape.borderFill", "borderFillList", 1);
+        ref("HwpElement.HwpRecord_CharShape.borderFillIDRef", "borderFillList", 1);
+        ref("paragraph.TblCell.borderFill", "borderFillList", 1);
+        ref("paragraph.Ctrl_Table.borderFillID", "borderFillList", 1);
+        ref("section.PageBorderFill.borderFill", "borderFillList", 1);
+        ref("paragraph.Ctrl_ShapePic.binDataID", "binDataList", 0);
+        ref("paragraph.Ctrl_ShapeOle.binDataID", "binDataList", 0);
+    }
+
+    private static void ref(String key, String list, int base) {
+        REFS.put(key, new String[] { list, String.valueOf(base) });
+    }
+
+    /** ID 로 참조되는 목록은 위치끼리 비교하지 않는다 (참조를 따라가 내용으로 비교됨) */
+    static final Set<String> REF_LISTS = new HashSet<String>(Arrays.asList(
+            "HwpDocInfo.charShapeList", "HwpDocInfo.paraShapeList", "HwpDocInfo.borderFillList",
+            "HwpDocInfo.styleList", "HwpDocInfo.tabDefList", "HwpDocInfo.faceNameList", "HwpDocInfo.binDataList",
+            "HwpDocInfo.faceNameOffset"
+    ));
+
+    /** 한쪽 모델에서 ID 를 객체로 바꾼다. 찾지 못하면 null */
+    public interface Resolver {
+        Object resolve(String list, int base, Object rawId);
+    }
 
     public static class Diff {
         public final String key;     // Class.field
@@ -50,9 +101,28 @@ public class ModelDiff {
     private final IdentityHashMap<Object, Boolean> visiting = new IdentityHashMap<Object, Boolean>();
     private final int maxDiffs;
     private long compared;
+    private final Resolver leftResolver, rightResolver;
+    /** 이미 비교한 (왼쪽 객체, 오른쪽 객체) 쌍 - 같은 참조 대상을 반복해서 비교하지 않는다 */
+    private final IdentityHashMap<Object, IdentityHashMap<Object, Boolean>> comparedPairs =
+            new IdentityHashMap<Object, IdentityHashMap<Object, Boolean>>();
 
     public ModelDiff(int maxDiffs) {
+        this(maxDiffs, null, null);
+    }
+
+    public ModelDiff(int maxDiffs, Resolver left, Resolver right) {
         this.maxDiffs = maxDiffs;
+        this.leftResolver = left;
+        this.rightResolver = right;
+    }
+
+    private boolean firstTime(Object a, Object b) {
+        IdentityHashMap<Object, Boolean> m = comparedPairs.get(a);
+        if (m == null) {
+            m = new IdentityHashMap<Object, Boolean>();
+            comparedPairs.put(a, m);
+        }
+        return m.put(b, Boolean.TRUE) == null;
     }
 
     public List<Diff> getDiffs() { return diffs; }
@@ -139,6 +209,25 @@ public class ModelDiff {
                     continue;
                 }
                 String fkey = ModelDumper.simpleName(f.getDeclaringClass()) + "." + f.getName();
+                if (IGNORE_KEYS.contains(fkey)) continue;
+                boolean normalize = leftResolver != null && rightResolver != null;
+                if (normalize && REF_LISTS.contains(fkey)) continue;
+                String[] ref = normalize ? REFS.get(fkey) : null;
+                if (ref != null) {
+                    int base = Integer.parseInt(ref[1]);
+                    Object ra = leftResolver.resolve(ref[0], base, fa);
+                    Object rb = rightResolver.resolve(ref[0], base, fb);
+                    if (ra != null && rb != null) {
+                        if (firstTime(ra, rb)) {
+                            compare(path + "." + f.getName() + "->" + ref[0], fkey, ra, rb, depth + 1);
+                        }
+                        continue;
+                    } else if (ra != null || rb != null) {
+                        add(fkey + "#ref", path + "." + f.getName(), fa, fb);
+                        continue;
+                    }
+                    // 양쪽 다 찾지 못하면 (예: 없음을 뜻하는 0, -1) 값 그대로 비교
+                }
                 compare(path + "." + f.getName(), fkey, fa, fb, depth + 1);
             }
         } finally {
