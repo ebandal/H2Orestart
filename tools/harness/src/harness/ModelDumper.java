@@ -141,7 +141,7 @@ public class ModelDumper {
         }
     }
 
-    private static List<Field> fieldsOf(Class<?> c) {
+    static List<Field> fieldsOf(Class<?> c) {
         // 상위 클래스 필드부터 선언 순서대로
         List<Class<?>> chain = new ArrayList<Class<?>>();
         for (Class<?> k = c; k != null && k != Object.class; k = k.getSuperclass()) {
@@ -165,13 +165,13 @@ public class ModelDumper {
         return fields;
     }
 
-    private static boolean isScalar(Class<?> c) {
+    static boolean isScalar(Class<?> c) {
         return c.isPrimitive() || c == String.class || Number.class.isAssignableFrom(c)
                 || c == Boolean.class || c == Character.class || c.isEnum()
                 || (c.getSuperclass() != null && c.getSuperclass().isEnum());
     }
 
-    private static String scalar(Object v) {
+    static String scalar(Object v) {
         if (v == null) return "null";
         if (v instanceof String) return "\"" + escape((String) v) + "\"";
         if (v instanceof Character) return "'" + escape(String.valueOf(v)) + "'";
@@ -196,7 +196,7 @@ public class ModelDumper {
         return sb.toString();
     }
 
-    private static String simpleName(Class<?> c) {
+    static String simpleName(Class<?> c) {
         String n = c.getName();
         return n.startsWith("HwpDoc.") ? n.substring(7) : c.getSimpleName();
     }
