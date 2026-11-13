@@ -66,7 +66,7 @@ public class Ctrl_NewNumber extends Ctrl {
 
         String numStr = attributes.getNamedItem("num").getNodeValue();
         num = (short) Integer.parseInt(numStr);
-        numType = NumType.valueOf(attributes.getNamedItem("numType").getNodeValue());
+        numType = NumType.fromXml(attributes.getNamedItem("numType").getNodeValue());
 
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {

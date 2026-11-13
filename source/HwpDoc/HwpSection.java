@@ -128,7 +128,12 @@ public class HwpSection {
                 }
                 
                 HwpTag tag = HwpTag.from(tagNum);
-                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" ("+size+")");
+                if (tag == null) {      // 알 수 없는 태그: 레코드를 건너뛴다
+                    log.fine("unknown tag " + tagNum + " (" + size + ")");
+                    off += size;
+                    continue;
+                }
+                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+String.valueOf(tag)+" ("+size+")");
                 
                 if (level==0 && tag==HwpTag.HWPTAG_PARA_HEADER) {
                     HwpParagraph currPara = HwpParagraph.parse(tagNum, level, size, buf, off, version);
@@ -163,8 +168,13 @@ public class HwpSection {
             }
             
             HwpTag tag = HwpTag.from(tagNum);
+            if (tag == null) {          // 알 수 없는 태그: 레코드를 건너뛴다
+                log.fine("unknown tag " + tagNum + " (" + size + ")");
+                offset += headerOffset + size;
+                continue;
+            }
             if (level > runLevel) {
-                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" > runLevel");
+                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+String.valueOf(tag)+" > runLevel");
                 
                 switch(tag) {
                 case HWPTAG_PARA_HEADER:
@@ -225,7 +235,7 @@ public class HwpSection {
                 }
             } else if (level==runLevel) {
                 offset += headerOffset;
-                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" ("+size+") = runLevel");
+                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+String.valueOf(tag)+" ("+size+") = runLevel");
                 
                 switch(tag) {
                 case HWPTAG_PARA_HEADER:
@@ -348,7 +358,7 @@ public class HwpSection {
             int headerOffset = 0;
             
             if (size == 0xFFF) {
-                size = buf[off + 7] << 24 & 0xFF000000 | buf[off + 6] << 16 & 0xFF0000 | buf[off + 5] << 8 & 0xFF00 | buf[off + 4] & 0xFF;
+                size = buf[offset + 7] << 24 & 0xFF000000 | buf[offset + 6] << 16 & 0xFF0000 | buf[offset + 5] << 8 & 0xFF00 | buf[offset + 4] & 0xFF;
                 headerOffset = 8;
             } else {
                 headerOffset = 4;
@@ -359,9 +369,14 @@ public class HwpSection {
             }
             
             HwpTag tag = HwpTag.from(tagNum);
+            if (tag == null) {          // 알 수 없는 태그: 레코드를 건너뛴다
+                log.fine("unknown tag " + tagNum + " (" + size + ")");
+                offset += headerOffset + size;
+                continue;
+            }
             if (level > runLevel) {
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") > runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") > runLevel");
                 
                 switch (tag) {
                 case HWPTAG_PARA_HEADER:
@@ -472,7 +487,7 @@ public class HwpSection {
             } else if (level == runLevel) {
                 offset += headerOffset;
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") = runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") = runLevel");
                 
                 switch (tag) {
                 case HWPTAG_PARA_HEADER:
@@ -717,7 +732,7 @@ public class HwpSection {
             int headerOffset = 0;
 
             if (size == 0xFFF) {
-                size = buf[off + 7] << 24 & 0xFF000000 | buf[off + 6] << 16 & 0xFF0000 | buf[off + 5] << 8 & 0xFF00 | buf[off + 4] & 0xFF;
+                size = buf[offset + 7] << 24 & 0xFF000000 | buf[offset + 6] << 16 & 0xFF0000 | buf[offset + 5] << 8 & 0xFF00 | buf[offset + 4] & 0xFF;
                 headerOffset = 8;
             } else {
                 headerOffset = 4;
@@ -728,10 +743,15 @@ public class HwpSection {
             }
 
             HwpTag tag = HwpTag.from(tagNum);
+            if (tag == null) {          // 알 수 없는 태그: 레코드를 건너뛴다
+                log.fine("unknown tag " + tagNum + " (" + size + ")");
+                offset += headerOffset + size;
+                continue;
+            }
             if (level > runLevel) {
                 offset += headerOffset;
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") > runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") > runLevel");
 
                 switch (tag) {
                 case HWPTAG_SHAPE_COMPONENT_PICTURE: {
@@ -942,7 +962,7 @@ public class HwpSection {
             } else if (level == runLevel) {
                 offset += headerOffset;
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") = runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") = runLevel");
 
                 switch (tag) {
                 case HWPTAG_PARA_HEADER:

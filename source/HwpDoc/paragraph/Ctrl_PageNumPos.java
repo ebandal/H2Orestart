@@ -72,7 +72,7 @@ public class Ctrl_PageNumPos extends Ctrl {
 	    
         NamedNodeMap attributes = node.getAttributes();
         
-        pos = NumPos.valueOf(attributes.getNamedItem("pos").getNodeValue());
+        pos = NumPos.fromXml(attributes.getNamedItem("pos").getNodeValue());
         numShape = NumberShape2.fromXml(attributes.getNamedItem("formatType").getNodeValue());
         // 줄표 넣기 (예: "-" 이면 "- 1 -")
         Node sideChar = attributes.getNamedItem("sideChar");
@@ -102,12 +102,34 @@ public class Ctrl_PageNumPos extends Ctrl {
 		OUTER_TOP		(0x7),	// 바깥쪽 위
 		OUTER_BOTTOM	(0x8),	// 바깥쪽 아래
 		INNER_TOP		(0x9),	// 안쪽 위
-		INNER_BOTTOM	(0x10);	// 안쪽 아래
+		INNER_BOTTOM	(0xA);	// 안쪽 아래
 		
 		private int num;
 	    private NumPos(int num) { 
 	    	this.num = num;
 	    }
+	    /** HWPX(OWPML) 의 pos 값 (TOP_LEFT, BOTTOM_RIGHT, OUTSIDE_BOTTOM ...) 을 변환한다. 알 수 없는 값은 NONE */
+	    public static NumPos fromXml(String name) {
+	        if (name == null) return NONE;
+	        switch (name) {
+	        case "TOP_LEFT":        return LEFT_TOP;
+	        case "TOP_CENTER":      return CENTER_TOP;
+	        case "TOP_RIGHT":       return RIGHT_TOP;
+	        case "BOTTOM_LEFT":     return LEFT_BOTTOM;
+	        case "BOTTOM_CENTER":   return BOTTOM_CENTER;
+	        case "BOTTOM_RIGHT":    return RIGHT_BOTTOM;
+	        case "OUTSIDE_TOP":     return OUTER_TOP;
+	        case "OUTSIDE_BOTTOM":  return OUTER_BOTTOM;
+	        case "INSIDE_TOP":      return INNER_TOP;
+	        case "INSIDE_BOTTOM":   return INNER_BOTTOM;
+	        default:
+	            for (NumPos type: values()) {
+	                if (type.name().equals(name)) return type;
+	            }
+	            return NONE;
+	        }
+	    }
+
 	    public static NumPos from(int num) {
 	    	for (NumPos type: values()) {
 	    		if (type.num == num)

@@ -101,7 +101,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
         String numStr = null;
         if (attributes.getNamedItem("groupLevel")!=null) {
             numStr = attributes.getNamedItem("groupLevel").getNodeValue();
-            nGrp = (short) Integer.parseInt(numStr);
+            nGrp = (short) (int) Long.parseLong(numStr);
             
             matrix = new double[(nGrp+1)*6];
             matrixSeq = new double[(nGrp+1)*6*2];
@@ -138,13 +138,13 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     if (numStr.matches("\\d+\\.\\d+")) {
                         iniWidth = (int)Double.parseDouble(numStr);
                     } else {
-                        iniWidth = Integer.parseInt(numStr);
+                        iniWidth = (int) Long.parseLong(numStr);
                     }
                     numStr = childAttrs.getNamedItem("height").getNodeValue();
                     if (numStr.matches("\\d+\\.\\d+")) {
                         iniHeight = (int)Double.parseDouble(numStr);
                     } else {
-                        iniHeight = Integer.parseInt(numStr);
+                        iniHeight = (int) Long.parseLong(numStr);
                     }
                 }
                 node.removeChild(child);
@@ -191,7 +191,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                     NamedNodeMap childAttrs = child.getAttributes();
                     if (childAttrs.getNamedItem("angle")!=null) {
                         numStr = childAttrs.getNamedItem("angle").getNodeValue();
-                        rotat = (short) Integer.parseInt(numStr);
+                        rotat = (short) (int) Long.parseLong(numStr);
                     }
                     if (childAttrs.getNamedItem("centerX")!=null) {
                         numStr = childAttrs.getNamedItem("centerX").getNodeValue();
