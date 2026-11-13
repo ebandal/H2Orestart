@@ -211,8 +211,12 @@ public class HwpDocInfo {
                         Node childNode = children.item(j);
                         switch(childNode.getNodeName()) {
                         case "opf:item":
-                            record = new HwpRecord_BinData(childNode, version);
-                            binDataList.put(record.itemId, record);
+                            // manifest 에는 header.xml, section0.xml, settings.xml, Scripts/*.js 도 들어 있다.
+                            // BinData 는 isEmbeded 속성이 있거나 BinData/ 아래에 있는 항목만.
+                            if (isBinDataItem(childNode)) {
+                                record = new HwpRecord_BinData(childNode, version);
+                                binDataList.put(record.itemId, record);
+                            }
                             break;
                         // case "#text":
                         default:
@@ -225,6 +229,13 @@ public class HwpDocInfo {
         }
         
         return true;
+    }
+
+    private static boolean isBinDataItem(Node item) {
+        NamedNodeMap attrs = item.getAttributes();
+        if (attrs.getNamedItem("isEmbeded") != null) return true;
+        Node href = attrs.getNamedItem("href");
+        return href != null && href.getNodeValue().startsWith("BinData/");
     }
 
     boolean read(Document document, int version) throws HwpParseException, NotImplementedException {
