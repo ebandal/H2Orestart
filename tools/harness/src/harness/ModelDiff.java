@@ -44,7 +44,8 @@ public class ModelDiff {
             "HwpElement.HwpRecord_BinData.binDataID",
             "HwpElement.HwpRecord_BinData.compressed",
             "HwpElement.HwpRecord_BinData.state",
-            "HwpElement.HwpRecord_ParaShape.attrBits"     // HWP 원본 비트 (HWPX 에는 없음)
+            "HwpElement.HwpRecord_ParaShape.attrBits",    // HWP 원본 비트 (HWPX 에는 없음)
+            "HwpElement.HwpRecord_Numbering$ParaHeadInfo.attrBits"
     ));
 
     /**
@@ -213,6 +214,12 @@ public class ModelDiff {
                 if (IGNORE_KEYS.contains(fkey)) continue;
                 boolean normalize = leftResolver != null && rightResolver != null;
                 if (normalize && REF_LISTS.contains(fkey)) continue;
+                if (normalize && "paragraph.HwpParagraph.breakType".equals(fkey) && fa instanceof Number && fb instanceof Number) {
+                    // 구역(0x01)/다단(0x02) 나누기는 HWPX 에서 secPr/colPr 컨트롤로 표현되므로 쪽(0x04)/단(0x08) 나누기만 비교
+                    int ma = ((Number) fa).intValue() & 0x0C, mb = ((Number) fb).intValue() & 0x0C;
+                    if (ma != mb) add(fkey, path + "." + f.getName(), fa, fb);
+                    continue;
+                }
                 if (normalize && PARA_CTRL_LIST.equals(fkey) && fa instanceof List && fb instanceof List) {
                     compareParaCtrls(path + "." + f.getName(), (List<?>) fa, (List<?>) fb, depth + 1);
                     continue;

@@ -259,10 +259,11 @@ public class Ctrl_SectionDef extends Ctrl {
                     }
                     
                     switch(childAttrs.getNamedItem("border").getNodeValue()) {
+                    // 명세 표 130: bit3 테두리 감추기, bit8 첫 쪽에만 테두리 표시
                     case "HIDE_FIRST":
                         hideBorder = true;  showFirstBorder = false;    break;
                     case "SHOW_FIRST":
-                        hideBorder = true;  showFirstBorder = false;    break;
+                        hideBorder = false; showFirstBorder = true;     break;
                     case "SHOW_ALL":
                         hideBorder = false; showFirstBorder = false;    break;
                     default:
@@ -273,12 +274,13 @@ public class Ctrl_SectionDef extends Ctrl {
                     }
                     
                     switch(childAttrs.getNamedItem("fill").getNodeValue()) {
+                    // 명세 표 130: bit4 배경 감추기, bit9 첫 쪽에만 배경 표시
                     case "HIDE_FIRST":
                         hideFill = true;  showFirstFill = false;  break;
                     case "SHOW_FIRST":
-                        hideFill = true;  showFirstFill = true;  break;
+                        hideFill = false; showFirstFill = true;   break;
                     case "SHOW_ALL":
-                        hideFill = false;  showFirstFill = true;  break;
+                        hideFill = false; showFirstFill = false;  break;
                     default:
                     	if (log.isLoggable(Level.FINE)) {
                     		throw new NotImplementedException("Ctrl_SectionDef");

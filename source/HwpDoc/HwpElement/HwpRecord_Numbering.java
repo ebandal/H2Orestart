@@ -57,9 +57,12 @@ public class HwpRecord_Numbering extends HwpRecord {
             int typeBits                = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
             offset += 4;
 
+            numbering[i].attrBits       = typeBits;
+            // bit5~ : 번호 모양 (명세 표 41 값. 표 40 에는 없지만 HWP/HWPX 쌍 문서로 확인)
+            numbering[i].numberShape    = NumberShape2.from((typeBits>>>5) & 0x1F);
             numbering[i].align          = (byte) ((typeBits)&0x03);
-            numbering[i].useInstWidth   = (typeBits&0x40)==0x40?true:false;
-            numbering[i].autoIndent     = (typeBits&0x80)==0x80?true:false;
+            numbering[i].useInstWidth   = (typeBits&0x04)==0x04?true:false;
+            numbering[i].autoIndent     = (typeBits&0x08)==0x08?true:false;
             numbering[i].textOffsetType = (byte) ((typeBits>>>4)&0x01);
 
             numbering[i].widthAdjust    = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
@@ -225,6 +228,7 @@ public class HwpRecord_Numbering extends HwpRecord {
     }
 
     public static class ParaHeadInfo {
+        public int          attrBits;               // (HWP) 문단 머리 정보 속성 원본 비트
         public byte         align;                  // 문단머리정보 - 문단의 정렬 종류 - 기본글꼴 존재여부
         public boolean      useInstWidth;           // 문단머리정보 - 번호 너비를 실제 인스턴스 문자열의 너비에 따를지 여부
         public boolean      autoIndent;             // 문단머리정보 - 자동 내어 쓰기 여부

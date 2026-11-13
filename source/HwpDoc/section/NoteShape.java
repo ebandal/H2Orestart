@@ -30,7 +30,7 @@ import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.HwpParseException;
-import HwpDoc.HwpElement.HwpRecordTypes.LineStyle1;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 
 public class NoteShape {
@@ -49,7 +49,7 @@ public class NoteShape {
 	public short			spacingAboveLine;	// 구분선 위 여백
 	public short			spacingBelowLine;	// 구분선 아래 여백
 	public short			sapcingBetweenNotes;// 주석 사이 여백
-	public LineStyle1		noteLineType;
+	public LineStyle2		noteLineType;	// 테두리 선 종류 (0:없음, 1:실선 ...). 명세 표 25 는 "없음"이 빠져 있어 한 칸 밀려 있음
 	public byte				noteLineWidth;
 	public int				noteLineColor;
 
@@ -84,15 +84,10 @@ public class NoteShape {
 	        case "hp:noteLine":
 	            noteLineLength = parseInt(attr(attrs, "length"), 0);
 	            String type = attr(attrs, "type");
-	            if (type==null || "NONE".equals(type)) {
-	                noteLineType = LineStyle1.SOLID;
-	                noteLineLength = 0;     // 구분선 없음
-	            } else {
-	                try {
-	                    noteLineType = LineStyle1.valueOf(type);
-	                } catch (IllegalArgumentException e) {
-	                    noteLineType = LineStyle1.SOLID;
-	                }
+	            try {
+	                noteLineType = type==null ? LineStyle2.NONE : LineStyle2.valueOf(type);
+	            } catch (IllegalArgumentException e) {
+	                noteLineType = LineStyle2.SOLID;
 	            }
 	            noteLineWidth = lineWidthIndex(attr(attrs, "width"));
 	            String color = attr(attrs, "color");
@@ -186,7 +181,7 @@ public class NoteShape {
         offset += 2;
         noteShape.sapcingBetweenNotes   = (short) (buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
         offset += 2;
-        noteShape.noteLineType          = LineStyle1.from(buf[offset++]);
+        noteShape.noteLineType          = LineStyle2.from(buf[offset++]);
         noteShape.noteLineWidth         = buf[offset++];
         noteShape.noteLineColor         = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
         offset += 4;          
