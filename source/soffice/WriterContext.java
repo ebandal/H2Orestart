@@ -315,14 +315,15 @@ public class WriterContext implements IContext {
             ArrayList<String> keyList = new ArrayList<String>(docInfo.binDataList.keySet());
             String key = keyList.get(Integer.parseInt(id));
             binData = (HwpRecord_BinData) docInfo.binDataList.get(key);
+            retString = binData.aPath;
             break;
         case HWPX:
             docInfo = hwpx.getDocInfo();
             binData = (HwpRecord_BinData) docInfo.binDataList.get(id);
+            retString = binData.aPath.substring(binData.aPath.indexOf("/")+1);
             break;
         }
 
-        retString = binData.aPath;
         /*
          * String compoundFileName = String.format("BIN%04X.%s", binData.binDataID,
          * binData.format); try { retString = hwp.saveChildEntry(getWorkingFolder(),
@@ -348,14 +349,14 @@ public class WriterContext implements IContext {
                         try {
                             imageBytes = Files.readAllBytes(file.toPath());
                         } catch (IOException e) {
-	                        log.log(Level.SEVERE, e.toString(), e);
+                            log.log(Level.SEVERE, e.toString(), e);
                         }
                     } else {
                         String compoundFileName = String.format("BIN%04X.%s", binData.binDataID, binData.format);
                         try {
                             imageBytes = hwp.getChildBytes(compoundFileName, binData.compressed);
                         } catch (IOException e) {
-	                        log.log(Level.SEVERE, e.toString(), e);
+                            log.log(Level.SEVERE, e.toString(), e);
                         }
                     }
                 }
@@ -370,7 +371,7 @@ public class WriterContext implements IContext {
                         String binShortName = binData.aPath.replaceAll("BinData/(.*)\\..*", "$1");
                         imageBytes = hwpx.getBinDataByIDRef(binShortName);
                     } catch (IOException | DataFormatException e) {
-	                    log.log(Level.SEVERE, e.toString(), e);
+                        log.log(Level.SEVERE, e.toString(), e);
                     }
                 }
             }

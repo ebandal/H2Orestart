@@ -87,7 +87,8 @@ public class HwpRecord_Bullet extends HwpRecord {
             imageEffect             = buf[offset++];
         }
         if (size-(offset-off) > 0) {
-            binItemRefID            = String.valueOf(buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
+            int binItem             = buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            binItemRefID            = String.valueOf(binItem-1);    // 1-based BinData 번호를 0-based로 (ShapePic, BorderFill과 동일)
             offset += 2;
         }
         // size가 23byte일 경우, 아래 2byte는 읽지 않도록 한다. 문서도 정확하지 않으니 이게 맞는 것인지는 알 수 없다.

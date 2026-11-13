@@ -115,7 +115,7 @@ public class Ctrl_ShapeOle extends Ctrl_GeneralShape {
         offset += 4;
         obj.extentY     = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
-        obj.binDataID	= String.valueOf((short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF));   
+        obj.binDataID	= String.valueOf((short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF) - 1);   // 1-based BinData 번호를 0-based로
         offset += 2;
         obj.borderColor = buf[offset+3]<<24&0xFF000000 | buf[offset]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset+2]&0x000000FF;
         offset += 4;

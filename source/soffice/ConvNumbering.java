@@ -471,8 +471,8 @@ public class ConvNumbering {
                         newPropsReady = true;
                     } else {
                         // GraphicBitmap 전달하는 것이 동작하지 않는다. 해결될때까지 GraphicURL 전달하는 방식으로 유지한다.
-                        int binId = Integer.parseInt(bullet.binItemRefID)-1;
-                        byte[] imageAsByteArray = wContext.getBinBytes(String.valueOf(binId));
+                        // binItemRefID: HWP는 파서에서 0-based로 변환된 번호, HWPX는 manifest item id 문자열 (예: "image1")
+                        byte[] imageAsByteArray = wContext.getBinBytes(bullet.binItemRefID);
                         try (ByteArrayInputStream bis = new ByteArrayInputStream(imageAsByteArray)) {
                             BufferedImage originalImage = ImageIO.read(bis);
                             // emf, wmf 포맷은 ImageIO로는 읽지 못함
@@ -480,7 +480,7 @@ public class ConvNumbering {
                                 int imgWidth = originalImage.getWidth();
                                 int imgHeight = originalImage.getHeight();
                                 
-                                String imageExtractPath = wContext.getBinFilename(String.valueOf(binId));
+                                String imageExtractPath = wContext.getBinFilename(bullet.binItemRefID);
                                 Path homeDir = wContext.userHomeDir;
                                 path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + imageExtractPath);
                                 URL url = path.toFile().toURI().toURL();
