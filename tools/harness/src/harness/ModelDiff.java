@@ -84,6 +84,11 @@ public class ModelDiff {
             "HwpDocInfo.faceNameOffset"
     ));
 
+    /** 글자처럼 취급하는 개체에서 비교하지 않는 필드 */
+    static final Set<String> INLINE_IGNORED = new HashSet<String>(Arrays.asList(
+            "textWrap", "textFlow", "allowOverlap", "flowWithText", "vertRelTo", "horzRelTo", "vertAlign", "horzAlign"
+    ));
+
     /** 한쪽 모델에서 ID 를 객체로 바꾼다. 찾지 못하면 null */
     public interface Resolver {
         Object resolve(String list, int base, Object rawId);
@@ -200,8 +205,12 @@ public class ModelDiff {
         }
         if (visiting.containsKey(a)) return;     // 순환 참조
         visiting.put(a, Boolean.TRUE);
+        // 글자처럼 취급하는 개체는 본문 배치 관련 값이 쓰이지 않는다 (명세 표 70). 한글은 HWPX 저장 시 값을 바꿔 쓴다
+        boolean bothInline = a instanceof HwpDoc.paragraph.Ctrl_Common && b instanceof HwpDoc.paragraph.Ctrl_Common
+                && ((HwpDoc.paragraph.Ctrl_Common) a).treatAsChar && ((HwpDoc.paragraph.Ctrl_Common) b).treatAsChar;
         try {
             for (Field f : ModelDumper.fieldsOf(ca)) {
+                if (bothInline && INLINE_IGNORED.contains(f.getName())) continue;
                 if (IGNORE_FIELDS.contains(f.getName())) continue;
                 Object fa, fb;
                 try {

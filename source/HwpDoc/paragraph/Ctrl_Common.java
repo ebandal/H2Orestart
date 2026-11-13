@@ -288,7 +288,9 @@ public class Ctrl_Common extends Ctrl {
                         throw new NotImplementedException(HwpRecord.attrError("Ctrl_Common", child, childAttrs.getNamedItem("treatAsChar")));
                     }
                     
-                    if (treatAsChar) {
+                    // affectLSpacing 은 글자처럼 취급할 때, allowOverlap 은 아닐 때만 의미가 있지만
+                    // HWP 와 같이 값은 항상 읽어 둔다 (저장 시 원래 값을 유지하기 위해)
+                    if (childAttrs.getNamedItem("affectLSpacing") != null) {
                         switch(childAttrs.getNamedItem("affectLSpacing").getNodeValue()) {
                         case "0":
                             affectLSpacing = false; break;
@@ -297,7 +299,8 @@ public class Ctrl_Common extends Ctrl {
                         default:
                             throw new NotImplementedException(HwpRecord.attrError("Ctrl_Common", child, childAttrs.getNamedItem("affectLSpacing")));
                         }
-                    } else {
+                    }
+                    if (childAttrs.getNamedItem("allowOverlap") != null) {
                         switch(childAttrs.getNamedItem("allowOverlap").getNodeValue()) {
                         case "0":
                             allowOverlap = false; break;
@@ -319,7 +322,7 @@ public class Ctrl_Common extends Ctrl {
                         horzRelTo = HRelTo.valueOf(childAttrs.getNamedItem("horzRelTo").getNodeValue());
                     }
                     
-                    if (vertRelTo==VRelTo.PARA) {
+                    if (childAttrs.getNamedItem("flowWithText") != null) {     // vertRelTo 가 PARA 일 때만 의미가 있지만 항상 읽음
                         switch(childAttrs.getNamedItem("flowWithText").getNodeValue()) {
                         case "0":
                             flowWithText = false; break;
@@ -430,9 +433,11 @@ public class Ctrl_Common extends Ctrl {
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
-                        case "p":
-                            CellParagraph cellP = new CellParagraph(grandChild, version, context);
-                            paras.add(cellP);
+                        case "hp:p":
+                            // 캡션 문단은 caption 목록에 넣는다 (HWP 와 같음).
+                            // 기존: 요소 이름 "p" 로 비교해 캡션을 하나도 읽지 못했고, 읽더라도 paras 에 넣었음
+                            CapParagraph capP = new CapParagraph(grandChild, version, context);
+                            caption.add(capP);
                             break;
                         }
                     }
