@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import HwpDoc.HwpElement.HwpRecord_BorderFill;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
+
 /**
  * 두 모델 객체 그래프(HWP 파서 결과 vs HWPX 파서 결과)를 리플렉션으로 나란히 순회하며 다른 값을 수집한다.
  * - 리스트/배열은 같은 인덱스끼리 비교하고, 길이가 다르면 "#size" 차이를 기록한다
@@ -244,7 +247,10 @@ public class ModelDiff {
                         }
                         continue;
                     } else if (ra != null || rb != null) {
-                        add(fkey + "#ref", path + "." + f.getName(), fa, fb);
+                        // HWP 의 테두리/배경 "없음"(0) 과 HWPX 의 빈 테두리/배경(보통 1번)은 같은 뜻
+                        if (!isEmptyBorderFill(ra != null ? ra : rb)) {
+                            add(fkey + "#ref", path + "." + f.getName(), fa, fb);
+                        }
                         continue;
                     }
                     // 양쪽 다 찾지 못하면 (예: 없음을 뜻하는 0, -1) 값 그대로 비교
@@ -254,6 +260,18 @@ public class ModelDiff {
         } finally {
             visiting.remove(a);
         }
+    }
+
+    /** 선도 채우기도 없는 테두리/배경 */
+    static boolean isEmptyBorderFill(Object o) {
+        if (!(o instanceof HwpRecord_BorderFill)) return false;
+        HwpRecord_BorderFill b = (HwpRecord_BorderFill) o;
+        HwpRecord_BorderFill.Border[] sides = { b.left, b.right, b.top, b.bottom };
+        for (HwpRecord_BorderFill.Border side : sides) {
+            if (side != null && side.style != null && side.style != LineStyle2.NONE) return false;
+        }
+        if (b.slash != 0 || b.backSlash != 0) return false;
+        return b.fill == null || b.fill.fillType == 0;
     }
 
     /** 문단의 컨트롤 목록 (ParaText + 컨트롤) */
