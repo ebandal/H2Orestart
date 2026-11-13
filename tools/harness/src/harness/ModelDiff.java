@@ -43,7 +43,8 @@ public class ModelDiff {
             "HwpElement.HwpRecord_BinData.itemId",      // "1"          vs "image1"
             "HwpElement.HwpRecord_BinData.binDataID",
             "HwpElement.HwpRecord_BinData.compressed",
-            "HwpElement.HwpRecord_BinData.state"
+            "HwpElement.HwpRecord_BinData.state",
+            "HwpElement.HwpRecord_ParaShape.attrBits"     // HWP 원본 비트 (HWPX 에는 없음)
     ));
 
     /**
