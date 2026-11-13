@@ -1,0 +1,8 @@
+/bin/
+/dist
+*.odt
+*.pdf
+
+# harness outputs (local corpus data, do not commit)
+/tools/harness/out/
+/tools/harness/work/
