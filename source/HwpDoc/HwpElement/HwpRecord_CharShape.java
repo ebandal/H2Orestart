@@ -82,7 +82,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 		int offset = off;
 		for (int i=0; i < Lang.MAX.num; i++) {
 			short fontID 	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
-			fontName[i] 	= ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+			fontName[i] 	= parent.getFaceName(i, fontID);
 			offset += 2;
 		}
 		for (int i=0; i < Lang.MAX.num; i++) {
@@ -258,25 +258,25 @@ public class HwpRecord_CharShape extends HwpRecord {
                     NamedNodeMap childAttrs = child.getAttributes();
                     numStr = childAttrs.getNamedItem("hangul").getNodeValue();
                     short fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.HANGUL.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.HANGUL.num]     = parent.getFaceName(Lang.HANGUL.num, fontID);
                     numStr = childAttrs.getNamedItem("latin").getNodeValue();
                     fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.LATIN.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.LATIN.num]     = parent.getFaceName(Lang.LATIN.num, fontID);
                     numStr = childAttrs.getNamedItem("hanja").getNodeValue();
                     fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.HANJA.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.HANJA.num]     = parent.getFaceName(Lang.HANJA.num, fontID);
                     numStr = childAttrs.getNamedItem("japanese").getNodeValue();
                     fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.JAPANESE.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.JAPANESE.num]     = parent.getFaceName(Lang.JAPANESE.num, fontID);
                     numStr = childAttrs.getNamedItem("other").getNodeValue();
                     fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.OTHER.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.OTHER.num]     = parent.getFaceName(Lang.OTHER.num, fontID);
                     numStr = childAttrs.getNamedItem("symbol").getNodeValue();
                     fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.SYMBOL.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.SYMBOL.num]     = parent.getFaceName(Lang.SYMBOL.num, fontID);
                     numStr = childAttrs.getNamedItem("user").getNodeValue();
                     fontID = (short)Integer.parseInt(numStr);
-                    fontName[Lang.USER.num]     = ((HwpRecord_FaceName)parent.faceNameList.get(fontID)).faceName;
+                    fontName[Lang.USER.num]     = parent.getFaceName(Lang.USER.num, fontID);
                 }
                 break;
             case "hh:ratio":
