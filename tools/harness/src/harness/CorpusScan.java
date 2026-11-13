@@ -147,6 +147,7 @@ public class CorpusScan {
         });
 
         XmlInventory inventory = new XmlInventory();
+        Coverage coverage = new Coverage();
         Map<String, Agg> logAgg = new TreeMap<String, Agg>();
         Map<String, Agg> errAgg = new TreeMap<String, Agg>();
         Map<String, Integer> statusCount = new TreeMap<String, Integer>();
@@ -190,9 +191,10 @@ public class CorpusScan {
             final Path dumpFile = dump ? dumps.resolve(String.format("%03d_%s.txt", idx, sanitize(p.getFileName().toString()))) : null;
             long t0 = System.currentTimeMillis();
             capture.drain();
+            final DomTracker tracker = new DomTracker();
             Future<Result> fut = exec.submit(new Callable<Result>() {
                 @Override public Result call() throws Exception {
-                    return parseAndDump(p.toFile(), dumpFile);
+                    return parseAndDump(p.toFile(), dumpFile, tracker);
                 }
             });
             Result res;
@@ -211,6 +213,9 @@ public class CorpusScan {
                 aggregate(errAgg, errorKey(c), idx, rel, res.error);
             }
             long ms = System.currentTimeMillis() - t0;
+            if ("OK".equals(res.status) && target.equals(xmlVer)) {
+                coverage.collect(tracker, idx, rel);
+            }
 
             List<LogRecord> logs = capture.drain();
             for (LogRecord r : logs) {
@@ -238,6 +243,12 @@ public class CorpusScan {
         pw = writer(out.resolve("zip-entries.tsv"));
         inventory.writeEntries(pw);
         pw.close();
+        pw = writer(out.resolve("coverage-elements.tsv"));
+        coverage.writeElements(pw);
+        pw.close();
+        pw = writer(out.resolve("coverage-attributes.tsv"));
+        coverage.writeAttributes(pw);
+        pw.close();
         writeAgg(out.resolve("parse-logs.tsv"), "level\tlogger\tmessage", logAgg);
         writeAgg(out.resolve("parse-errors.tsv"), "exception\ttopFrame", errAgg);
 
@@ -249,6 +260,8 @@ public class CorpusScan {
         rep.println("inventory  : " + inventory.elementKinds() + " element kinds, " + inventory.attributeKinds() + " attribute kinds");
         rep.println("errors     : " + errAgg.size() + " distinct (see parse-errors.tsv)");
         rep.println("logs       : " + logAgg.size() + " distinct INFO+ messages (see parse-logs.tsv)");
+        rep.println("coverage   : (target docs, see coverage-*.tsv)");
+        rep.println(coverage.summary());
         rep.close();
         System.out.println();
         System.out.println(new String(Files.readAllBytes(out.resolve("report.txt")), StandardCharsets.UTF_8));
@@ -256,10 +269,10 @@ public class CorpusScan {
         System.exit(0);
     }
 
-    static Result parseAndDump(File file, Path dumpFile) throws Exception {
+    static Result parseAndDump(File file, Path dumpFile, DomTracker tracker) throws Exception {
         Result res = new Result();
         Ctx ctx = new Ctx();
-        HwpxFile hwpx = new HwpxFile(file);
+        HwpxFile hwpx = new TrackingHwpxFile(file, tracker);
         ctx.hwpx = hwpx;
         try {
             hwpx.open(ctx);
