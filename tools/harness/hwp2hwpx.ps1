@@ -8,6 +8,8 @@
   - 문서 하나가 TimeoutSec 를 넘기면 이 스크립트가 띄운 한글 프로세스만 종료하고, 다음 파일부터 새 인스턴스로 계속한다
     (새 인스턴스에서는 보안 창이 다시 뜰 수 있다)
   - 결과: <OutDir>\results.tsv (file, status, ms, outKB, error)
+  - 암호/DRM 문서는 열 때 입력 창이 뜨므로 건너뛴다 (SKIP_PASSWORD). 목록은 HwpFlagScan 으로 미리 만든다:
+      java -cp tools/harness/out/classes harness.HwpFlagScan <Root> tools/harness/work/hwp2hwpx-flags.tsv
 
   사용 예:
     powershell -ExecutionPolicy Bypass -File tools\harness\hwp2hwpx.ps1
@@ -17,7 +19,8 @@ param(
     [string]$Root = "D:\eclipse-workspace\HWP",
     [string]$OutDir = (Join-Path $PSScriptRoot "work\hwp2hwpx"),
     [int]$TimeoutSec = 120,
-    [int]$Limit = 0
+    [int]$Limit = 0,
+    [string]$FlagList = (Join-Path $PSScriptRoot "work\hwp2hwpx-flags.tsv")
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,18 +32,37 @@ $marker  = Join-Path $OutDir "current.txt"
 $infoFile = Join-Path $OutDir "hwpinfo.txt"
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 
+# 암호/DRM 문서 목록 (skip=1)
+$skipSet = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+if (Test-Path -LiteralPath $FlagList) {
+    Import-Csv -LiteralPath $FlagList -Delimiter "`t" -Encoding UTF8 | Where-Object { $_.skip -eq "1" } | ForEach-Object { [void]$skipSet.Add($_.file) }
+} else {
+    Write-Host "암호 문서 목록($FlagList)이 없습니다. 암호 문서를 만나면 입력 창이 뜹니다 (취소하면 OPEN_FAIL 로 기록)." -ForegroundColor Yellow
+}
+
 # 처리 대상: 출력이 아직 없는 .hwp
 $todo = New-Object System.Collections.Generic.List[string]
+$skipped = New-Object System.Collections.Generic.List[string]
 Get-ChildItem -Path $Root -Recurse -File -Filter "*.hwp" | Where-Object { $_.Extension -ieq ".hwp" } | Sort-Object FullName | ForEach-Object {
     $rel = $_.FullName.Substring($Root.Length).TrimStart('\')
     $dst = Join-Path $OutDir ([System.IO.Path]::ChangeExtension($rel, ".hwpx"))
-    if (-not (Test-Path -LiteralPath $dst)) { $todo.Add($rel) }
+    if (-not (Test-Path -LiteralPath $dst)) {
+        if ($skipSet.Contains($rel)) { $skipped.Add($rel) } else { $todo.Add($rel) }
+    }
 }
 if ($Limit -gt 0 -and $todo.Count -gt $Limit) { $todo = $todo.GetRange(0, $Limit) }
 if (-not (Test-Path -LiteralPath $results)) {
     [System.IO.File]::WriteAllText($results, "file`tstatus`tms`toutKB`terror`r`n", $utf8)
 }
-Write-Host ("대상 {0}개 (이미 변환된 파일은 제외), 출력: {1}" -f $todo.Count, $OutDir)
+# 건너뛴 암호 문서는 결과에 한 번만 기록 (이전 실행에서 기록된 파일은 다시 쓰지 않음)
+$recorded = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+Import-Csv -LiteralPath $results -Delimiter "`t" -Encoding UTF8 | Where-Object { $_.status -eq "SKIP_PASSWORD" } | ForEach-Object { [void]$recorded.Add($_.file) }
+foreach ($rel in $skipped) {
+    if (-not $recorded.Contains($rel)) {
+        [System.IO.File]::AppendAllText($results, "$rel`tSKIP_PASSWORD`t0`t0`t`r`n", $utf8)
+    }
+}
+Write-Host ("대상 {0}개 (이미 변환된 파일 제외, 암호 문서 {1}개 건너뜀), 출력: {2}" -f $todo.Count, $skipped.Count, $OutDir)
 if ($todo.Count -eq 0) { exit 0 }
 
 # 작업 프로세스(Job) 안에서 한글 인스턴스 하나로 목록을 차례로 처리한다
