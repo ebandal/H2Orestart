@@ -51,6 +51,10 @@ public class DomTracker {
     private final Set<Node> entered = Collections.newSetFromMap(new IdentityHashMap<Node, Boolean>());
     private final Set<Node> textRead = Collections.newSetFromMap(new IdentityHashMap<Node, Boolean>());
     private final List<Loaded> loaded = new ArrayList<Loaded>();
+    /** NamedNodeMap -> 소유 요소 */
+    private final Map<Object, Node> mapOwner = new IdentityHashMap<Object, Node>();
+    /** 파서가 DOM 에서 지운 속성 (요소 -> 이름 -> 값) */
+    private final Map<Node, Map<String, String>> removed = new IdentityHashMap<Node, Map<String, String>>();
     private static final Map<Class<?>, Class<?>[]> IFACES = new HashMap<Class<?>, Class<?>[]>();
 
     public Document wrap(String entry, Document doc) {
@@ -62,6 +66,10 @@ public class DomTracker {
     public boolean isNameRead(Node n) { return nameRead.contains(n); }
     public boolean isEntered(Node n) { return entered.contains(n); }
     public boolean isTextRead(Node n) { return textRead.contains(n); }
+    public Map<String, String> removedAttrs(Node n) {
+        Map<String, String> m = removed.get(n);
+        return m == null ? Collections.<String, String>emptyMap() : m;
+    }
     public boolean isAttrRead(Node n, String attr) {
         Set<String> s = attrRead.get(n);
         return s != null && s.contains(attr);
@@ -106,6 +114,26 @@ public class DomTracker {
             attrRead.put(owner, s);
         }
         s.add(name);
+    }
+
+    private void recordRemove(Object target, String m, Object[] args) {
+        Node owner = null;
+        String name = null;
+        if (target instanceof NamedNodeMap && "removeNamedItem".equals(m)) {
+            owner = mapOwner.get(target);
+            name = (String) args[0];
+        } else if (target instanceof Element && ("removeAttribute".equals(m))) {
+            owner = (Element) target;
+            name = (String) args[0];
+        }
+        if (owner == null || name == null || !(owner instanceof Element)) return;
+        String value = ((Element) owner).getAttribute(name);
+        Map<String, String> mm = removed.get(owner);
+        if (mm == null) {
+            mm = new java.util.LinkedHashMap<String, String>();
+            removed.put(owner, mm);
+        }
+        mm.put(name, value);
     }
 
     private void record(Object target, String m, Object[] args) {
@@ -153,11 +181,15 @@ public class DomTracker {
                 }
             }
             record(target, method.getName(), args);
+            recordRemove(target, method.getName(), args);
             Object r;
             try {
                 r = method.invoke(target, args);
             } catch (InvocationTargetException e) {
                 throw e.getCause();
+            }
+            if (target instanceof Element && "getAttributes".equals(method.getName()) && r != null) {
+                mapOwner.put(r, (Element) target);
             }
             return wrapAny(r);
         }

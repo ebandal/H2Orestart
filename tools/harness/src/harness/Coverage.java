@@ -124,6 +124,29 @@ public class Coverage {
             }
         }
 
+        // 파서가 DOM 에서 지운 속성도 집계한다 (지우기 전에 읽었는지로 판정)
+        for (Map.Entry<String, String> ra : t.removedAttrs(e).entrySet()) {
+            String an = ra.getKey();
+            String akey = kind + "	" + name + "@" + an;
+            AttrStat as = attrs.get(akey);
+            if (as == null) {
+                as = new AttrStat();
+                as.sampleValue = ra.getValue();
+                as.sampleDoc = docName;
+                attrs.put(akey, as);
+            }
+            as.docs.add(docIdx);
+            as.present++;
+            attrPresent++;
+            if (t.isAttrRead(e, an)) {
+                as.read++;
+                attrReadTotal++;
+            } else {
+                as.unreadDocs.add(docIdx);
+                if (as.unreadDocs.size() == 1) as.sampleValue = ra.getValue();
+            }
+        }
+
         // 텍스트 (직접 자식 텍스트가 공백이 아닐 때)
         boolean hasText = false;
         NodeList children = e.getChildNodes();
