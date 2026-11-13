@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -41,7 +42,8 @@ public class HwpParagraph {
     public short            paraStyleID;    // HWPTAG_PARA_HEADER
     public byte             breakType;      // HWPTAG_PARA_HEADER
     // public List<CharShape>   charShapes;   // HWPTAG_PARA_CHAR_SHAPE
-    public LineSeg          lineSegs;       // HWPTAG_PARA_LINE_SEG
+    public LineSeg          lineSegs;       // HWPTAG_PARA_LINE_SEG (첫 번째 줄)
+    public List<LineSeg>    lineSegList;    // HWPTAG_PARA_LINE_SEG (모든 줄)
     public List<RangeTag>   rangeTags;      // HWPTAG_PARA_RANGE_TAG
     
     public LinkedList<Ctrl> p;              // HWPTAG_PARA_TEXT + List<Ctrl>  V2
@@ -118,7 +120,14 @@ public class HwpParagraph {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
                         case "hp:lineseg":	
-                            lineSegs = new LineSeg(grandChild, version);
+                            {
+                                LineSeg seg = new LineSeg(grandChild, version);
+                                if (lineSegList == null) {
+                                    lineSegList = new ArrayList<LineSeg>();
+                                    lineSegs = seg;     // HWP 와 같이 첫 번째 줄
+                                }
+                                lineSegList.add(seg);
+                            }
                             break;
                         }
                     }

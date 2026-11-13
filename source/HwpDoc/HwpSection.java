@@ -269,7 +269,8 @@ public class HwpSection {
                     }
                     break;
                 case HWPTAG_PARA_LINE_SEG:
-                    currPara.lineSegs = new LineSeg(tagNum, level, size, buf, offset, version);
+                    currPara.lineSegList = LineSeg.parseAll(tagNum, level, size, buf, offset, version);
+                    currPara.lineSegs = currPara.lineSegList.isEmpty() ? null : currPara.lineSegList.get(0);
                     offset += size;
                     break;
                 case HWPTAG_PARA_RANGE_TAG:

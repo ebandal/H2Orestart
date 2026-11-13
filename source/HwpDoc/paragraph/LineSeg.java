@@ -20,6 +20,8 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.w3c.dom.NamedNodeMap;
@@ -71,17 +73,42 @@ public class LineSeg {
         }
     }
     
+    /**
+     * HWPX hp:lineseg
+     * &lt;hp:lineseg textpos="0" vertpos="0" vertsize="1000" textheight="1000" baseline="850" spacing="600"
+     *             horzpos="0" horzsize="42520" flags="393216"/&gt;
+     */
     public LineSeg (Node node, int version) {
         NamedNodeMap attrs = node.getAttributes();
         
-        String numStr = attrs.getNamedItem("baseline").getNodeValue();
-        numStr = attrs.getNamedItem("flags").getNodeValue();
-        numStr = attrs.getNamedItem("horzpos").getNodeValue();
-        numStr = attrs.getNamedItem("horzsize").getNodeValue();
-        numStr = attrs.getNamedItem("spacing").getNodeValue();
-        numStr = attrs.getNamedItem("textheight").getNodeValue();
-        numStr = attrs.getNamedItem("textpos").getNodeValue();
-        numStr = attrs.getNamedItem("vertpos").getNodeValue();
-        numStr = attrs.getNamedItem("vertsize").getNodeValue();
+        this.startPos           = intAttr(attrs, "textpos");
+        this.lineVerticalPos    = intAttr(attrs, "vertpos");
+        this.lineHeight         = intAttr(attrs, "vertsize");
+        this.textHeight         = intAttr(attrs, "textheight");
+        this.lineDistanceToBase = intAttr(attrs, "baseline");
+        this.lineSpacing        = intAttr(attrs, "spacing");
+        this.columnStartPos     = intAttr(attrs, "horzpos");
+        this.segmentWidth       = intAttr(attrs, "horzsize");
+        this.lineTag            = intAttr(attrs, "flags");
+        this.isHeadingApplied   = (this.lineTag>>21&0x01)==0x01?true:false;
+    }
+
+    /** HWPTAG_PARA_LINE_SEG 레코드 하나에 들어 있는 모든 줄 정보 (줄 하나당 36 bytes) */
+    public static List<LineSeg> parseAll(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
+        List<LineSeg> list = new ArrayList<LineSeg>();
+        for (int i=0; i+36<=size; i+=36) {
+            list.add(new LineSeg(tagNum, level, 36, buf, off+i, version));
+        }
+        return list;
+    }
+
+    private static int intAttr(NamedNodeMap attrs, String name) {
+        Node n = attrs.getNamedItem(name);
+        if (n == null) return 0;
+        try {
+            return (int) Long.parseLong(n.getNodeValue().trim());   // flags 등 unsigned 32bit 값
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }
