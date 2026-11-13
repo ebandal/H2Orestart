@@ -197,18 +197,19 @@ public class HwpParagraph {
                     case "#text":
                         p.add(new ParaText("____", child.getNodeValue(), 0, charShapeId));
                         break;
+                    // 탭/줄바꿈/특수 공백도 그 run 의 글자 모양을 갖는다 (기존: 0번 글자 모양이 적용됨)
                     case "hp:lineBreak":
-                        p.add(new Ctrl_Character("   _", CtrlCharType.LINE_BREAK));
+                        p.add(new Ctrl_Character("   _", CtrlCharType.LINE_BREAK, charShapeId));
                         break;
                     case "hp:hyphen":
-                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN));
+                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN, charShapeId));
                         break;
                     case "hp:nbSpace":
                     case "hp:fwSpace":
-                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE));
+                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE, charShapeId));
                         break;
                     case "hp:tab":
-                        p.add(new ParaText("____", "\t", 0));
+                        p.add(new ParaText("____", "\t", 0, charShapeId));
                         break;
                     case "hp:markpenBegin":    // 134 page
                     case "hp:markpenEnd":

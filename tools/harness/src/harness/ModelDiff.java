@@ -212,6 +212,10 @@ public class ModelDiff {
                 if (IGNORE_KEYS.contains(fkey)) continue;
                 boolean normalize = leftResolver != null && rightResolver != null;
                 if (normalize && REF_LISTS.contains(fkey)) continue;
+                if (normalize && PARA_CTRL_LIST.equals(fkey) && fa instanceof List && fb instanceof List) {
+                    compareParaCtrls(path + "." + f.getName(), (List<?>) fa, (List<?>) fb, depth + 1);
+                    continue;
+                }
                 String[] ref = normalize ? REFS.get(fkey) : null;
                 if (ref != null) {
                     int base = Integer.parseInt(ref[1]);
@@ -233,6 +237,83 @@ public class ModelDiff {
         } finally {
             visiting.remove(a);
         }
+    }
+
+    /** 문단의 컨트롤 목록 (ParaText + 컨트롤) */
+    static final String PARA_CTRL_LIST = "paragraph.HwpParagraph.p";
+    static final String CHAR_SHAPE_KEY = "paragraph.ParaText.charShapeId";
+
+    /**
+     * 문단 안의 컨트롤 목록을 비교한다.
+     * - 한글은 HWPX 로 저장할 때 같은 글자 모양의 텍스트 조각을 합치므로 ParaText 는 위치로 비교하지 않는다.
+     *   텍스트는 이어 붙인 문자열로, 글자 모양은 글자 위치마다 (참조 대상 내용으로) 비교한다.
+     * - 그 밖의 컨트롤은 종류 순서를 LCS 로 맞춘 뒤 짝끼리 비교하고, 짝이 없으면 "#only" 로 기록한다.
+     */
+    private void compareParaCtrls(String path, List<?> a, List<?> b, int depth) {
+        StringBuilder ta = new StringBuilder(), tb = new StringBuilder();
+        List<Object> sa = new ArrayList<Object>(), sb = new ArrayList<Object>();   // 글자 위치별 글자 모양 ID
+        List<Object> ca = new ArrayList<Object>(), cb = new ArrayList<Object>();   // 텍스트 이외의 컨트롤
+        split(a, ta, sa, ca);
+        split(b, tb, sb, cb);
+
+        if (!ta.toString().equals(tb.toString())) {
+            add("paragraph.ParaText.text#merged", path, ta.toString(), tb.toString());
+        } else {
+            String[] ref = REFS.get(CHAR_SHAPE_KEY);
+            int base = Integer.parseInt(ref[1]);
+            for (int i = 0; i < sa.size(); i++) {
+                Object ra = leftResolver.resolve(ref[0], base, sa.get(i));
+                Object rb = rightResolver.resolve(ref[0], base, sb.get(i));
+                if (ra != null && rb != null) {
+                    if (firstTime(ra, rb)) {
+                        compare(path + "#char[" + i + "]->" + ref[0], CHAR_SHAPE_KEY, ra, rb, depth + 1);
+                    }
+                } else if (ra != null || rb != null) {
+                    add(CHAR_SHAPE_KEY + "#ref", path + "#char[" + i + "]", sa.get(i), sb.get(i));
+                }
+            }
+        }
+
+        // 컨트롤 종류 순서로 LCS 정렬
+        int n = ca.size(), m = cb.size();
+        int[][] lcs = new int[n + 1][m + 1];
+        for (int i = n - 1; i >= 0; i--) {
+            for (int j = m - 1; j >= 0; j--) {
+                lcs[i][j] = sig(ca.get(i)).equals(sig(cb.get(j))) ? lcs[i + 1][j + 1] + 1
+                                                                 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+            }
+        }
+        int i = 0, j = 0;
+        while (i < n || j < m) {
+            if (i < n && j < m && sig(ca.get(i)).equals(sig(cb.get(j)))) {
+                compare(path + "[" + sig(ca.get(i)) + "#" + i + "]", PARA_CTRL_LIST, ca.get(i), cb.get(j), depth + 1);
+                i++;
+                j++;
+            } else if (j >= m || (i < n && lcs[i + 1][j] >= lcs[i][j + 1])) {
+                add(PARA_CTRL_LIST + "#only:" + sig(ca.get(i)), path + "[" + i + "]", sig(ca.get(i)), "(none)");
+                i++;
+            } else {
+                add(PARA_CTRL_LIST + "#only:" + sig(cb.get(j)), path + "[" + j + "]", "(none)", sig(cb.get(j)));
+                j++;
+            }
+        }
+    }
+
+    private static void split(List<?> list, StringBuilder text, List<Object> shapes, List<Object> ctrls) {
+        for (Object o : list) {
+            if (o instanceof HwpDoc.paragraph.ParaText) {
+                HwpDoc.paragraph.ParaText t = (HwpDoc.paragraph.ParaText) o;
+                String s = t.text == null ? "" : t.text;
+                text.append(s);
+                for (int k = 0; k < s.length(); k++) shapes.add(t.charShapeId);
+            } else if (o != null) {
+                ctrls.add(o);
+            }
+        }
+    }
+
+    private static String sig(Object o) {
+        return o == null ? "null" : ModelDumper.simpleName(o.getClass());
     }
 
     @SuppressWarnings("unchecked")
