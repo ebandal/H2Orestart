@@ -177,7 +177,13 @@ public class ConvTable {
                 }
             }
 
-            
+            // 제목 줄 반복: 위에서부터 연속된 제목 셀 행 수만큼 반복
+            int headerRows = countHeaderRows(table);
+            if ((table.attr & 0x04) != 0 && headerRows > 0) {
+                tableProps.setPropertyValue("RepeatHeadline", true);
+                tableProps.setPropertyValue("HeaderRowCount", headerRows);
+            }
+
             HwpRecord_BorderFill tableBorderFill = WriterContext.getBorderFill(table.borderFillID);
             if (tableBorderFill != null) {
                 TableBorder tBorder = new TableBorder();
@@ -1127,6 +1133,18 @@ public class ConvTable {
         int xx = (nullColCount + curRowsCount - otherRowsColSpan) / 26;
         int xxx = (nullColCount + curRowsCount - otherRowsColSpan) % 26;
         return (xx > 0 ? "" + ((char) ('a' + (xxx))) : "" + ((char) ('A' + xxx))) + (y + 1);
+    }
+
+    /** 첫 행부터 연속으로 제목 셀(header)이 있는 행의 수. 제목 셀 정보가 없으면(HWP) 0 */
+    private static int countHeaderRows(Ctrl_Table table) {
+        if (table.cells == null) return 0;
+        java.util.Set<Integer> headerRowSet = new java.util.HashSet<Integer>();
+        for (TblCell cell : table.cells) {
+            if (cell.header) headerRowSet.add((int) cell.rowAddr);
+        }
+        int rows = 0;
+        while (headerRowSet.contains(rows)) rows++;
+        return rows;
     }
 
     private static void setCellPara(String cellName, TblCell cell, XTextTable xtable, Ctrl_Table table,

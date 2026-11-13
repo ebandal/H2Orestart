@@ -42,6 +42,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
 	public boolean		snapToGrid;								// 편집 용지의 줄 격자 사용 여부
 	public byte			condense;								// 공백 최소값 (0%~75%)
 	public boolean 		widowOrphan;							// 외톨이줄 보호 여부
+	public boolean 		keepLines;								// 문단 보호 여부
 	public boolean 		keepWithNext;							// 다음 문단과 함께 여부
 	public boolean 		pageBreakBefore;						// 문단 앞에서 항상 쪽 나눔 여부
 	public VerticalAlign   vertAlign;							// 세로정렬 (0:글꼴기준, 1:위쪽, 2:가운데, 3:아래)
@@ -300,14 +301,12 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "1":
                     keepWithNext = true;    break;
                 }
-                /*
                 switch(childAttrs.getNamedItem("keepLines").getNodeValue()) {
                 case "0":
                     keepLines = false;    break;
                 case "1":
                     keepLines = true;    break;
                 }
-				*/
                 switch(childAttrs.getNamedItem("pageBreakBefore").getNodeValue()) {
                 case "0":
                     pageBreakBefore = false;   break;
@@ -456,6 +455,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		cloned.snapToGrid        = source.snapToGrid;
 		cloned.condense          = source.condense;
 		cloned.widowOrphan       = source.widowOrphan;
+		cloned.keepLines         = source.keepLines;
 		cloned.keepWithNext      = source.keepWithNext;
 		cloned.pageBreakBefore   = source.pageBreakBefore;
 		cloned.vertAlign 	     = source.vertAlign;

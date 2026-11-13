@@ -51,6 +51,7 @@ public class Ctrl_Common extends Ctrl {
     public boolean     allowOverlap;	// 다른 오브젝트와 겹치는 것을 허용할지 여부. (TreatAsChar가 false일대만 사용, flowWithText가 true이면 언제나 false로 간주함)
     public WidthRelTo  widthRelto;		// 오브젝트 폭의 기준
     public HeightRelTo heightRelto;	// 오브젝트 높이의 기준
+    public byte        pageBreak;		// (HWPX) 쪽 경계에서 나눔. HWP 표 속성 bit0-1 과 같은 값 (0:NONE, 1:TABLE, 2:CELL)
     public TextWrap    textWrap;		// 0:어울림(Square), 1:자리차지(TopAndBottom),2:글뒤로(BehindText), 3:글앞으로(InFrontOfText)
     public byte        textFlow;		// 0:양쪽, 1:왼쪽, 2:오른쪽, 3:큰쪽
     public byte        numberingType;  // 이 객체가 속하는 번호 범위
@@ -181,9 +182,11 @@ public class Ctrl_Common extends Ctrl {
         if (attributes.getNamedItem("pageBreak")!=null) {
             switch(attributes.getNamedItem("pageBreak").getNodeValue()) {
             case "TABLE":
+                pageBreak = 1;  break;
             case "CELL":
+                pageBreak = 2;  break;
             case "NONE":
-                break;
+                pageBreak = 0;  break;
             default:
                 if (log.isLoggable(Level.FINE)) {
                     throw new NotImplementedException("Ctrl_Common");

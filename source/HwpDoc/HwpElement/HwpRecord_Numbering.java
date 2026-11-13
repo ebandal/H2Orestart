@@ -31,6 +31,7 @@ import org.w3c.dom.NodeList;
 import HwpDoc.HwpDocInfo;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
+import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 
 public class HwpRecord_Numbering extends HwpRecord {
     private static final Logger log = Logger.getLogger(HwpRecord_Numbering.class.getName());
@@ -206,222 +207,11 @@ public class HwpRecord_Numbering extends HwpRecord {
                     numStr = childAttrs.getNamedItem("textOffset").getNodeValue();
                     numbering[j].textOffset = Short.parseShort(numStr);
 
-                    // level은 1수준~7수준을 의미
-                    numStr = childAttrs.getNamedItem("level").getNodeValue();
-                    short level = Short.parseShort(numStr);
-
-                    switch(childAttrs.getNamedItem("numFormat").getNodeValue()) {
-                    case "DIGIT":
-                        switch(level) {
-                        case 1:
-                            numbering[j].numFormat = "^1.";
-                            break;
-                        case 2:
-                            numbering[j].numFormat = "^2.";
-                            break;
-                        case 3:
-                            numbering[j].numFormat = "^3.";
-                            break;
-                        case 4:
-                            numbering[j].numFormat = "^4.";
-                            break;
-                        case 5:
-                            numbering[j].numFormat = "^5.";
-                            break;
-                        case 6:
-                            numbering[j].numFormat = "^6.";
-                            break;
-                        case 7:
-                            numbering[j].numFormat = "^7.";
-                            break;
-                        case 8:
-                            numbering[j].numFormat = "^8.";
-                            break;
-                        case 9:
-                            numbering[j].numFormat = "^9.";
-                            break;
-                        case 10:
-                            numbering[j].numFormat = "^10.";
-                            break;
-                        }
-                        break;
-                    case "HANGUL_SYLLABLE":
-                    case "HANGUL_JAMO":
-                        switch(level) {
-                        case 1:
-                            numbering[j].numFormat = "^가.";
-                            break;
-                        case 2:
-                            numbering[j].numFormat = "^나.";
-                            break;
-                        case 3:
-                            numbering[j].numFormat = "^다.";
-                            break;
-                        case 4:
-                            numbering[j].numFormat = "^라.";
-                            break;
-                        case 5:
-                            numbering[j].numFormat = "^마.";
-                            break;
-                        case 6:
-                            numbering[j].numFormat = "^바.";
-                            break;
-                        case 7:
-                            numbering[j].numFormat = "^사.";
-                            break;
-                        case 8:
-                            numbering[j].numFormat = "^아.";
-                            break;
-                        case 9:
-                            numbering[j].numFormat = "^자.";
-                            break;
-                        case 10:
-                            numbering[j].numFormat = "^차.";
-                            break;
-                        }
-                        break;
-                    case "CIRCLED_DIGIT":
-                        switch(level) {
-                        case 1:
-                            numbering[j].numFormat = "^\u2460.";
-                            break;
-                        case 2:
-                            numbering[j].numFormat = "^\u2461.";
-                            break;
-                        case 3:
-                            numbering[j].numFormat = "^\u2462.";
-                            break;
-                        case 4:
-                            numbering[j].numFormat = "^\u2463.";
-                            break;
-                        case 5:
-                            numbering[j].numFormat = "^\u2464.";
-                            break;
-                        case 6:
-                            numbering[j].numFormat = "^\u2465.";
-                            break;
-                        case 7:
-                            numbering[j].numFormat = "^\u2466.";
-                            break;
-                        case 8:
-                            numbering[j].numFormat = "^\u2467.";
-                            break;
-                        case 9:
-                            numbering[j].numFormat = "^\u2468.";
-                            break;
-                        case 10:
-                            numbering[j].numFormat = "^\u2469.";
-                            break;
-                        }
-                        break;
-                    case "LATIN_SMALL":
-                        switch(level) {
-                        case 1:
-                            numbering[j].numFormat = "^a.";
-                            break;
-                        case 2:
-                            numbering[j].numFormat = "^b.";
-                            break;
-                        case 3:
-                            numbering[j].numFormat = "^c.";
-                            break;
-                        case 4:
-                            numbering[j].numFormat = "^d.";
-                            break;
-                        case 5:
-                            numbering[j].numFormat = "^e.";
-                            break;
-                        case 6:
-                            numbering[j].numFormat = "^f.";
-                            break;
-                        case 7:
-                            numbering[j].numFormat = "^g.";
-                            break;
-                        case 8:
-                            numbering[j].numFormat = "^h.";
-                            break;
-                        case 9:
-                            numbering[j].numFormat = "^i.";
-                            break;
-                        case 10:
-                            numbering[j].numFormat = "^j.";
-                            break;
-                        }
-                        break;
-                    case "CIRCLED_HANGUL_SYLLABLE":
-                        switch(level) {
-                        case 1:
-                            numbering[j].numFormat = "^\u326E.";
-                            break;
-                        case 2:
-                            numbering[j].numFormat = "^\u326F.";
-                            break;
-                        case 3:
-                            numbering[j].numFormat = "^\u3270.";
-                            break;
-                        case 4:
-                            numbering[j].numFormat = "^\u3271.";
-                            break;
-                        case 5:
-                            numbering[j].numFormat = "^\u3272.";
-                            break;
-                        case 6:
-                            numbering[j].numFormat = "^\u3273.";
-                            break;
-                        case 7:
-                            numbering[j].numFormat = "^\u3274.";
-                            break;
-                        case 8:
-                            numbering[j].numFormat = "^\u3275.";
-                            break;
-                        case 9:
-                            numbering[j].numFormat = "^\u3276.";
-                            break;
-                        case 10:
-                            numbering[j].numFormat = "^\u3277.";
-                            break;
-                        }
-                        break;
-                    case "ROMAN_SMALL":
-                        switch(level) {
-                        case 1:
-                            numbering[j].numFormat = "^\u2170.";
-                            break;
-                        case 2:
-                            numbering[j].numFormat = "^\u2171.";
-                            break;
-                        case 3:
-                            numbering[j].numFormat = "^\u2172.";
-                            break;
-                        case 4:
-                            numbering[j].numFormat = "^\u2173.";
-                            break;
-                        case 5:
-                            numbering[j].numFormat = "^\u2174.";
-                            break;
-                        case 6:
-                            numbering[j].numFormat = "^\u2175.";
-                            break;
-                        case 7:
-                            numbering[j].numFormat = "^\u2176.";
-                            break;
-                        case 8:
-                            numbering[j].numFormat = "^\u2177.";
-                            break;
-                        case 9:
-                            numbering[j].numFormat = "^\u2178.";
-                            break;
-                        case 10:
-                            numbering[j].numFormat = "^\u2179.";
-                            break;
-                        }
-                        break;
-                    default:
-                        if (log.isLoggable(Level.FINE)) {
-                            throw new NotImplementedException("HwpRecord_Numbering");
-                        }
-                        break;
-                    }
+                    // 번호 모양 (DIGIT, HANGUL_SYLLABLE, ...)
+                    numbering[j].numberShape = NumberShape2.fromXml(childAttrs.getNamedItem("numFormat").getNodeValue());
+                    // 번호 형식 문자열은 요소의 텍스트 (예: "^1.", "^3)", "(^5)", "^1.^2."). 비어 있으면 번호를 표시하지 않음
+                    String formatText = child.getTextContent();
+                    numbering[j].numFormat = formatText==null ? "" : formatText;
 
                     numStr = childAttrs.getNamedItem("charPrIDRef").getNodeValue();
                     numbering[j].charShape = (short)Integer.parseUnsignedInt(numStr);
@@ -447,6 +237,7 @@ public class HwpRecord_Numbering extends HwpRecord {
 	
     public static class Numbering extends ParaHeadInfo {
         public String       numFormat;               // 번호 형식
+        public NumberShape2 numberShape;             // 번호 모양 (HWPX 에서만 설정. null 이면 numFormat 으로 추정)
     }
 
 }

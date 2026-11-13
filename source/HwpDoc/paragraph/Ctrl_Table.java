@@ -76,11 +76,14 @@ public class Ctrl_Table extends Ctrl_Common {
             nodeNames.add(attributes.item(i).getNodeName());
         }
         
+        // HWP 표 속성(attr)과 같은 비트로 맞춘다. bit0-1: 쪽 경계에서 나눔, bit2: 제목 줄 자동 반복
+        attr = (attr & ~0x03) | (pageBreak & 0x03);
         //repeatHeader="1"
         switch(attributes.getNamedItem("repeatHeader").getNodeValue()) {
         case "0":
+            attr &= ~0x04;  break;
         case "1":
-            break;
+            attr |= 0x04;   break;
         }
         nodeNames.remove("repeatHeader");
         

@@ -370,23 +370,34 @@ public class HwpRecord_CharShape extends HwpRecord {
                     
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
                     if (!numStr.equals("none")) {
-                    	underlineColor = (short)Integer.parseInt(numStr, 16);
+                    	underlineColor = (int) Long.parseLong(numStr, 16);     // RGBColor (0xRRGGBB)
                     }
                 }
                 break;
             case "hh:strikeout":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    // strikeOutShape = LineType2.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
-                    switch(childAttrs.getNamedItem("shape").getNodeValue()) {
-                   	case "3D":
+                    String shape = childAttrs.getNamedItem("shape").getNodeValue();
+                    switch(shape) {
+                    case "NONE":
+                   	case "3D":      // 한글이 취소선 없음을 "3D" 로 저장하는 경우가 많다
+                   	    strikeOut = 0;
                    		strikeOutShape = LineStyle2.NONE; 	break;
                    	default:
-                   		log.fine("Not Implemented:" + childAttrs.getNamedItem("shape").getNodeValue());
+                   	    strikeOut = 1;
+                   	    try {
+                   	        strikeOutShape = LineStyle2.valueOf(shape);
+                   	    } catch (IllegalArgumentException e) {
+                   	        log.fine("Not Implemented strikeout shape:" + shape);
+                   	        strikeOutShape = LineStyle2.SOLID;
+                   	    }
+                   	    break;
                     }
                     
-                    // numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
-                    // strikeoutColor = (short)Integer.parseInt(numStr, 16);
+                    Node colorNode = childAttrs.getNamedItem("color");
+                    if (colorNode != null && !colorNode.getNodeValue().equals("none")) {
+                        strikeOutColor = (int) Long.parseLong(colorNode.getNodeValue().replaceAll("#", ""), 16);   // RGBColor (0xRRGGBB)
+                    }
                 }
                 break;
             case "hh:outline":

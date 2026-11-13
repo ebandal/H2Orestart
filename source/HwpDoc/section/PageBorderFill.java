@@ -94,6 +94,7 @@ public class PageBorderFill {
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             switch(child.getNodeName()) {
+            case "hp:offset":
             case "offset":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();

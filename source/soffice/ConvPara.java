@@ -228,6 +228,10 @@ public class ConvPara {
             // widowOrphan                          // 외톨이줄 보호 여부
             // keepWithNext                         // 다음 문단과 함께 여부
             xStyleProps.setPropertyValue("ParaKeepTogether", paraShape.keepWithNext);
+            // keepLines                            // 문단 보호 여부 (문단이 쪽 경계에서 나뉘지 않음)
+            if (paraShape.keepLines) {
+                xStyleProps.setPropertyValue("ParaSplit", false);
+            }
             // pageBreakBefore                      // 문단 앞에서 항상 쪽 나눔 여부
             // verAlign                             // 세로정렬 (0:글꼴기준, 1:위쪽, 2:가운데, 3:아래)
             short vertAlign = ParagraphVertAlign.CENTER;

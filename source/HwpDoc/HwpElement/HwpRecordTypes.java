@@ -144,6 +144,22 @@ public class HwpRecordTypes {
             }
             return DIGIT;
         }
+
+        /** HWPX(OWPML) 의 numFormat/formatType 값을 변환한다. 알 수 없는 값은 DIGIT */
+        public static NumberShape2 fromXml(String name) {
+            if (name==null) return DIGIT;
+            switch (name) {
+            case "CIRCLED_DIGIT":           return CIRCLE_DIGIT;
+            case "HANGUL_SYLLABLE":         return HANGLE_SYLLABLE;
+            case "DECAGON_CIRCLE_HANJA":    return DECAGON_CRICLE_HANGJA;
+            default:
+                for (NumberShape2 shape: values()) {
+                    if (shape.name().equals(name))
+                        return shape;
+                }
+                return DIGIT;
+            }
+        }
     }
 
     public static enum LineArrowStyle {

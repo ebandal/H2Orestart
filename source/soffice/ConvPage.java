@@ -1096,6 +1096,16 @@ public class ConvPage {
             footerCursor.gotoStart(false);
             footerCursor.gotoEnd(true);
             xText.insertTextContent(footerCursor, numField, true);
+
+            // 줄표 넣기: "- 1 -"
+            String dash = numPoz.constantDash;
+            if (dash!=null && dash.length()>0 && dash.charAt(0) > ' ') {
+                dash = dash.substring(0, 1);
+                footerCursor.gotoStart(false);
+                xText.insertString(footerCursor, dash + " ", false);
+                footerCursor.gotoEnd(false);
+                xText.insertString(footerCursor, " " + dash, false);
+            }
         } catch (Exception | IllegalArgumentException e) {
             log.log(Level.SEVERE, e.toString(), e);
         }

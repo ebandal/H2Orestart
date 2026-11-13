@@ -24,7 +24,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.logging.Logger;
 
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import HwpDoc.HwpElement.HwpRecord;
 import HwpDoc.Exception.HwpParseException;
@@ -53,8 +55,106 @@ public class NoteShape {
 
 	public NoteShape() { }
 
-	public NoteShape(Node child, int version) {
+	/**
+	 * HWPX hp:footNotePr / hp:endNotePr
+	 * <pre>
+	 * &lt;hp:footNotePr&gt;
+	 *   &lt;hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/&gt;
+	 *   &lt;hp:noteLine length="-1" type="SOLID" width="0.1 mm" color="#000000"/&gt;
+	 *   &lt;hp:noteSpacing betweenNotes="850" belowLine="567" aboveLine="567"/&gt;
+	 *   &lt;hp:numbering type="CONTINUOUS" newNum="1"/&gt;
+	 *   &lt;hp:placement place="EACH_COLUMN" beneathText="0"/&gt;
+	 * &lt;/hp:footNotePr&gt;
+	 * </pre>
+	 */
+	public NoteShape(Node node, int version) {
+	    NodeList children = node.getChildNodes();
+	    for (int i=0; i<children.getLength(); i++) {
+	        Node child = children.item(i);
+	        if (child.getNodeType() != Node.ELEMENT_NODE) continue;
+	        NamedNodeMap attrs = child.getAttributes();
+	        switch(child.getNodeName()) {
+	        case "hp:autoNumFormat":
+	            numberShape = NumberShape2.fromXml(attr(attrs, "type"));
+	            userChar    = firstChar(attr(attrs, "userChar"));
+	            prefixChar  = firstChar(attr(attrs, "prefixChar"));
+	            suffixChar  = firstChar(attr(attrs, "suffixChar"));
+	            superscript = "1".equals(attr(attrs, "supscript"));
+	            break;
+	        case "hp:noteLine":
+	            noteLineLength = parseInt(attr(attrs, "length"), 0);
+	            String type = attr(attrs, "type");
+	            if (type==null || "NONE".equals(type)) {
+	                noteLineType = LineStyle1.SOLID;
+	                noteLineLength = 0;     // 구분선 없음
+	            } else {
+	                try {
+	                    noteLineType = LineStyle1.valueOf(type);
+	                } catch (IllegalArgumentException e) {
+	                    noteLineType = LineStyle1.SOLID;
+	                }
+	            }
+	            noteLineWidth = lineWidthIndex(attr(attrs, "width"));
+	            String color = attr(attrs, "color");
+	            if (color!=null && color.startsWith("#")) {
+	                noteLineColor = (int) Long.parseLong(color.substring(1), 16);  // RGBColor (0xRRGGBB)
+	            }
+	            break;
+	        case "hp:noteSpacing":
+	            sapcingBetweenNotes = (short) parseInt(attr(attrs, "betweenNotes"), 0);
+	            spacingBelowLine    = (short) parseInt(attr(attrs, "belowLine"), 0);
+	            spacingAboveLine    = (short) parseInt(attr(attrs, "aboveLine"), 0);
+	            break;
+	        case "hp:numbering":
+	            String num = attr(attrs, "type");
+	            numbering = "ON_SECTION".equals(num) ? NoteNumbering.ON_SECTION
+	                      : "ON_PAGE".equals(num)    ? NoteNumbering.ON_PAGE
+	                      : NoteNumbering.CONTINUOUS;
+	            newNumber = (short) parseInt(attr(attrs, "newNum"), 1);
+	            break;
+	        case "hp:placement":
+	            String place = attr(attrs, "place");
+	            if ("MERGED_COLUMN".equals(place) || "END_OF_SECTION".equals(place)) {
+	                placement = 1;
+	            } else if ("RIGHT_MOST_COLUMN".equals(place)) {
+	                placement = 2;
+	            } else {    // EACH_COLUMN, END_OF_DOCUMENT
+	                placement = 0;
+	            }
+	            beneathText = "1".equals(attr(attrs, "beneathText"));
+	            break;
+	        }
+	    }
     }
+
+	private static String attr(NamedNodeMap attrs, String name) {
+	    Node n = attrs==null ? null : attrs.getNamedItem(name);
+	    return n==null ? null : n.getNodeValue();
+	}
+
+	private static char firstChar(String s) {
+	    return (s==null || s.isEmpty()) ? '\0' : s.charAt(0);
+	}
+
+	private static int parseInt(String s, int def) {
+	    if (s==null) return def;
+	    try {
+	        return Integer.parseInt(s.trim());
+	    } catch (NumberFormatException e) {
+	        return def;
+	    }
+	}
+
+	/** "0.1 mm" 형태의 선 굵기를 HWP 선 굵기 인덱스(0:0.1mm ~ 15:5.0mm)로 변환 */
+	private static byte lineWidthIndex(String width) {
+	    if (width==null) return 0;
+	    String w = width.replace("mm", "").trim();
+	    String[] table = { "0.1", "0.12", "0.15", "0.2", "0.25", "0.3", "0.4", "0.5", "0.6", "0.7", "1.0", "1.5", "2.0", "3.0", "4.0", "5.0" };
+	    for (int i=0; i<table.length; i++) {
+	        if (table[i].equals(w)) return (byte) i;
+	    }
+	    return 0;
+	}
 
     public static NoteShape parse(int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;

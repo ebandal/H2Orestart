@@ -73,8 +73,10 @@ public class Ctrl_PageNumPos extends Ctrl {
         NamedNodeMap attributes = node.getAttributes();
         
         pos = NumPos.valueOf(attributes.getNamedItem("pos").getNodeValue());
-        numShape = NumberShape2.valueOf(attributes.getNamedItem("formatType").getNodeValue());
-        // attributes.getNamedItem("sideChar").getNodeValue();
+        numShape = NumberShape2.fromXml(attributes.getNamedItem("formatType").getNodeValue());
+        // 줄표 넣기 (예: "-" 이면 "- 1 -")
+        Node sideChar = attributes.getNamedItem("sideChar");
+        constantDash = sideChar==null ? "" : sideChar.getNodeValue();
     }
 
     public String toString() {

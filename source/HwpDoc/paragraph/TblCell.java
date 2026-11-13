@@ -42,6 +42,7 @@ public class TblCell {
 	
 	public short	colAddr;			// 셀 주소(Column, 맨 왼쪽 셀이 0부터 시작하여 1씩 증가)
 	public short	rowAddr;			// 셀 주소(Row, 맨 위쪽 셀이 0부터 시작하여 1씩 증가)
+	public boolean	header;				// (HWPX) 제목 셀 여부
 	public short	colSpan;			// 열의 병합 갯수
 	public short	rowSpan;			// 행의 병합 갯수
 	public int		width;				// 셀의 폭
@@ -90,7 +91,8 @@ public class TblCell {
         NamedNodeMap attrs = node.getAttributes();
         
         // attrs.getNamedItem("name").getNodeValue();
-        // attrs.getNamedItem("header").getNodeValue();
+        Node headerAttr = attrs.getNamedItem("header");
+        header = headerAttr!=null && "1".equals(headerAttr.getNodeValue());
         // attrs.getNamedItem("hasMargin").getNodeValue();
         // attrs.getNamedItem("protect").getNodeValue();
         // attrs.getNamedItem("editable").getNodeValue();
