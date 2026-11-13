@@ -103,7 +103,9 @@ public class Ctrl_Common extends Ctrl {
         heightRelto     = HeightRelTo.from(objAttr>>18&0x03);
         textWrap        = TextWrap.from(objAttr>>21&0x07);
         textFlow        = (byte) (objAttr>>24&0x03);
-        numberingType   = (byte) (objAttr>>26&0x07);
+        // 명세 표 70 은 bit 26~28 이지만, 한글 HWP->HWPX 변환 쌍에서 bit 28 이 켜진 값(4,5,6)이 NONE/PICTURE/TABLE 로 저장됨.
+        // 번호 범주는 bit 26~27 만 쓴다
+        numberingType   = (byte) (objAttr>>26&0x03);
         
         vertOffset      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;

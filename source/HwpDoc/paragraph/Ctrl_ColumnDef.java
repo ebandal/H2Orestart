@@ -160,7 +160,7 @@ public class Ctrl_ColumnDef extends Ctrl {
             case "hp:colLine":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    colLineStyle = LineStyle2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+                    colLineStyle = LineStyle2.fromXml(childAttrs.getNamedItem("type").getNodeValue());
 
                     switch(childAttrs.getNamedItem("width").getNodeValue()) {
                     case "0.1":

@@ -120,6 +120,30 @@ public class HwpRecord_CharShape extends HwpRecord {
 		useFontSpace	= (attrBits&0x2000000)==0x2000000?true:false;
 		strikeOutShape	= LineStyle2.from((attrBits>>>26)&0x0F);
 		useKerning		= (attrBits&0x40000000)==0x40000000?true:false;
+		if (underline==Underline.CENTER) {
+		    // 밑줄 종류 2(글자 중간)는 명세에 없는 값. 한글은 이를 밑줄 없음 + 취소선으로 해석하고,
+		    // 취소선 모양은 밑줄 모양 비트를 쓴다 (HWP->HWPX 변환 쌍에서 확인).
+		    // 밑줄 모양이 3D 계열이면 한글은 취소선 모양을 "3D" 로 저장하며 취소선을 그리지 않는다.
+		    underline = Underline.NONE;
+		    if (strikeOut!=0 && strikeOutShape==LineStyle2.NONE) {
+		        switch(underlineShape) {
+		        case THICK_3D:
+		        case THICK_3D_REVERS_LI:
+		        case SOLID_3D:
+		        case SOLID_3D_REVERS_LI:
+		            strikeOut = 0;
+		            underlineShape = LineStyle1.SOLID;     // 한글이 HWPX 에 쓰는 값
+		            break;
+		        case WAVE:
+		        case DOUBLE_WAVE:
+		            strikeOutShape = LineStyle2.SOLID;     // 취소선에는 물결 모양이 없다
+		            break;
+		        default:
+		            strikeOutShape = LineStyle2.valueOf(underlineShape.name());  // 같은 이름 (SOLID ~ SLIM_THICK_SLIM)
+		            break;
+		        }
+		    }
+		}
 		// Attributes
 		
 		shadowOffsetX	= buf[offset++];
@@ -366,7 +390,7 @@ public class HwpRecord_CharShape extends HwpRecord {
                     NamedNodeMap childAttrs = child.getAttributes();
                     underline = Underline.valueOf(childAttrs.getNamedItem("type").getNodeValue());
                     
-                    underlineShape = LineStyle1.valueOf(childAttrs.getNamedItem("shape").getNodeValue());
+                    underlineShape = LineStyle1.fromXml(childAttrs.getNamedItem("shape").getNodeValue());
                     
                     numStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("#", "");
                     if (!numStr.equals("none")) {
@@ -386,7 +410,7 @@ public class HwpRecord_CharShape extends HwpRecord {
                    	default:
                    	    strikeOut = 1;
                    	    try {
-                   	        strikeOutShape = LineStyle2.valueOf(shape);
+                   	        strikeOutShape = LineStyle2.fromXml(shape);
                    	    } catch (IllegalArgumentException e) {
                    	        log.fine("Not Implemented strikeout shape:" + shape);
                    	        strikeOutShape = LineStyle2.SOLID;

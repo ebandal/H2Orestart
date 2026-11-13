@@ -276,7 +276,7 @@ public class HwpRecord_BorderFill extends HwpRecord {
         NamedNodeMap childAttrs = child.getAttributes();
         // [color="none", type="NONE", width="0.1 mm"]
         
-        border.style = LineStyle2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+        border.style = LineStyle2.fromXml(childAttrs.getNamedItem("type").getNodeValue());
         String colorStr = childAttrs.getNamedItem("color").getNodeValue().replaceAll("^#([0-9A-Fa-f]+)$", "$1");
         if (!colorStr.equals("none")) {
         	border.color = Integer.parseUnsignedInt(colorStr, 16);      // RGBColor (0xRRGGBB) 값으로 저장

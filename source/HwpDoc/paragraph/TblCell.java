@@ -75,7 +75,8 @@ public class TblCell {
 		
 		margin = new int[4];
 		for (int i=0;i<4;i++) {
-			margin[i]	= (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+			// HWPUNIT16. 한글은 65535 를 HWPX 에 -1(4294967295) 로 저장하므로 부호 있는 값으로 읽는다
+			margin[i]	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
 			offset += 2;
 		}
 		borderFill	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);

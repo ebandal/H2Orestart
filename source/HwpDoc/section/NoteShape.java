@@ -85,7 +85,7 @@ public class NoteShape {
 	            noteLineLength = parseInt(attr(attrs, "length"), 0);
 	            String type = attr(attrs, "type");
 	            try {
-	                noteLineType = type==null ? LineStyle2.NONE : LineStyle2.valueOf(type);
+	                noteLineType = type==null ? LineStyle2.NONE : LineStyle2.fromXml(type);
 	            } catch (IllegalArgumentException e) {
 	                noteLineType = LineStyle2.SOLID;
 	            }

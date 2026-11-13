@@ -125,7 +125,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                     }
                     numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
                     lineThick = Integer.parseUnsignedInt(numStr);
-                    lineStyle = LineStyle2.valueOf(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
+                    lineStyle = LineStyle2.fromXml(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
                     
                     /*
                     childAttrs.getNamedItem("endCap").getNodeValue();                      // 선 끝 모양
