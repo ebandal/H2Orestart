@@ -237,6 +237,12 @@ public class ModelDiff {
                     if (ma != mb) add(fkey, path + "." + f.getName(), fa, fb);
                     continue;
                 }
+                if (normalize && "paragraph.Ctrl_Table.attr".equals(fkey) && fa instanceof Number && fb instanceof Number) {
+                    // 표 속성 bit 24~26 은 명세에 없고 HWPX 에 대응 값이 없다 (한글이 저장 시 버림). 하위 비트만 비교
+                    int ma = ((Number) fa).intValue() & 0x00FFFFFF, mb = ((Number) fb).intValue() & 0x00FFFFFF;
+                    if (ma != mb) add(fkey, path + "." + f.getName(), fa, fb);
+                    continue;
+                }
                 if (normalize && PARA_CTRL_LIST.equals(fkey) && fa instanceof List && fb instanceof List) {
                     compareParaCtrls(path + "." + f.getName(), (List<?>) fa, (List<?>) fb, depth + 1);
                     continue;

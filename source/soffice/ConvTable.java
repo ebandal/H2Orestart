@@ -169,11 +169,10 @@ public class ConvTable {
                 if (table.treatAsChar) {
                     tableProps.setPropertyValue("Split", false);
                 } else {
-                    if ((table.attr & 0x03) == 0x02) {
-                        tableProps.setPropertyValue("Split", true);
-                    } else {
-                        tableProps.setPropertyValue("Split", false);
-                    }
+                    // 쪽 경계에서 나눔 (bit 0-1). 0: 나누지 않음, 1: 셀 단위로 나눔 (HWPX "TABLE"), 2: 나눔 (HWPX "CELL")
+                    // 명세 표 75 는 2 를 "나누지 않음"으로 적었으나 0 과 중복. 기존: 1 이면 나누지 않았음
+                    int pageBreak = table.attr & 0x03;
+                    tableProps.setPropertyValue("Split", pageBreak == 0x01 || pageBreak == 0x02);
                 }
             }
 
@@ -246,6 +245,13 @@ public class ConvTable {
             
             // table row 높이 조정
             XTableRows xTableRows = xTextTable.getRows();
+            if (xTableRows != null && !table.treatAsChar && (table.attr & 0x03) == 0x01) {
+                // 셀 단위로 나눔: 표는 쪽 경계에서 나뉘지만 행(셀) 안에서는 나누지 않는다
+                for (int row = 0; row < xTableRows.getCount(); row++) {
+                    XPropertySet rowProps = UnoRuntime.queryInterface(XPropertySet.class, xTableRows.getByIndex(row));
+                    rowProps.setPropertyValue("IsSplitAllowed", false);
+                }
+            }
             if (xTableRows != null) {
                 int[] rowHeight = calculateRowHeight(cellArray, table.height);
                 if (hasNullRow(rowHeight, table.height) == false) {
