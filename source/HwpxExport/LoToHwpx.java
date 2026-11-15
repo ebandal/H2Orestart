@@ -87,7 +87,10 @@ public class LoToHwpx {
 
     /** 1/100 mm → HWPUNIT (Transform.translateHwp2Office 의 역) */
     static int hwp(int mm100) {
-        return (int) Math.round(mm100 * 59529.0 / 21000.0);
+        // 가져오기는 (int)(hwp*21000/59529) 로 소수점을 버린다. 다시 읽었을 때 같은 값이 되도록
+        // 양수는 올림, 음수는 내림으로 고른다 (반올림하면 저장할 때마다 값이 줄어든다)
+        double v = mm100 * 59529.0 / 21000.0;
+        return (int) (mm100 >= 0 ? Math.ceil(v - 1e-9) : Math.floor(v + 1e-9));
     }
 
     private void text(XText text) {
@@ -141,7 +144,7 @@ public class LoToHwpx {
     private void paragraph(Object paraObj) throws com.sun.star.uno.Exception {
         XPropertySet pp = UnoRuntime.queryInterface(XPropertySet.class, paraObj);
         WParagraph p = new WParagraph();
-        p.paraPrId = doc.addParaPr(paraPr(pp));
+        String lastFont = null;     // 마지막 텍스트 조각의 글꼴 (가져오기는 마지막 run 의 줄 간격 보정값이 남는다)
         Object bt = pp.getPropertyValue("BreakType");
         if (bt instanceof BreakType && (bt == BreakType.PAGE_BEFORE || bt == BreakType.PAGE_BOTH)) {
             p.pageBreak = !section.paragraphs.isEmpty();
@@ -157,6 +160,7 @@ public class LoToHwpx {
             String s = UnoRuntime.queryInterface(XTextRange.class, portion).getString();
             if (s.isEmpty()) continue;
             int cp = doc.addCharPr(charPr(ps));
+            lastFont = fontForAlpha(ps);
             // 같은 글자 모양이 이어지면 run 을 합친다 (한글도 같은 모양은 한 run)
             if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp) {
                 p.runs.get(p.runs.size() - 1).text += s;
@@ -168,6 +172,7 @@ public class LoToHwpx {
             // 빈 문단도 문단 끝 글자 모양을 갖는다
             p.runs.add(new WParagraph.WRun(doc.addCharPr(charPr(pp)), ""));
         }
+        p.paraPrId = doc.addParaPr(paraPr(pp, lastFont != null ? lastFont : fontForAlpha(pp)));
         section.paragraphs.add(p);
     }
 
@@ -208,7 +213,17 @@ public class LoToHwpx {
         return idx;
     }
 
-    private WParaPr paraPr(XPropertySet pp) throws com.sun.star.uno.Exception {
+    private static String fontForAlpha(XPropertySet ps) {
+        try {
+            String face = AnyConverter.toString(ps.getPropertyValue("CharFontNameAsian"));
+            if (face == null || face.isEmpty()) face = AnyConverter.toString(ps.getPropertyValue("CharFontName"));
+            return face;
+        } catch (com.sun.star.uno.Exception e) {
+            return null;
+        }
+    }
+
+    private WParaPr paraPr(XPropertySet pp, String alphaFont) throws com.sun.star.uno.Exception {
         WParaPr p = new WParaPr();
         int adjust = AnyConverter.toInt(pp.getPropertyValue("ParaAdjust"));
         // 가져오기는 양쪽 정렬을 왼쪽 정렬로 바꾼다 (ConvPara: 양쪽 정렬이 줄바꿈 때 더 비슷). 왼쪽은 양쪽으로 추정한다
@@ -237,7 +252,7 @@ public class LoToHwpx {
         // 가져오기(ConvPara.setParagraphProperties) 의 역변환
         case LineSpacingMode.FIX:
             p.lineSpacingType = "FIXED";
-            p.lineSpacing = (int) Math.round(ls.Height / 0.352778 * 2);
+            p.lineSpacing = 2 * (int) Math.ceil(ls.Height / 0.352778 - 1e-9);    // 가져오기: (short)(v/2*0.352778), 버림의 역
             break;
         case LineSpacingMode.MINIMUM:
             if (singleParaCell && Math.abs(ls.Height - 100) <= 2) {
@@ -257,7 +272,7 @@ public class LoToHwpx {
         default:
             // 가져오기는 글꼴별 보정값을 곱했다 (ConvPage.adjustFontIfNotExists). 같은 값으로 나눈다
             p.lineSpacingType = "PERCENT";
-            p.lineSpacing = (int) Math.round(ls.Height / lineSpaceAlpha(pp));
+            p.lineSpacing = (int) Math.ceil(ls.Height / lineSpaceAlpha(alphaFont) - 1e-9);    // 가져오기: (short)(v*보정값), 버림의 역
             break;
         }
         return p;
@@ -266,16 +281,9 @@ public class LoToHwpx {
     /**
      * 글꼴별 줄 간격 보정값. ConvPage.adjustFontIfNotExists 와 같은 규칙:
      * 크기 100 글꼴의 ascent+descent 가 117 미만 0.870, 130 미만 0.857, 133 미만 0.764, 그 이상 0.752.
-     * 가져오기는 문단 첫 글자의 글자 모양 보정값을 쓰므로, 문단의 동아시아 글꼴(없으면 서양 글꼴)로 구한다.
+     * 가져오기는 run 마다 문단 속성을 다시 설정해 마지막 run 의 보정값이 남으므로, 그 글꼴(동아시아, 없으면 서양)로 구한다.
      */
-    private double lineSpaceAlpha(XPropertySet pp) {
-        String face = null;
-        try {
-            face = AnyConverter.toString(pp.getPropertyValue("CharFontNameAsian"));
-            if (face == null || face.isEmpty()) face = AnyConverter.toString(pp.getPropertyValue("CharFontName"));
-        } catch (com.sun.star.uno.Exception e) {
-            face = null;
-        }
+    private double lineSpaceAlpha(String face) {
         if (face == null || device == null) return 0.870;
         Double cached = alphaCache.get(face);
         if (cached != null) return cached;
