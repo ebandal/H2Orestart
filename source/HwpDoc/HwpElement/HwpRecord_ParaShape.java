@@ -336,6 +336,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
                     lineSpacingType = 0; break;
                 case "FIXED":
                     lineSpacingType = 1; break;
+                case "BETWEEN_LINES":   // 여백만 지정 (기존: "BETWEENLINES" 로 비교해 PERCENT 로 남았음)
                 case "BETWEENLINES":
                     lineSpacingType = 2; break;
                 case "AT_LEAST":

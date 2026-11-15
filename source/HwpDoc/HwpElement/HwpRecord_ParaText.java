@@ -50,7 +50,8 @@ public class HwpRecord_ParaText extends HwpRecord {
 	private static final Logger log = Logger.getLogger(HwpRecord_ParaText.class.getName());
     private static final String PATTERN_STRING = "[\\u0000\\u000a\\u000d\\u0018-\\u001f]|[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017].{6}[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017]";
     private static final String PATTERN_8BYTES = "[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017].{6}[\\u0001\\u0002-\\u0009\\u000b-\\u000c\\u000e-\\u0017]";
-    public static Pattern pattern = Pattern.compile(PATTERN_STRING);
+    // DOTALL: 확장 컨트롤의 데이터 6글자에 줄 끝 문자(CR, LF, NEL 등)가 있어도 건너뛰도록 (기존: 매칭 실패로 탭 데이터가 본문 글자로 섞였음)
+    public static Pattern pattern = Pattern.compile(PATTERN_STRING, Pattern.DOTALL);
 
 	HwpRecord_ParaText(int tagNum, int level, int size) {
 		super(tagNum, level, size);
@@ -61,10 +62,23 @@ public class HwpRecord_ParaText extends HwpRecord {
 		
 		ArrayList<Ctrl> paras = new ArrayList<>();
 		
-		String text = new String(buf, offset, size, StandardCharsets.UTF_16LE);
+		// WCHAR 를 그대로 옮긴다. UTF_16LE 디코더는 짝 없는 서로게이트를 바꿔 글자 수가 달라질 수 있어
+		// 8 WCHAR 단위 컨트롤의 위치가 어긋났다 (컨트롤 데이터에 서로게이트 값이 들어 있는 경우)
+		char[] wchars = new char[size/2];
+		for (int k=0; k<wchars.length; k++) {
+		    wchars[k] = (char) (buf[offset+2*k]&0xFF | (buf[offset+2*k+1]&0xFF)<<8);
+		}
+		String text = new String(wchars);
 		offset += size;
 
-        Matcher m = pattern.matcher(text);
+        // 정규식의 "." 은 코드 포인트 단위라 컨트롤 데이터 안의 서로게이트 쌍을 1글자로 센다.
+        // 서로게이트를 일반 문자로 바꾼 사본(길이 같음)으로 위치를 찾고, 값은 원본에서 꺼낸다
+        // (기존: 탭 데이터에 서로게이트가 있으면 끝 위치가 어긋나 데이터가 본문 글자로 섞였음)
+        char[] scanChars = text.toCharArray();
+        for (int k=0; k<scanChars.length; k++) {
+            if (Character.isSurrogate(scanChars[k])) scanChars[k] = (char) 0xFFFD;
+        }
+        Matcher m = pattern.matcher(new String(scanChars));
         
         log.finer("paraText Length="+ text.length());
         int prevIndex = 0;
@@ -75,12 +89,12 @@ public class HwpRecord_ParaText extends HwpRecord {
                 int startIndex = prevIndex;
                 
                 String content = text.substring(startIndex, m.start());
-                paras.add(new ParaText("____", content, startIndex));
+                paras.add(new ParaText("____", fixLoneSurrogates(content), startIndex));
             }
             
             if (m.start()+1==m.end()) {
                 // 문자컨드롤
-                byte controlByte = m.group().getBytes(StandardCharsets.UTF_16LE)[0];
+                byte controlByte = text.substring(m.start(), m.end()).getBytes(StandardCharsets.UTF_16LE)[0];
                 
                 Ctrl_Character ch = null;
                 switch(controlByte) {
@@ -105,8 +119,8 @@ public class HwpRecord_ParaText extends HwpRecord {
                 
             } else if (m.start()+8==m.end()) {
                 // 인라인 컨트롤, 확장컨트롤
-                byte controlByte = m.group().getBytes(StandardCharsets.UTF_16LE)[0];
-                String info = new String(m.group().getBytes(StandardCharsets.UTF_16LE), 2, 12, StandardCharsets.US_ASCII).replaceAll("[\\x00-\\x20]+$", "");
+                byte controlByte = text.substring(m.start(), m.end()).getBytes(StandardCharsets.UTF_16LE)[0];
+                String info = new String(text.substring(m.start(), m.end()).getBytes(StandardCharsets.UTF_16LE), 2, 12, StandardCharsets.US_ASCII).replaceAll("[\\x00-\\x20]+$", "");
 
                 switch(controlByte) {
                 case 0x04:  // 필드 끝
@@ -186,7 +200,7 @@ public class HwpRecord_ParaText extends HwpRecord {
             // write final text
             int startIndex = prevIndex;
             String content = text.substring(startIndex);
-            paras.add(new ParaText("____", content, startIndex));
+            paras.add(new ParaText("____", fixLoneSurrogates(content), startIndex));
         }
 		        
 		String readable = toReadableString(text);
@@ -200,6 +214,16 @@ public class HwpRecord_ParaText extends HwpRecord {
 		return paras;
 	}
 	
+	/** 짝 없는 서로게이트는 U+FFFD 로 (기존 UTF_16LE 디코더와 같은 결과. 글자 수는 그대로) */
+	private static String fixLoneSurrogates(String s) {
+	    char[] c = s.toCharArray();
+	    for (int i=0; i<c.length; i++) {
+	        if (Character.isHighSurrogate(c[i]) && i+1<c.length && Character.isLowSurrogate(c[i+1])) { i++; continue; }
+	        if (Character.isSurrogate(c[i])) c[i] = (char) 0xFFFD;
+	    }
+	    return new String(c);
+	}
+
 	public static String getText(int tagNum, int level, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         

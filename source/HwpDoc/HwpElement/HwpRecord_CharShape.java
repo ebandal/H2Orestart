@@ -114,7 +114,7 @@ public class HwpRecord_CharShape extends HwpRecord {
 		emboss			= (attrBits&0x2000)==0x2000?true:false;
 		engrave			= (attrBits&0x4000)==0x4000?true:false;
 		superScript		= (attrBits&0x8000)==0x8000?true:false;
-		subScript		= (attrBits&0xF000)==0xF000?true:false;
+		subScript		= (attrBits&0x10000)==0x10000?true:false;	// bit 16 (기존: 0xF000 으로 비교해 아래 첨자를 읽지 못했음)
 		strikeOut		= (byte) ((attrBits>>>18)&0x07);
 		symMark			= Accent.from((attrBits>>>21)&0x0F);
 		useFontSpace	= (attrBits&0x2000000)==0x2000000?true:false;
