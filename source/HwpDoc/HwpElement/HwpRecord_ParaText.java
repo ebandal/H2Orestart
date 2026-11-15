@@ -82,20 +82,25 @@ public class HwpRecord_ParaText extends HwpRecord {
                 // 문자컨드롤
                 byte controlByte = m.group().getBytes(StandardCharsets.UTF_16LE)[0];
                 
+                Ctrl_Character ch = null;
                 switch(controlByte) {
                 case 0x0a:      // 10 한 줄 끝 (line break);
-                    paras.add(new Ctrl_Character("   _", CtrlCharType.LINE_BREAK));
+                    ch = new Ctrl_Character("   _", CtrlCharType.LINE_BREAK);
                     break;
                 case 0x0d:      // 13 문단 끝 (para break)
-                    paras.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK));
+                    ch = new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK);
                     break;
                 case 0x18:      // 24 하이픈
-                    paras.add(new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN));
+                    ch = new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN);
                     break;
                 case 0x1e:      // 30 묶음 빈칸
                 case 0x1f:      // 31 고정폭 빈칸
-                    paras.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE));
+                    ch = new Ctrl_Character("   _", CtrlCharType.HARD_SPACE);
                     break;
+                }
+                if (ch != null) {
+                    ch.startIdx = m.start();    // 글자 모양 구간을 위치로 적용하기 위해
+                    paras.add(ch);
                 }
                 
             } else if (m.start()+8==m.end()) {
@@ -109,7 +114,7 @@ public class HwpRecord_ParaText extends HwpRecord {
                 case 0x08:  // title mark
                     break;
                 case 0x09:  // 탭
-                    paras.add(new ParaText("____", "\t", 0));
+                    paras.add(new ParaText("____", "\t", m.start()));     // 위치 (기존 0: 첫 구간의 글자 모양만 받았음)
                     break;
                 case 0x10:  // 머리말/꼬리말
                     paras.add(new Ctrl_HeadFoot(info));

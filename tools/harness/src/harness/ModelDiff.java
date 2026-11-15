@@ -42,6 +42,8 @@ public class ModelDiff {
 
     /** 비교하지 않는 차이 키 (형식마다 원래 표현이 다른 값) */
     static final Set<String> IGNORE_KEYS = new HashSet<String>(Arrays.asList(
+            "paragraph.Ctrl_Character.startIdx",        // HWP 파서 내부용 위치 (HWPX 는 -1)
+            "paragraph.Ctrl_Common.offset",             // 파서 내부용 레코드 위치
             "HwpElement.HwpRecord_BinData.aPath",       // BIN0001.jpg  vs BinData/image1.jpg
             "HwpElement.HwpRecord_BinData.itemId",      // "1"          vs "image1"
             "HwpElement.HwpRecord_BinData.binDataID",

@@ -23,6 +23,7 @@ package HwpDoc.paragraph;
 public class Ctrl_Character extends Ctrl {
     public CtrlCharType    ctrlChar;
     public int charShapeId;
+    public int startIdx = -1;      // HWP 문단 텍스트 안의 위치 (WCHAR 단위). 글자 모양 구간 적용에 쓴다. -1: 모름
 
     public Ctrl_Character(String ctrlId, CtrlCharType ctrlChar) {
         super(ctrlId);
