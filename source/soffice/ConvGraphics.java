@@ -102,6 +102,7 @@ import HwpDoc.paragraph.Ctrl_ShapeArc;
 import HwpDoc.paragraph.Ctrl_ShapeCurve;
 import HwpDoc.paragraph.Ctrl_ShapeEllipse;
 import HwpDoc.paragraph.Ctrl_ShapeLine;
+import HwpDoc.paragraph.Ctrl_ShapeConnectLine;
 import HwpDoc.paragraph.Ctrl_ShapePic;
 import HwpDoc.paragraph.Ctrl_ShapePolygon;
 import HwpDoc.paragraph.Ctrl_ShapeRect;
@@ -140,8 +141,14 @@ public class ConvGraphics {
                 insertTextFrame(wContext, (Ctrl_ShapeRect) obj, step, -1, -1);
             }
             break;
-        case "nil$": // 선
         case "loc$":
+            // 꺾은선/곡선 연결선은 제어점을 따라 그린다
+            if (obj instanceof Ctrl_ShapeConnectLine && insertConnectorPath(wContext, (Ctrl_ShapeConnectLine) obj, step)) {
+                break;
+            }
+            insertLINE(wContext, (Ctrl_ShapeLine) obj, step, -1, -1);
+            break;
+        case "nil$": // 선
             insertLINE(wContext, (Ctrl_ShapeLine) obj, step, -1, -1);
             break;
         case "lle$": // 타원
@@ -1217,8 +1224,10 @@ public class ConvGraphics {
                 }
             }
 
-            setArrowStyle(xPropsSet, shape.lineHead, shape.lineHeadSz, true);
-            setArrowStyle(xPropsSet, shape.lineTail, shape.lineTailSz, false);
+            // isReverseHV(attr bit0): 수평/수직선의 실제 방향이 저장된 좌표와 반대. 시작/끝 화살표를 맞바꾼다
+            boolean reverse = (shape.attr & 0x01) != 0;
+            setArrowStyle(xPropsSet, reverse ? shape.lineTail : shape.lineHead, reverse ? shape.lineTailSz : shape.lineHeadSz, true);
+            setArrowStyle(xPropsSet, reverse ? shape.lineHead : shape.lineTail, reverse ? shape.lineHeadSz : shape.lineTailSz, false);
             if (shape.nGrp == 0) {
                 ++autoNum;
             }
@@ -1232,6 +1241,76 @@ public class ConvGraphics {
             log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
             log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /**
+     * 꺾은선(STROKE_*)·곡선(ARC_*) 개체연결선을 제어점을 따라 꺾은선으로 그린다.
+     * 제어점(개체 좌표)에 scale/rotation 행렬(matrixSeq), translation 행렬(matrix) 순으로 적용하면
+     * 개체 위치 기준 좌표가 된다 (건강보험.hwp 의 꺾은선으로 한글 출력과 대조).
+     * 묶음 안의 연결선, 제어점이 2개 이하인 직선은 처리하지 않고 false 를 돌려준다.
+     */
+    private static boolean insertConnectorPath(WriterContext wContext, Ctrl_ShapeConnectLine shape, int step) {
+        if (shape.nGrp != 0 || shape.controlPoints == null || shape.controlPoints.size() <= 2 || shape.type == null
+                || shape.type.name().startsWith("STRAIGHT") || shape.matrix == null || shape.matrix.length < 6) {
+            return false;
+        }
+        boolean hasCaption = shape.caption != null && shape.caption.size() > 0;
+        if (hasCaption) {
+            return false;
+        }
+        try {
+            int n = shape.controlPoints.size();
+            double[] xs = new double[n], ys = new double[n];
+            for (int i = 0; i < n; i++) {
+                double x = shape.controlPoints.get(i).x, y = shape.controlPoints.get(i).y;
+                for (int m = 0; m < shape.matCnt && shape.matrixSeq != null && m * 12 + 11 < shape.matrixSeq.length; m++) {
+                    double[] s = shape.matrixSeq;
+                    int b = m * 12;
+                    double sx = s[b] * x + s[b + 1] * y + s[b + 2];        // scale
+                    double sy = s[b + 3] * x + s[b + 4] * y + s[b + 5];
+                    x = s[b + 6] * sx + s[b + 7] * sy + s[b + 8];          // rotation
+                    y = s[b + 9] * sx + s[b + 10] * sy + s[b + 11];
+                }
+                double[] t = shape.matrix;
+                xs[i] = t[0] * x + t[1] * y + t[2];
+                ys[i] = t[3] * x + t[4] * y + t[5];
+            }
+            double minX = xs[0], minY = ys[0], maxX = xs[0], maxY = ys[0];
+            for (int i = 1; i < n; i++) {
+                minX = Math.min(minX, xs[i]);  maxX = Math.max(maxX, xs[i]);
+                minY = Math.min(minY, ys[i]);  maxY = Math.max(maxY, ys[i]);
+            }
+
+            Object xObj = wContext.mMSF.createInstance("com.sun.star.drawing.PolyLineShape");
+            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
+            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
+            xShape.setPosition(new Point(0, 0));
+            xShape.setSize(new Size(Transform.translateHwp2Office((int) (maxX - minX)), Transform.translateHwp2Office((int) (maxY - minY))));
+            XPropertySet xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xShape);
+            xPropSet.setPropertyValue("AnchorType", TextContentAnchorType.AT_PARAGRAPH);
+            setPosition(xPropSet, shape, (int) minX, (int) minY);
+            setWrapStyle(xPropSet, shape);
+            setLineStyle(xPropSet, shape);
+
+            Point[][] poly = new Point[1][n];
+            for (int i = 0; i < n; i++) {
+                poly[0][i] = new Point(Transform.translateHwp2Office((int) (xs[i] - minX)), Transform.translateHwp2Office((int) (ys[i] - minY)));
+            }
+            xPropSet.setPropertyValue("PolyPolygon", poly);
+
+            wContext.mText.insertTextContent(wContext.mTextCursor, xTextContentShape, true);
+            if (step == 2 && wContext.version >= 72) {
+                wContext.mText.insertString(wContext.mTextCursor, " ", false);
+            }
+            boolean reverse = (shape.attr & 0x01) != 0;
+            setArrowStyle(xPropSet, reverse ? shape.lineTail : shape.lineHead, reverse ? shape.lineTailSz : shape.lineHeadSz, true);
+            setArrowStyle(xPropSet, reverse ? shape.lineHead : shape.lineTail, reverse ? shape.lineHeadSz : shape.lineTailSz, false);
+            ++autoNum;
+            return true;
+        } catch (com.sun.star.uno.Exception | SkipDrawingException e) {
+            log.log(Level.SEVERE, e.toString(), e);
+            return true;    // 이미 일부를 만들었을 수 있으므로 다시 그리지 않는다
         }
     }
 

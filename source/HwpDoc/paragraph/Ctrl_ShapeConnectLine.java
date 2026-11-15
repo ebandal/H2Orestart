@@ -147,7 +147,7 @@ public class Ctrl_ShapeConnectLine extends Ctrl_ShapeLine {
      *   UINT32   : 연결선 종류 (ConnectLineType)
      *   UINT32 x4: 시작점 연결 개체 ID, 연결 위치, 끝점 연결 개체 ID, 연결 위치
      *   UINT32   : 제어점 개수 n,  (INT32 x, INT32 y, UINT16 종류) x n
-     *   나머지 4 bytes 는 알 수 없음
+     *   마지막 UINT32 : 방향 속성 (isReverseHV)
      */
     public static int parseConnect(Ctrl_ShapeConnectLine obj, int size, byte[] buf, int off) {
         int offset = off;
@@ -179,6 +179,11 @@ public class Ctrl_ShapeConnectLine extends Ctrl_ShapeLine {
                 offset += 2;    // 제어점 종류
                 obj.controlPoints.add(p);
             }
+        }
+        // 마지막 4 bytes: 선의 isReverseHV 와 같은 속성으로 보인다 (값 1 이면 한글은 화살표를 반대쪽 끝에 그림).
+        // HWPX 연결선에는 이 속성이 없어 한글도 HWPX 를 열면 원래 방향으로 그린다 (건강보험.hwp 로 확인)
+        if (size - 4 >= offset - off) {
+            obj.attr = (short) readInt(buf, off + size - 4);
         }
         return size;
     }
