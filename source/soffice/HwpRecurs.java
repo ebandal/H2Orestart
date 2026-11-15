@@ -165,11 +165,25 @@ public class HwpRecurs {
                             }
                         }
                         break;
+                    // 묶음 빈칸/하이픈은 글자처럼 넣는다 (LibreOffice 의 HARD_SPACE/HARD_HYPHEN 도 같은 문자 U+00A0/U+2011).
+                    // 제어 문자로 넣으면 그 위치의 글자 모양을 받지 못하고, 문단 첫 글자일 때는 뒤 글자에서 문단 스타일을
+                    // 설정하면서 글자 모양이 지워진다
                     case HARD_HYPHEN:
-                        wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_HYPHEN, false);
-                        break;
                     case HARD_SPACE:
-                        wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_SPACE, false);
+                        {
+                            String ch = ((Ctrl_Character)ctrl).ctrlChar==Ctrl_Character.CtrlCharType.HARD_SPACE ? " " : "‑";
+                            int charShapeId = ((Ctrl_Character)ctrl).charShapeId;
+                            if (callback==null || callback.onText(ch, charShapeId, ((Ctrl_Character)ctrl).startIdx, append)==false) {
+                                insertParaString(wContext, ch, para.lineSegs, para.paraStyleID, para.paraShapeID,
+                                                 (short)charShapeId, append,
+                                                 callback==null?false:callback.firstParaAfterTable, step);
+                                oldParaShapeID = para.paraShapeID;
+                                oldCharShapeID = (short) charShapeId;
+                            }
+                            append = true;
+                        }
+                        break;
+                    default:
                         break;
                     }
                 }
@@ -361,8 +375,8 @@ public class HwpRecurs {
         }
     }
 
-    public static void beforeParaBreak(WriterContext wContext,  
-                                        short paraShapeID, short charShapeID, 
+    public static void beforeParaBreak(WriterContext wContext,
+                                        short paraShapeID, short charShapeID,
                                         boolean append, int step) {
         HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
         HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);

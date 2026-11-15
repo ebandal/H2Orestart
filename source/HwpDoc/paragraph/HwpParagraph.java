@@ -149,7 +149,9 @@ public class HwpParagraph {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK, charShapeID));
         }
         // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
-        if (p.size()==0 || !(p.getLast() instanceof Ctrl_Character)) {
+        // (문단 끝의 묶음 빈칸/고정폭 빈칸/하이픈/줄바꿈도 Ctrl_Character 이므로 종류까지 본다. 아니면 다음 문단과 합쳐진다)
+        if (p.size()==0 || !(p.getLast() instanceof Ctrl_Character)
+                || ((Ctrl_Character)p.getLast()).ctrlChar!=CtrlCharType.PARAGRAPH_BREAK) {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK, charShapeID));
         }
     }

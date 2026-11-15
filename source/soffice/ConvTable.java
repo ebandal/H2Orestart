@@ -1273,9 +1273,14 @@ public class ConvTable {
                 if (isLastPara == false) {
                     HwpRecurs.insertParaString(childContext, "\r", para.lineSegs, styleName, paraStyle, paraShape,
                             charShape, true, true, step);
+                } else {
+                    // 셀의 마지막 빈 문단도 문단/글자 모양을 적용한다 (안 하면 앞 문단 모양이나 기본값이 남는다)
+                    HwpRecurs.beforeParaBreak(childContext, cellParaShape(paraShape, cell), charShape, false, true, step);
                 }
                 continue;
             }
+            // 글자가 들어간 문단인지 (마지막 문단에 글자가 없으면 문단 끝에서 문단 모양을 적용한다)
+            final boolean[] textDone = new boolean[1];
 
             HwpCallback callback = new HwpCallback() {
                 @Override
@@ -1294,20 +1299,11 @@ public class ConvTable {
                     String styleNameTemp = ConvPara.getStyleName((int) para.paraStyleID);
                     HwpRecord_Style paraStyleTemp = wContext.getParaStyle(para.paraStyleID);
                     HwpRecord_ParaShape paraShape = wContext.getParaShape(para.paraShapeID);
-                    HwpRecord_ParaShape paraShapeTemp = null;
-                    try {
-                        paraShapeTemp = HwpRecord_ParaShape.clone(paraShape);
-                        if (cell.paras.size()==1) {
-                            // Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
-                            paraShapeTemp.lineSpacing = 100;
-                            paraShapeTemp.lineSpacingType = 0x3;
-                        }
-                    } catch (java.lang.ClassNotFoundException | IOException e) {
-                        log.log(Level.SEVERE, e.toString(), e);
-                    }
+                    HwpRecord_ParaShape paraShapeTemp = cellParaShape(paraShape, cell);
                     HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
                                                paraShapeTemp, charShape, append, true, step);
+                    textDone[0] = true;
                     return true;
                 }
 
@@ -1316,12 +1312,47 @@ public class ConvTable {
                     if (isLastPara == false) {
                     	return false;
                     } else {
+                        if (textDone[0] == false) {
+                            // 글자 없는 마지막 문단 (그림/표만 있거나 빈 문단): 문단 끝 글자 모양으로 문단 모양을 적용한다
+                            HwpRecurs.beforeParaBreak(childContext, cellParaShape(paraShape, cell),
+                                                      wContext.getCharShape(lastCharShapeId(para, charShapeID[0])), false, true, step);
+                        }
                     	return true;
                     }
                 }
             };
             HwpRecurs.printParaRecurs(childContext, wContext, para, callback, 2);
         }
+    }
+
+    /** 셀 문단의 문단 모양. 셀에 문단이 하나뿐이면 줄 간격을 최소 100 으로 한다 (LibreOffice 와 한글의 간격 차이 해소) */
+    private static HwpRecord_ParaShape cellParaShape(HwpRecord_ParaShape paraShape, TblCell cell) {
+        if (paraShape == null || cell.paras.size() != 1) {
+            return paraShape;
+        }
+        try {
+            HwpRecord_ParaShape temp = HwpRecord_ParaShape.clone(paraShape);
+            temp.lineSpacing = 100;
+            temp.lineSpacingType = 0x3;
+            return temp;
+        } catch (java.lang.ClassNotFoundException | IOException e) {
+            log.log(Level.SEVERE, e.toString(), e);
+            return paraShape;
+        }
+    }
+
+    /** 문단 끝(PARAGRAPH_BREAK)의 글자 모양. 없으면 def */
+    private static short lastCharShapeId(HwpParagraph para, short def) {
+        if (para.p != null) {
+            for (int i = para.p.size() - 1; i >= 0; i--) {
+                Ctrl c = para.p.get(i);
+                if (c instanceof Ctrl_Character
+                        && ((Ctrl_Character) c).ctrlChar == Ctrl_Character.CtrlCharType.PARAGRAPH_BREAK) {
+                    return (short) ((Ctrl_Character) c).charShapeId;
+                }
+            }
+        }
+        return def;
     }
 
     private static TblCell[][] removeAllNullColumns(TblCell[][] cellArray) {
