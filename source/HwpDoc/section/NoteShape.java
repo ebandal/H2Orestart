@@ -157,7 +157,7 @@ public class NoteShape {
         NoteShape noteShape = new NoteShape();
         
         // 속성 4 bytes
-        noteShape.numberShape           = NumberShape2.from(buf[offset++]);
+        noteShape.numberShape           = NumberShape2.from(buf[offset++]&0xFF);    // 부호 없이 (기존: 0x81 USER_CHAR 가 -127 이 되어 DIGIT 로 바뀌었음)
         byte     attr                   = buf[offset++];
         noteShape.placement             = (byte) (attr&0x03);
         noteShape.numbering             = NoteNumbering.from(attr>>2&0x03);

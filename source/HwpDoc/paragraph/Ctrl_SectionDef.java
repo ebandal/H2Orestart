@@ -101,7 +101,7 @@ public class Ctrl_SectionDef extends Ctrl {
 		showFirstBorder	= (attr&0x100)==0x100?true:false;
 		showFirstFill	= (attr&0x200)==0x200?true:false;
 		textDirection	= (byte) (attr>>16&0x07);
-		hideEmptyLine	= (attr&0x20000)==0x20000?true:false;
+		hideEmptyLine	= (attr&0x80000)==0x80000?true:false;	// bit 19 (기존 0x20000 은 텍스트 방향 비트)
 		pageStartOn		= (byte) (attr>>20&0x03);
 		
 		// 동일한 페이지에서 서로 다른 단 사이의 간격.  기본값:1134. 기본설정 11.3pt=4mm=0.158inch

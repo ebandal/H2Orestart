@@ -258,6 +258,17 @@ public class HwpDocInfo {
                 readRefList(node, version);
                 break;
             case "hh:compatibleDocument":
+                {
+                    // 호환 문서 (기존: 읽지 않아 HWPX 는 항상 HWP 로 처리, MS 워드 호환 문서의 문단 간격이 HWP 와 달랐음)
+                    org.w3c.dom.Node target = node.getAttributes()==null ? null : node.getAttributes().getNamedItem("targetProgram");
+                    if (target != null) {
+                        switch (target.getNodeValue()) {
+                        case "MS_WORD":  compatibleDoc = CompatDoc.MS_WORD; break;
+                        case "HWP200X":  compatibleDoc = CompatDoc.OLD_HWP; break;
+                        default:         compatibleDoc = CompatDoc.HWP;     break;
+                        }
+                    }
+                }
                 break;
             case "hh:docOption":
                 break;

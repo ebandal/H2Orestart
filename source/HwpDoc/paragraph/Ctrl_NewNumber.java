@@ -51,8 +51,10 @@ public class Ctrl_NewNumber extends Ctrl {
 
 		int attr 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 		numType 	= NumType.from(attr&0xF);
-		numShape	= NumberShape2.from(attr>>4&0xF);
+		// 번호 모양: 명세 표 144 에는 bit 0~3(번호 종류)만 있고 HWPX 에도 없다. 읽지 않는다
+		offset += 4;		// UINT32 속성 (기존: 건너뛰지 않아 번호를 속성의 하위 2 bytes 로 읽었음, 명세 표 144)
 		num			= (short) (buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF);
+		offset += 2;
 		
 		log.fine("                                                  " + toString());
 		this.size = offset-off;
