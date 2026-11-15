@@ -40,7 +40,7 @@ public class HwpRecord_Numbering extends HwpRecord {
     public Numbering[]	numbering = new Numbering[10];       // 문단머리정보+번호형식[1~7]
     public short        start;                               // 시작번호
     public String[]     extLevelFormat	= new String[3];     // 확장 번호 형식
-    public int[]        extLevelStart 	= new int[3];        // 확장 수준별 시작번호
+    public int[]        extLevelStart 	= { 1, 1, 1 };       // 확장 수준별 시작번호 (없으면 1. 기존 0 은 번호가 0 부터 시작)
 	
     HwpRecord_Numbering(int tagNum, int level, int size) {
         super(tagNum, level, size);
@@ -53,62 +53,46 @@ public class HwpRecord_Numbering extends HwpRecord {
         int offset = off;
         for (int i=0; i < 7; i++) {
             numbering[i] = new Numbering();
-
-            int typeBits                = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-            offset += 4;
-
-            numbering[i].attrBits       = typeBits;
-            // bit5~ : 번호 모양 (명세 표 41 값. 표 40 에는 없지만 HWP/HWPX 쌍 문서로 확인)
-            numbering[i].numberShape    = NumberShape2.from((typeBits>>>5) & 0x1F);
-            numbering[i].align          = (byte) ((typeBits)&0x03);
-            numbering[i].useInstWidth   = (typeBits&0x04)==0x04?true:false;
-            numbering[i].autoIndent     = (typeBits&0x08)==0x08?true:false;
-            numbering[i].textOffsetType = (byte) ((typeBits>>>4)&0x01);
-
-            numbering[i].widthAdjust    = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
-            offset += 2;
-            numbering[i].textOffset     = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
-            offset += 2;
-            numbering[i].charShape      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-            offset += 4;
-
-            short len = (short) ((buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2);
-            offset += 2;
-            numbering[i].numFormat      = new String(buf, offset, len, StandardCharsets.UTF_16LE);
-            offset += len;
+            offset = readLevel(numbering[i], buf, offset);
         }
 
         // <numbering>의 "start" 속성에 대응
         start 	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
 
-        if (version > 5025 && offset-off < size) {
-            // 하위 <paraHead>태그의 "start" 속성에 대응
+        // 수준별 시작번호 (명세: 5.0.2.5 이상). 버전이 아니라 레코드에 남은 크기로 판단한다
+        // (5.0.2.4 문서에도 들어 있는 경우가 있고, 5.0.3.3 문서에 없는 경우도 있음)
+        if (offset-off+4*7 <= size) {
             for (int i=0; i < 7; i++) {
                 numbering[i].startNumber = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
                 offset += 4;
             }
+        } else {
+            // 없으면 한글은 1수준을 start(0 이면 1), 나머지 수준을 1 로 본다 (HWP->HWPX 변환 쌍에서 확인)
+            for (int i=0; i < 7; i++) {
+                numbering[i].startNumber = 1;
+            }
+            if (start > 0) {
+                numbering[0].startNumber = start;
+            }
         }
 
-        if (version > 5100 && offset-off < size) {
+        // 확장 수준(8~10). 구조는 1~7 수준과 같다 (문단 머리 정보 12 bytes + 번호 형식)
+        // 명세 표 38 에는 번호 형식만 적혀 있고, 표 39 의 문단 머리 정보 길이(8)도 실제(12)와 다르다
+        if (offset-off+14*3 <= size) {
             for (int i=0; i < 3; i++) {
-                // 내용은 알수 없으나, 8byte를 포함하고 있음.
-                offset += 8;
-
-                // 내용은 알수 없으나, 4byte를 포함하고 있음.
-                offset += 4;
-
-                // 내용을 알수 없으나, 글자수를 포함한것으로 보임.
-                short len = (short) ((buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2);
-                offset += 2;
-
-                // 글자수*2 만큼 건너뜀
-                offset += len;
+                numbering[7+i] = new Numbering();
+                offset = readLevel(numbering[7+i], buf, offset);
+                numbering[7+i].startNumber = 1;
+                extLevelFormat[i] = numbering[7+i].numFormat;
+                extLevelStart[i] = 1;
             }
-
-            for (int i=0; i < 3; i++) {
-                extLevelStart[i] = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-                offset += 4;
+            if (offset-off+4*3 <= size) {
+                for (int i=0; i < 3; i++) {
+                    extLevelStart[i] = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+                    numbering[7+i].startNumber = extLevelStart[i];
+                    offset += 4;
+                }
             }
         }
 
@@ -140,6 +124,33 @@ public class HwpRecord_Numbering extends HwpRecord {
         }
     }
 	
+    /** 문단 머리 정보(12 bytes) + 번호 형식 길이(2) + 번호 형식 */
+    private static int readLevel(Numbering numb, byte[] buf, int offset) {
+        int typeBits            = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        offset += 4;
+
+        numb.attrBits       = typeBits;
+        // bit5~ : 번호 모양 (명세 표 41 값. 표 40 에는 없지만 HWP/HWPX 쌍 문서로 확인)
+        numb.numberShape    = NumberShape2.from((typeBits>>>5) & 0x1F);
+        numb.align          = (byte) ((typeBits)&0x03);
+        numb.useInstWidth   = (typeBits&0x04)==0x04?true:false;
+        numb.autoIndent     = (typeBits&0x08)==0x08?true:false;
+        numb.textOffsetType = (byte) ((typeBits>>>4)&0x01);
+
+        numb.widthAdjust    = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+        offset += 2;
+        numb.textOffset     = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+        offset += 2;
+        numb.charShape      = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        offset += 4;
+
+        int len = (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF)*2;
+        offset += 2;
+        numb.numFormat      = new String(buf, offset, len, StandardCharsets.UTF_16LE);
+        offset += len;
+        return offset;
+    }
+
     public HwpRecord_Numbering(HwpDocInfo docInfo, Node node, int version) throws NotImplementedException {
         super(HwpTag.HWPTAG_NUMBERING, 0, 0);
         this.parent = docInfo;
@@ -221,6 +232,10 @@ public class HwpRecord_Numbering extends HwpRecord {
 
                     numStr = childAttrs.getNamedItem("start").getNodeValue();
                     numbering[j].startNumber = (short)Integer.parseInt(numStr);
+                    if (j >= 7 && j < 10) {     // 확장 수준: 변환기는 extLevel* 를 쓴다
+                        extLevelFormat[j-7] = numbering[j].numFormat;
+                        extLevelStart[j-7] = numbering[j].startNumber;
+                    }
                     j++;
                 }
             }
