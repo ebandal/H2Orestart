@@ -175,7 +175,10 @@ public class ModelDiff {
         Class<?> ca = a.getClass(), cb = b.getClass();
         boolean sa = ModelDumper.isScalar(ca), sb = ModelDumper.isScalar(cb);
         if (sa || sb) {
-            if (!(sa && sb) || !scalarEquals(a, b)) add(key, path, a, b);
+            if (!(sa && sb) || !scalarEquals(a, b)) {
+                if (FONT_NAME_KEY.equals(key) && sameFont(String.valueOf(a), String.valueOf(b))) return;
+                add(key, path, a, b);
+            }
             return;
         }
         if (ca == byte[].class || cb == byte[].class) {
@@ -262,6 +265,29 @@ public class ModelDiff {
         } finally {
             visiting.remove(a);
         }
+    }
+
+    static final String FONT_NAME_KEY = "HwpElement.HwpRecord_CharShape.fontName";
+
+    /**
+     * 같은 글꼴의 한글/영문 이름. 한글은 HWPX 로 저장할 때 그 PC 에 설치된 글꼴 이름으로 바꿔 쓴다
+     * (예: HWP "Malgun Gothic" -> HWPX "맑은 고딕", HWP "나눔고딕"(기본 글꼴 NanumGothic) -> HWPX "NanumGothic").
+     */
+    static final String[][] FONT_ALIASES = {
+        { "맑은 고딕", "Malgun Gothic" }, { "나눔고딕", "NanumGothic" }, { "나눔명조", "NanumMyeongjo" },
+        { "바탕", "Batang" }, { "바탕체", "BatangChe" }, { "돋움", "Dotum" }, { "돋움체", "DotumChe" },
+        { "굴림", "Gulim" }, { "굴림체", "GulimChe" }, { "궁서", "Gungsuh" }, { "궁서체", "GungsuhChe" },
+        { "한양신명조", "HY Sinmyeongjo" }, { "한양견고딕", "HY Gyeongothic" }, { "한양중고딕", "HY Junggothic" },
+    };
+
+    static boolean sameFont(String a, String b) {
+        if (a.equalsIgnoreCase(b)) return true;
+        for (String[] alias : FONT_ALIASES) {
+            boolean ma = alias[0].equalsIgnoreCase(a) || alias[1].equalsIgnoreCase(a);
+            boolean mb = alias[0].equalsIgnoreCase(b) || alias[1].equalsIgnoreCase(b);
+            if (ma && mb) return true;
+        }
+        return false;
     }
 
     /** 선도 채우기도 없는 테두리/배경 */
