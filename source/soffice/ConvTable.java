@@ -335,27 +335,9 @@ public class ConvTable {
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
-                                if (cellBorderFill.fill.isColorFill()) {
-                                    if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
-                                        cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
-                                    } else {
-                                        cellProps.setPropertyValue("BackTransparent", false);
-                                        cellProps.setPropertyValue("BackColor", cellBorderFill.fill.faceColor);
-                                    }
-                                } else if (cellBorderFill.fill.isGradFill()) {
-                                    // CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
-                                    if (cellBorderFill.fill.colors.length==2) {
-                                        short r, g, b;
-                                        r = (short) (((cellBorderFill.fill.colors[0]>>16&0x00FF) + (cellBorderFill.fill.colors[1]>>16&0x00FF))/2);  
-                                        g = (short) (((cellBorderFill.fill.colors[0]>>8&0x00FF) + (cellBorderFill.fill.colors[1]>>8&0x00FF))/2);  
-                                        b = (short) (((cellBorderFill.fill.colors[0]&0x00FF) + (cellBorderFill.fill.colors[1]&0x00FF))/2);  
-                                        int midColor = (r<<16)|(g<<8)|b;
-                                        cellProps.setPropertyValue("BackColor", midColor);
-                                    }
-                                } else if (cellBorderFill.fill.isImageFill()) {
-                                    ConvGraphics.fillGraphic(wContext, cellProps, cellBorderFill.fill);
-                                }
+                                applyCellFill(wContext, cellProps, cellBorderFill, callback);
                             }
+                            applyCellZones(wContext, cellProps, cell, table, callback);
                         }
                     } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
                             | WrappedTargetException e) {
@@ -368,6 +350,85 @@ public class ConvTable {
         } catch (IllegalArgumentException | Exception e3) {
             log.log(Level.SEVERE, e3.toString(), e3);
         }
+    }
+
+    private static void applyCellFill(WriterContext wContext, XPropertySet cellProps, HwpRecord_BorderFill borderFill,
+            HwpCallback callback) throws IllegalArgumentException, UnknownPropertyException, PropertyVetoException,
+            WrappedTargetException, HwpParseException {
+        if (borderFill.fill == null) {
+            return;
+        }
+        if (borderFill.fill.isColorFill()) {
+            if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
+                cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
+            } else {
+                cellProps.setPropertyValue("BackTransparent", false);
+                cellProps.setPropertyValue("BackColor", borderFill.fill.faceColor);
+            }
+        } else if (borderFill.fill.isGradFill()) {
+            // CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
+            if (borderFill.fill.colors.length==2) {
+                short r, g, b;
+                r = (short) (((borderFill.fill.colors[0]>>16&0x00FF) + (borderFill.fill.colors[1]>>16&0x00FF))/2);
+                g = (short) (((borderFill.fill.colors[0]>>8&0x00FF) + (borderFill.fill.colors[1]>>8&0x00FF))/2);
+                b = (short) (((borderFill.fill.colors[0]&0x00FF) + (borderFill.fill.colors[1]&0x00FF))/2);
+                int midColor = (r<<16)|(g<<8)|b;
+                cellProps.setPropertyValue("BackColor", midColor);
+            }
+        } else if (borderFill.fill.isImageFill()) {
+            ConvGraphics.fillGraphic(wContext, cellProps, borderFill.fill);
+        }
+    }
+
+    /*
+     * 셀 영역(cellzone): 셀 범위에 테두리/배경을 지정한다. 셀 자신의 테두리/배경과 별도로 저장된다.
+     * 한글 렌더링으로 확인한 규칙 (h23_year_end_settlement.hwpx 의 영역 테두리를 바꿔 PDF 로 비교):
+     *  - 배경은 범위 안의 모든 셀에 적용
+     *  - 테두리는 범위의 바깥 경계에만 적용 (안쪽 선은 그대로)
+     *  - 선 없음(NONE)인 변은 이웃 셀 선과 구분할 수 없어 바꾸지 않는다
+     * 기존: 변환기가 영역을 전혀 쓰지 않아 영역으로 지정한 배경/테두리가 빠졌음.
+     */
+    private static void applyCellZones(WriterContext wContext, XPropertySet cellProps, TblCell cell, Ctrl_Table table,
+            HwpCallback callback) throws IllegalArgumentException, UnknownPropertyException, PropertyVetoException,
+            WrappedTargetException, HwpParseException {
+        if (table.cellzoneList == null || table.cellzoneList.isEmpty()) {
+            return;
+        }
+        int r0 = cell.rowAddr, r1 = cell.rowAddr + Math.max(1, (int) cell.rowSpan) - 1;
+        int c0 = cell.colAddr, c1 = cell.colAddr + Math.max(1, (int) cell.colSpan) - 1;
+        for (Ctrl_Table.CellZone zone : table.cellzoneList) {
+            if (r1 < zone.startRowAddr || r0 > zone.endRowAddr || c1 < zone.startColAddr || c0 > zone.endColAddr) {
+                continue;
+            }
+            HwpRecord_BorderFill zoneFill;
+            try {
+                zoneFill = WriterContext.getBorderFill(zone.borderFillIDRef);
+            } catch (java.lang.IndexOutOfBoundsException e) {
+                // 잘못된 참조 하나로 문서 전체 변환이 실패하지 않도록 건너뛴다
+                log.warning("cellzone borderFill out of range: " + zone.borderFillIDRef);
+                continue;
+            }
+            if (zoneFill == null) {
+                continue;
+            }
+            applyCellFill(wContext, cellProps, zoneFill, callback);
+            if (c0 == zone.startColAddr && hasLine(zoneFill.left)) {
+                cellProps.setPropertyValue("LeftBorder", Transform.toBorderLine(zoneFill.left));
+            }
+            if (c1 == zone.endColAddr && hasLine(zoneFill.right)) {
+                cellProps.setPropertyValue("RightBorder", Transform.toBorderLine(zoneFill.right));
+            }
+            if (r0 == zone.startRowAddr && hasLine(zoneFill.top)) {
+                cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(zoneFill.top));
+            }
+            if (r1 == zone.endRowAddr && hasLine(zoneFill.bottom)) {
+                cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(zoneFill.bottom));
+            }
+        }
+    }
+
+    private static boolean hasLine(HwpRecord_BorderFill.Border border) {
+        return border != null && border.style != null && border.style != HwpDoc.HwpElement.HwpRecordTypes.LineStyle2.NONE;
     }
 
     private static XTextFrame makeOuterFrame(WriterContext wContext, Ctrl_Table table) throws Exception {

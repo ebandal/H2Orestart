@@ -73,6 +73,7 @@ public class ModelDiff {
         ref("HwpElement.HwpRecord_CharShape.borderFillIDRef", "borderFillList", 1);
         ref("paragraph.TblCell.borderFill", "borderFillList", 1);
         ref("paragraph.Ctrl_Table.borderFillID", "borderFillList", 1);
+        ref("paragraph.Ctrl_Table$CellZone.borderFillIDRef", "borderFillList", 1);
         ref("section.PageBorderFill.borderFill", "borderFillList", 1);
         ref("paragraph.Ctrl_ShapePic.binDataID", "binDataList", 0);
         ref("paragraph.Ctrl_ShapeOle.binDataID", "binDataList", 0);
