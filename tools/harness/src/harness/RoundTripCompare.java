@@ -35,8 +35,8 @@ import HwpDoc.paragraph.TblCell;
  */
 public class RoundTripCompare {
 
-    /** HWPUNIT 반올림 허용 오차 (1/100mm 변환을 거치므로) */
-    static final int TOL = 3;
+    /** HWPUNIT 허용 오차 */
+    static final int TOL = 8;      // 가져오기의 /2 정수 절사와 1/100mm 변환을 두 번 거친다
 
     static class Para {
         String text;

@@ -53,8 +53,10 @@ public final class H2OrestartExportImpl extends WeakBase implements com.sun.star
     private static final String[] m_serviceNames = { __serviceName };
 
     private XComponent sourceDocument;
+    private final XComponentContext context;
 
     public H2OrestartExportImpl(XComponentContext context) {
+        this.context = context;
     }
 
     public static XSingleComponentFactory __getComponentFactory(String sImplementationName) {
@@ -97,7 +99,7 @@ public final class H2OrestartExportImpl extends WeakBase implements com.sun.star
             }
         }
         try {
-            WDocument doc = LoToHwpx.convert(sourceDocument);
+            WDocument doc = LoToHwpx.convert(sourceDocument, context);
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             HwpxPackage.write(doc, bos);
             byte[] data = bos.toByteArray();

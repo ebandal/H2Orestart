@@ -56,9 +56,25 @@ public class LoToHwpx {
 
     private final WDocument doc = WDocument.createDefault();
     private final WSection section = new WSection();
+    /** 글꼴 크기 측정용 (가져오기의 글꼴별 줄 간격 보정값을 같은 방식으로 구한다). 없으면 기본값 */
+    private com.sun.star.awt.XDevice device;
+    private final java.util.Map<String, Double> alphaCache = new java.util.HashMap<String, Double>();
 
     public static WDocument convert(XComponent component) {
+        return convert(component, null);
+    }
+
+    public static WDocument convert(XComponent component, com.sun.star.uno.XComponentContext context) {
         LoToHwpx c = new LoToHwpx();
+        if (context != null) {
+            try {
+                Object o = context.getServiceManager().createInstanceWithContext("com.sun.star.awt.Toolkit", context);
+                com.sun.star.awt.XToolkit tk = UnoRuntime.queryInterface(com.sun.star.awt.XToolkit.class, o);
+                c.device = tk.createScreenCompatibleDevice(0, 0);
+            } catch (com.sun.star.uno.Exception e) {
+                log.log(Level.WARNING, e.toString(), e);
+            }
+        }
         XTextDocument textDoc = UnoRuntime.queryInterface(XTextDocument.class, component);
         if (textDoc == null) {
             throw new IllegalArgumentException("not a text document");
@@ -214,11 +230,41 @@ public class LoToHwpx {
             p.lineSpacing = ls.Height;
             break;
         default:
+            // 가져오기는 글꼴별 보정값을 곱했다 (ConvPage.adjustFontIfNotExists). 같은 값으로 나눈다
             p.lineSpacingType = "PERCENT";
-            p.lineSpacing = (int) Math.round(ls.Height / 0.85);    // ConvPara.PARA_SPACING (한글 호환 문서)
+            p.lineSpacing = (int) Math.round(ls.Height / lineSpaceAlpha(pp));
             break;
         }
         return p;
+    }
+
+    /**
+     * 글꼴별 줄 간격 보정값. ConvPage.adjustFontIfNotExists 와 같은 규칙:
+     * 크기 100 글꼴의 ascent+descent 가 117 미만 0.870, 130 미만 0.857, 133 미만 0.764, 그 이상 0.752.
+     * 가져오기는 문단 첫 글자의 글자 모양 보정값을 쓰므로, 문단의 동아시아 글꼴(없으면 서양 글꼴)로 구한다.
+     */
+    private double lineSpaceAlpha(XPropertySet pp) {
+        String face = null;
+        try {
+            face = AnyConverter.toString(pp.getPropertyValue("CharFontNameAsian"));
+            if (face == null || face.isEmpty()) face = AnyConverter.toString(pp.getPropertyValue("CharFontName"));
+        } catch (com.sun.star.uno.Exception e) {
+            face = null;
+        }
+        if (face == null || device == null) return 0.870;
+        Double cached = alphaCache.get(face);
+        if (cached != null) return cached;
+        com.sun.star.awt.FontDescriptor fd = new com.sun.star.awt.FontDescriptor();
+        fd.Name = face;
+        fd.Height = 100;
+        com.sun.star.awt.SimpleFontMetric m = device.getFont(fd).getFontMetric();
+        double ascDes = m.Ascent + m.Descent;
+        double alpha = 0.870;
+        if (ascDes >= 117 && ascDes < 130) alpha = 0.857;
+        else if (ascDes >= 130 && ascDes < 133) alpha = 0.764;
+        else if (ascDes >= 133) alpha = 0.752;
+        alphaCache.put(face, alpha);
+        return alpha;
     }
 
     /** 본문 첫 문단의 쪽 스타일로 용지 크기/여백을 정한다 */
