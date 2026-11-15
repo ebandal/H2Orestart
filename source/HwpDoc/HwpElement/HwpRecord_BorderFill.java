@@ -219,15 +219,15 @@ public class HwpRecord_BorderFill extends HwpRecord {
                     NamedNodeMap childAttrs = child.getAttributes();
                     switch(childAttrs.getNamedItem("type").getNodeValue()) {
                     case "NONE":
-                        slash = 0;      break;
+                        backSlash = 0;      break;   // 기존: slash 에 넣어 역대각선이 대각선으로 바뀌었음
                     case "CENTER":
-                        slash = 0b010; break; 
+                        backSlash = 0b010; break; 
                     case "CENTER_BELOW":
-                        slash = 0b011; break;
+                        backSlash = 0b011; break;
                     case "CENTER_ABOVE":
-                        slash = 0b110; break;
+                        backSlash = 0b110; break;
                     case "ALL":
-                        slash = 0b111; break;
+                        backSlash = 0b111; break;
                     }
 
                     switch(childAttrs.getNamedItem("Crooked").getNodeValue()) {

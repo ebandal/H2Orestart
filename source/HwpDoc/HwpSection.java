@@ -603,6 +603,12 @@ public class HwpSection {
                         // LIST_HEADER에 붙어서 오는 41byte 먼저 읽고,
                         TblCell cell = new TblCell(size - 6, buf, offset, version);
                         cell.verAlign = verAlign; // 세로 정렬
+                        if (cell.height < 0) {
+                            // 음수 셀 높이: 한글은 셀 위/아래 여백의 합으로 바꿔 저장한다 (HWP->HWPX 변환 쌍에서 확인)
+                            Ctrl_Table tbl = (Ctrl_Table) ctrl;
+                            cell.height = cell.hasMargin && cell.margin != null ? cell.margin[2] + cell.margin[3]
+                                                                               : tbl.inUSpace + tbl.inDSpace;
+                        }
                         offset += cell.getSize();
                         ((Ctrl_Table) ctrl).cells.add(cell);
                         /*

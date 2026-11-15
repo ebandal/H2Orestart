@@ -53,7 +53,7 @@ public class Ctrl_PageNumPos extends Ctrl {
 		numShape		= NumberShape2.from(attr&0xFF);
 		pos 			= NumPos.from((attr>>8)&0xF);
 		
-		offset += 2;
+		offset += 4;		// UINT32 속성 (기존 2: 이후 문자들이 한 칸씩 밀려 읽혔음)
 		userDef 		= new String(buf, offset, 2, StandardCharsets.UTF_16LE);
 		offset += 2;
 		prefix 			= new String(buf, offset, 2, StandardCharsets.UTF_16LE);
@@ -63,6 +63,11 @@ public class Ctrl_PageNumPos extends Ctrl {
 		constantDash 	= new String(buf, offset, 2, StandardCharsets.UTF_16LE);
 		offset += 2;
 		
+		// 값이 없으면 NUL 문자. HWPX 와 같이 빈 문자열로 둔다
+		userDef = noNul(userDef);
+		prefix = noNul(prefix);
+		postfix = noNul(postfix);
+		constantDash = noNul(constantDash);
 		log.fine("                                                  " + toString());
 		this.size = offset-off;
 	}
@@ -77,6 +82,13 @@ public class Ctrl_PageNumPos extends Ctrl {
         // 줄표 넣기 (예: "-" 이면 "- 1 -")
         Node sideChar = attributes.getNamedItem("sideChar");
         constantDash = sideChar==null ? "" : sideChar.getNodeValue();
+        userDef = "";       // HWPX 에는 해당 속성이 없다
+        prefix = "";
+        postfix = "";
+    }
+
+    private static String noNul(String s) {
+        return s==null ? "" : s.replace(String.valueOf((char) 0), "");
     }
 
     public String toString() {
