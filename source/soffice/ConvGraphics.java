@@ -569,6 +569,7 @@ public class ConvGraphics {
                     }
                     break;
                 case "Ctrl_ShapeLine":
+                case "Ctrl_ShapeConnectLine":   // 개체연결선은 선으로 그린다
                     sizeWidth = (((Ctrl_ShapeLine) shape).endX - ((Ctrl_ShapeLine) shape).startX);
                     sizeHeight = (((Ctrl_ShapeLine) shape).endY - ((Ctrl_ShapeLine) shape).startY);
                     sizeWidth = (int) (shape.iniWidth * xScale /* /container.matrixSeq[0] */);

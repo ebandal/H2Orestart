@@ -395,7 +395,10 @@ public class ModelDiff {
     private static boolean scalarEquals(Object a, Object b) {
         if (a instanceof Number && b instanceof Number) {
             if (a instanceof Float || a instanceof Double || b instanceof Float || b instanceof Double) {
-                return Math.abs(((Number) a).doubleValue() - ((Number) b).doubleValue()) < 1e-6;
+                // HWPX 는 실수를 소수 6자리 정도로 쓰므로 상대 오차로 비교한다 (예: 3449.629744351342 vs 3449.629639)
+                double da = ((Number) a).doubleValue(), db = ((Number) b).doubleValue();
+                double diff = Math.abs(da - db);
+                return diff < 1e-6 || diff <= 1e-6 * Math.max(Math.abs(da), Math.abs(db));
             }
             return ((Number) a).longValue() == ((Number) b).longValue();
         }

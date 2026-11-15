@@ -96,7 +96,8 @@ public class Ctrl_Container extends Ctrl_GeneralShape {
                 list.add(ctrl);
                 break;
             case "hp:connectLine":
-                ctrl = new Ctrl_ShapeLine("loc$", child, version, context);
+                // 개체연결선 (기존: Ctrl_ShapeLine 으로 읽어 hp:startPt/endPt 좌표를 읽지 못했음)
+                ctrl = new Ctrl_ShapeConnectLine("loc$", child, version, context);
                 list.add(ctrl);
                 break;
             case "hp:pic":

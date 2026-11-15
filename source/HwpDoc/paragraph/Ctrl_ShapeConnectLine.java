@@ -32,7 +32,9 @@ import org.w3c.dom.NodeList;
 import HwpDoc.IContext;
 import HwpDoc.Exception.NotImplementedException;
 
-public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
+// 개체연결선. 변환기는 선(Ctrl_ShapeLine)으로 그리므로 선을 상속한다
+// (기존: Ctrl_GeneralShape 상속 → 변환기의 (Ctrl_ShapeLine) 형변환 실패로 HWPX 연결선이 빠졌음)
+public class Ctrl_ShapeConnectLine extends Ctrl_ShapeLine {
     private static final Logger log = Logger.getLogger(Ctrl_ShapeConnectLine.class.getName());
     private int size;
 
@@ -43,7 +45,7 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
 
     public Ctrl_ShapeConnectLine(String ctrlId, int size, byte[] buf, int off, int version) {
         super(ctrlId, size, buf, off, version);
-        this.size = offset-off;
+        this.size = super.getSize();
 
         log.fine("                                                  " + toString());
     }
@@ -134,6 +136,55 @@ public class Ctrl_ShapeConnectLine extends Ctrl_GeneralShape {
                 }
             }
         }
+        // 선 좌표 (HWP 선 개체와 같은 필드)
+        if (startPt != null) { startX = startPt.x; startY = startPt.y; }
+        if (endPt != null)   { endX = endPt.x;     endY = endPt.y; }
+    }
+
+    /*
+     * HWPTAG_SHAPE_COMPONENT_LINE (개체연결선). 명세에 없음. HWP->HWPX 변환 쌍(건강보험.hwp)의 값으로 확인:
+     *   INT32 x4 : 시작점 x, y, 끝점 x, y
+     *   UINT32   : 연결선 종류 (ConnectLineType)
+     *   UINT32 x4: 시작점 연결 개체 ID, 연결 위치, 끝점 연결 개체 ID, 연결 위치
+     *   UINT32   : 제어점 개수 n,  (INT32 x, INT32 y, UINT16 종류) x n
+     *   나머지 4 bytes 는 알 수 없음
+     */
+    public static int parseConnect(Ctrl_ShapeConnectLine obj, int size, byte[] buf, int off) {
+        int offset = off;
+        if (size < 40) {
+            return size;
+        }
+        obj.startX = readInt(buf, offset);  offset += 4;
+        obj.startY = readInt(buf, offset);  offset += 4;
+        obj.endX   = readInt(buf, offset);  offset += 4;
+        obj.endY   = readInt(buf, offset);  offset += 4;
+        obj.type   = ConnectLineType.from(readInt(buf, offset));  offset += 4;
+        obj.startPt = new ConnectPoint();
+        obj.startPt.x = obj.startX;
+        obj.startPt.y = obj.startY;
+        obj.startPt.subjectIDRef = (short) readInt(buf, offset);  offset += 4;
+        obj.startPt.subjectIdx   = (short) readInt(buf, offset);  offset += 4;
+        obj.endPt = new ConnectPoint();
+        obj.endPt.x = obj.endX;
+        obj.endPt.y = obj.endY;
+        obj.endPt.subjectIDRef = (short) readInt(buf, offset);  offset += 4;
+        obj.endPt.subjectIdx   = (short) readInt(buf, offset);  offset += 4;
+        int count = readInt(buf, offset);  offset += 4;
+        if (count > 0 && offset-off + count*10 <= size) {
+            obj.controlPoints = new ArrayList<Point>();
+            for (int i=0; i<count; i++) {
+                Point p = new Point();
+                p.x = readInt(buf, offset);  offset += 4;
+                p.y = readInt(buf, offset);  offset += 4;
+                offset += 2;    // 제어점 종류
+                obj.controlPoints.add(p);
+            }
+        }
+        return size;
+    }
+
+    private static int readInt(byte[] buf, int offset) {
+        return buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
     }
 
     public String toString() {
