@@ -14,7 +14,7 @@ CLASSES="tools/harness/out/classes"
 
 rm -rf "$CLASSES"
 mkdir -p "$CLASSES"
-find source/HwpDoc tools/harness/src -name '*.java' > tools/harness/out/sources.txt
+find source/HwpDoc source/HwpxWriter tools/harness/src -name '*.java' > tools/harness/out/sources.txt
 javac --release 8 -encoding UTF-8 -nowarn -d "$CLASSES" @tools/harness/out/sources.txt
 
 java -Xmx2g -cp "$CLASSES" harness.CorpusScan --root "$CORPUS" --out tools/harness/work "$@"

@@ -9,7 +9,7 @@ CORPUS="${1:-D:/eclipse-workspace/HWP}"
 cd "$REPO"
 CLASSES="tools/harness/out/classes"
 mkdir -p "$CLASSES"
-find source/HwpDoc tools/harness/src -name '*.java' > tools/harness/out/sources.txt
+find source/HwpDoc source/HwpxWriter tools/harness/src -name '*.java' > tools/harness/out/sources.txt
 javac --release 8 -encoding UTF-8 -nowarn -d "$CLASSES" @tools/harness/out/sources.txt
 
 ARGS="--same-dir $CORPUS"
