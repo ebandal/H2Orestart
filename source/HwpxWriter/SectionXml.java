@@ -55,19 +55,23 @@ final class SectionXml {
         sb.append("</hp:p>");
     }
 
-    /** 텍스트를 hp:t 로 쓰고 탭/줄바꿈은 hp:t 안의 hp:tab, hp:lineBreak 로 쓴다 */
+    /** 텍스트를 hp:t 로 쓰고 탭/줄바꿈/묶음 빈칸/하이픈은 hp:t 안의 hp:tab, hp:lineBreak, hp:nbSpace, hp:hyphen 으로 쓴다 */
     private static void run(StringBuilder sb, WParagraph.WRun r) {
         sb.append("<hp:run charPrIDRef=\"").append(r.charPrId).append("\"><hp:t>");
         String t = r.text == null ? "" : r.text;
         int start = 0;
         for (int i = 0; i < t.length(); i++) {
             char c = t.charAt(i);
-            if (c == '\t' || c == '\n') {
+            if (c == '\t' || c == '\n' || c == 0x00A0 || c == 0x2011) {
                 sb.append(Xml.esc(t.substring(start, i)));
                 if (c == '\t') {
                     sb.append("<hp:tab width=\"4000\" leader=\"0\" type=\"1\"/>");
-                } else {
+                } else if (c == '\n') {
                     sb.append("<hp:lineBreak/>");
+                } else if (c == 0x00A0) {
+                    sb.append("<hp:nbSpace/>");     // 묶음 빈칸 (LibreOffice 의 줄바꿈 없는 빈칸)
+                } else {
+                    sb.append("<hp:hyphen/>");      // 줄바꿈 없는 하이픈
                 }
                 start = i + 1;
             }

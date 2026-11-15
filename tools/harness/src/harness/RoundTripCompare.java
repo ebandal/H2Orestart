@@ -128,9 +128,13 @@ public class RoundTripCompare {
                         sb.append(t.text.charAt(i));
                         para.chars.add(cs);
                     }
-                } else if (c instanceof Ctrl_Character
-                        && ((Ctrl_Character) c).ctrlChar == Ctrl_Character.CtrlCharType.LINE_BREAK) {
-                    sb.append('\n');
+                } else if (c instanceof Ctrl_Character && ((Ctrl_Character) c).ctrlChar != Ctrl_Character.CtrlCharType.PARAGRAPH_BREAK) {
+                    // 줄바꿈, 묶음/고정폭 빈칸, 하이픈은 LibreOffice 를 거쳐 문자로 돌아온다
+                    switch (((Ctrl_Character) c).ctrlChar) {
+                    case LINE_BREAK:  sb.append('\n');     break;
+                    case HARD_SPACE:  sb.append(' '); break;
+                    default:          sb.append('‑'); break;
+                    }
                     para.chars.add(charShape(info, ((Ctrl_Character) c).charShapeId));
                 } else if (c instanceof Ctrl_Table) {
                     tables.add((Ctrl_Table) c);
