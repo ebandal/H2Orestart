@@ -190,29 +190,32 @@ public class LoToHwpx {
         int first = AnyConverter.toInt(pp.getPropertyValue("ParaFirstLineIndent"));
         int top = AnyConverter.toInt(pp.getPropertyValue("ParaTopMargin"));
         int bottom = AnyConverter.toInt(pp.getPropertyValue("ParaBottomMargin"));
-        p.left = hwp(left);
-        p.right = hwp(right);
-        p.indent = hwp(first);
-        p.prev = hwp(top);
-        p.next = hwp(bottom);
+        // 문단 여백 단위는 1/200 pt (HWPUNIT 의 절반). 가져오기(ConvPara)는 값/2 를 쓰므로 2 배로 되돌린다.
+        // 내어쓰기(음수)는 가져오기가 왼쪽 여백에 더해 두었으므로 빼서 되돌린다
+        p.indent = 2 * hwp(first);
+        p.left = 2 * hwp(left) + (p.indent < 0 ? p.indent : 0);
+        p.right = 2 * hwp(right);
+        p.prev = 2 * hwp(top);
+        p.next = 2 * hwp(bottom);
 
         LineSpacing ls = (LineSpacing) AnyConverter.toObject(LineSpacing.class, pp.getPropertyValue("ParaLineSpacing"));
         switch (ls.Mode) {
+        // 가져오기(ConvPara.setParagraphProperties) 의 역변환
         case LineSpacingMode.FIX:
             p.lineSpacingType = "FIXED";
-            p.lineSpacing = hwp(ls.Height);
+            p.lineSpacing = (int) Math.round(ls.Height / 0.352778 * 2);
             break;
         case LineSpacingMode.MINIMUM:
             p.lineSpacingType = "AT_LEAST";
-            p.lineSpacing = hwp(ls.Height);
+            p.lineSpacing = ls.Height;
             break;
         case LineSpacingMode.LEADING:
             p.lineSpacingType = "BETWEEN_LINES";
-            p.lineSpacing = hwp(ls.Height);
+            p.lineSpacing = ls.Height;
             break;
         default:
             p.lineSpacingType = "PERCENT";
-            p.lineSpacing = ls.Height;
+            p.lineSpacing = (int) Math.round(ls.Height / 0.85);    // ConvPara.PARA_SPACING (한글 호환 문서)
             break;
         }
         return p;
