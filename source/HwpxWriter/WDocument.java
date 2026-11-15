@@ -33,6 +33,8 @@ public class WDocument {
     public final List<WCharPr> charPrList = new ArrayList<WCharPr>();
     public final List<WParaPr> paraPrList = new ArrayList<WParaPr>();
     public final List<WStyle> styleList = new ArrayList<WStyle>();
+    /** 테두리/배경. ID 는 위치+1. 1: 선/채우기 없음, 2: 글자 모양 기본 (한글 새 문서와 같다) */
+    public final List<WBorderFill> borderFillList = new ArrayList<WBorderFill>();
     public final List<WSection> sections = new ArrayList<WSection>();
 
     public String title = "";
@@ -42,6 +44,20 @@ public class WDocument {
         for (int i = 0; i < LANGS.length; i++) {
             fonts[i] = new ArrayList<String>();
         }
+        borderFillList.add(new WBorderFill());
+        WBorderFill charDefault = new WBorderFill();
+        charDefault.fillColor = -1;     // 채우기 "none" (글자 모양 기본). 1 번과 구분하기 위한 표시
+        borderFillList.add(charDefault);
+    }
+
+    /** 같은 테두리/배경이 있으면 그 ID, 없으면 추가한 ID (1 부터) */
+    public int addBorderFill(WBorderFill bf) {
+        int idx = borderFillList.indexOf(bf);
+        if (idx < 0) {
+            borderFillList.add(bf);
+            idx = borderFillList.size() - 1;
+        }
+        return idx + 1;
     }
 
     /** 모든 언어에 같은 글꼴을 등록하고 각 언어의 ID 를 돌려준다 */

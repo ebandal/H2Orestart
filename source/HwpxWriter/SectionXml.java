@@ -46,13 +46,61 @@ final class SectionXml {
             sb.append("<hp:ctrl><hp:colPr id=\"\" type=\"NEWSPAPER\" layout=\"LEFT\" colCount=\"1\" sameSz=\"1\" sameGap=\"0\"/></hp:ctrl>");
             sb.append("</hp:run>");
         }
-        if (p.runs.isEmpty()) {
+        if (p.table != null) {
+            // 표는 문단의 run 안에 넣고 빈 텍스트를 붙인다 (한글 2022 와 같다)
+            sb.append("<hp:run charPrIDRef=\"").append(p.lastCharPrId()).append("\">");
+            table(sb, sec, p.table);
+            sb.append("<hp:t/></hp:run>");
+        } else if (p.runs.isEmpty()) {
             sb.append("<hp:run charPrIDRef=\"").append(p.lastCharPrId()).append("\"><hp:t/></hp:run>");
         }
         for (WParagraph.WRun r : p.runs) {
+            if (p.table != null && (r.text == null || r.text.isEmpty())) continue;
             run(sb, r);
         }
         sb.append("</hp:p>");
+    }
+
+    /**
+     * 표 (hp:tbl). 위치는 문단 기준 왼쪽에서부터 (가져오기가 LEFT_AND_WIDTH 로 놓는다).
+     * 셀 여백은 한글 기본값 (가져오기는 셀 여백을 쓰지 않는다).
+     */
+    private static void table(StringBuilder sb, WSection sec, WTable t) {
+        sb.append("<hp:tbl id=\"0\" zOrder=\"0\" numberingType=\"TABLE\" textWrap=\"TOP_AND_BOTTOM\" textFlow=\"BOTH_SIDES\" lock=\"0\" dropcapstyle=\"None\"")
+          .append(" pageBreak=\"").append(t.pageBreak).append("\" repeatHeader=\"").append(t.repeatHeader ? 1 : 0)
+          .append("\" rowCnt=\"").append(t.rowCnt).append("\" colCnt=\"").append(t.colCnt)
+          .append("\" cellSpacing=\"0\" borderFillIDRef=\"").append(t.borderFillId).append("\" noAdjust=\"0\">");
+        sb.append("<hp:sz width=\"").append(t.width).append("\" widthRelTo=\"ABSOLUTE\" height=\"").append(t.height)
+          .append("\" heightRelTo=\"ABSOLUTE\" protect=\"0\"/>");
+        sb.append("<hp:pos treatAsChar=\"0\" affectLSpacing=\"0\" flowWithText=\"1\" allowOverlap=\"0\" holdAnchorAndSO=\"0\"")
+          .append(" vertRelTo=\"PARA\" horzRelTo=\"PARA\" vertAlign=\"TOP\" horzAlign=\"LEFT\" vertOffset=\"").append(t.vertOffset)
+          .append("\" horzOffset=\"").append(t.horzOffset).append("\"/>");
+        sb.append("<hp:outMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
+        sb.append("<hp:inMargin left=\"510\" right=\"510\" top=\"141\" bottom=\"141\"/>");
+        for (int r = 0; r < t.rowCnt; r++) {
+            sb.append("<hp:tr>");
+            for (WTable.WCell c : t.cells) {
+                if (c.row != r) continue;
+                sb.append("<hp:tc name=\"\" header=\"").append(c.header ? 1 : 0)
+                  .append("\" hasMargin=\"0\" protect=\"0\" editable=\"0\" dirty=\"0\" borderFillIDRef=\"").append(c.borderFillId).append("\">");
+                sb.append("<hp:subList id=\"\" textDirection=\"HORIZONTAL\" lineWrap=\"BREAK\" vertAlign=\"").append(c.vertAlign)
+                  .append("\" linkListIDRef=\"0\" linkListNextIDRef=\"0\" textWidth=\"0\" textHeight=\"0\" hasTextRef=\"0\" hasNumRef=\"0\">");
+                if (c.paragraphs.isEmpty()) {
+                    c.paragraphs.add(new WParagraph());
+                }
+                for (WParagraph cp : c.paragraphs) {
+                    paragraph(sb, sec, cp, false);
+                }
+                sb.append("</hp:subList>");
+                sb.append("<hp:cellAddr colAddr=\"").append(c.col).append("\" rowAddr=\"").append(c.row).append("\"/>");
+                sb.append("<hp:cellSpan colSpan=\"").append(c.colSpan).append("\" rowSpan=\"").append(c.rowSpan).append("\"/>");
+                sb.append("<hp:cellSz width=\"").append(c.width).append("\" height=\"").append(c.height).append("\"/>");
+                sb.append("<hp:cellMargin left=\"510\" right=\"510\" top=\"141\" bottom=\"141\"/>");
+                sb.append("</hp:tc>");
+            }
+            sb.append("</hp:tr>");
+        }
+        sb.append("</hp:tbl>");
     }
 
     /** 텍스트를 hp:t 로 쓰고 탭/줄바꿈/묶음 빈칸/하이픈은 hp:t 안의 hp:tab, hp:lineBreak, hp:nbSpace, hp:hyphen 으로 쓴다 */

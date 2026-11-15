@@ -28,7 +28,7 @@ final class HeaderXml {
         sb.append("<hh:beginNum page=\"1\" footnote=\"1\" endnote=\"1\" pic=\"1\" tbl=\"1\" equation=\"1\"/>");
         sb.append("<hh:refList>");
         fontfaces(sb, doc);
-        borderFills(sb);
+        borderFills(sb, doc);
         charProperties(sb, doc);
         sb.append("<hh:tabProperties itemCnt=\"1\"><hh:tabPr id=\"0\" autoTabLeft=\"0\" autoTabRight=\"0\"/></hh:tabProperties>");
         paraProperties(sb, doc);
@@ -57,17 +57,22 @@ final class HeaderXml {
         sb.append("</hh:fontfaces>");
     }
 
-    /** 1: 선/채우기 없음, 2: 글자 모양 기본(채우기 없음) — 한글 새 문서와 같다 */
-    private static void borderFills(StringBuilder sb) {
-        sb.append("<hh:borderFills itemCnt=\"2\">");
-        for (int id = 1; id <= 2; id++) {
-            sb.append("<hh:borderFill id=\"").append(id).append("\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\">")
-              .append("<hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/>")
-              .append("<hh:leftBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:rightBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/>")
-              .append("<hh:topBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/><hh:bottomBorder type=\"NONE\" width=\"0.1 mm\" color=\"#000000\"/>")
-              .append("<hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/>");
-            if (id == 2) {
-                sb.append("<hc:fillBrush><hc:winBrush faceColor=\"none\" hatchColor=\"#999999\" alpha=\"0\"/></hc:fillBrush>");
+    /** 1: 선/채우기 없음, 2: 글자 모양 기본(채우기 none) — 한글 새 문서와 같다. 이후는 표 셀 등 */
+    private static void borderFills(StringBuilder sb, WDocument doc) {
+        String[] sides = { "leftBorder", "rightBorder", "topBorder", "bottomBorder" };
+        sb.append("<hh:borderFills itemCnt=\"").append(doc.borderFillList.size()).append("\">");
+        for (int i = 0; i < doc.borderFillList.size(); i++) {
+            WBorderFill b = doc.borderFillList.get(i);
+            sb.append("<hh:borderFill id=\"").append(i + 1).append("\" threeD=\"0\" shadow=\"0\" centerLine=\"NONE\" breakCellSeparateLine=\"0\">")
+              .append("<hh:slash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/><hh:backSlash type=\"NONE\" Crooked=\"0\" isCounter=\"0\"/>");
+            for (int s = 0; s < 4; s++) {
+                sb.append("<hh:").append(sides[s]).append(" type=\"").append(b.type[s]).append("\" width=\"")
+                  .append(WBorderFill.WIDTHS[b.width[s]]).append("\" color=\"").append(Xml.color(b.color[s])).append("\"/>");
+            }
+            sb.append("<hh:diagonal type=\"SOLID\" width=\"0.1 mm\" color=\"#000000\"/>");
+            if (b.fillColor != null) {
+                String face = b.fillColor < 0 ? "none" : Xml.color(b.fillColor);
+                sb.append("<hc:fillBrush><hc:winBrush faceColor=\"").append(face).append("\" hatchColor=\"#999999\" alpha=\"0\"/></hc:fillBrush>");
             }
             sb.append("</hh:borderFill>");
         }

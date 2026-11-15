@@ -40,6 +40,7 @@ public class RoundTripCompare {
 
     static class Para {
         String text;
+        int depth;         // 0: 본문, 1 이상: 표 셀 깊이
         HwpRecord_ParaShape ps;
         List<HwpRecord_CharShape> chars = new ArrayList<HwpRecord_CharShape>();   // 글자별
     }
@@ -104,7 +105,7 @@ public class RoundTripCompare {
             HwpDocInfo info = hwpx.getDocInfo();
             for (HwpSection s : hwpx.getSections()) {
                 for (HwpParagraph p : s.paraList) {
-                    addPara(info, p, out);
+                    addPara(info, p, out, 0);
                 }
             }
         } finally {
@@ -113,8 +114,9 @@ public class RoundTripCompare {
         return out;
     }
 
-    static void addPara(HwpDocInfo info, HwpParagraph p, List<Para> out) {
+    static void addPara(HwpDocInfo info, HwpParagraph p, List<Para> out, int depth) {
         Para para = new Para();
+        para.depth = depth;
         para.ps = p.paraShapeID >= 0 && p.paraShapeID < info.paraShapeList.size()
                 ? (HwpRecord_ParaShape) info.paraShapeList.get(p.paraShapeID) : null;
         StringBuilder sb = new StringBuilder();
@@ -146,10 +148,19 @@ public class RoundTripCompare {
         // 내보내기(LoToHwpx) 처럼 표 셀 문단을 이어서
         for (Ctrl_Table t : tables) {
             if (t.cells == null) continue;
+            // 표 구조를 가상 문단으로 (다르면 짝 없는 문단으로 드러난다)
+            Para sig = new Para();
+            StringBuilder ts = new StringBuilder("§TABLE " + t.nRows + "x" + t.nCols + " ");
+            for (TblCell cell : t.cells) {
+                ts.append(cell.rowAddr).append(',').append(cell.colAddr).append(',')
+                  .append(cell.rowSpan).append(',').append(cell.colSpan).append(';');
+            }
+            sig.text = ts.toString();
+            out.add(sig);
             for (TblCell cell : t.cells) {
                 if (cell.paras == null) continue;
                 for (HwpParagraph cp : cell.paras) {
-                    addPara(info, cp, out);
+                    addPara(info, cp, out, depth + 1);
                 }
             }
         }
@@ -195,7 +206,7 @@ public class RoundTripCompare {
 
     static int comparePara(String doc, int idx, Para a, Para b, PrintWriter out) {
         int d = 0;
-        String w = "orig[" + idx + "] " + abbreviate(a.text);
+        String w = "orig[" + idx + "]" + (a.depth > 0 ? "{cell" + a.depth + "}" : "") + " " + abbreviate(a.text);
         if (a.ps != null && b.ps != null) {
             d += cmp(doc, "ParaShape.align", String.valueOf(a.ps.align), String.valueOf(b.ps.align), out, w);
             d += cmpInt(doc, "ParaShape.marginLeft", a.ps.marginLeft, b.ps.marginLeft, out, w);

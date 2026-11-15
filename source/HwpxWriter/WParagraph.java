@@ -23,6 +23,8 @@ public class WParagraph {
     public int paraPrId = 0;
     public int styleId = 0;
     public boolean pageBreak;
+    /** 문단에 든 표 (문단의 첫 run 에 쓴다). 없으면 null */
+    public WTable table;
     public final List<WRun> runs = new ArrayList<WRun>();
 
     /** 글자 모양 하나로 된 문단 */
