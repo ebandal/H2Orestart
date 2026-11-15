@@ -117,9 +117,25 @@ public class LoToHwpx {
         for (String name : table.getCellNames()) {
             XText cellText = UnoRuntime.queryInterface(XText.class, table.getCellByName(name));
             if (cellText != null) {
+                boolean saved = singleParaCell;
+                singleParaCell = countParagraphs(cellText) == 1;
                 text(cellText);
+                singleParaCell = saved;
             }
         }
+    }
+
+    /** 지금 쓰는 문단이 문단 하나뿐인 셀 안에 있는가 (가져오기의 셀 줄 간격 보정을 되돌리기 위해) */
+    private boolean singleParaCell;
+
+    private static int countParagraphs(XText text) throws com.sun.star.uno.Exception {
+        XEnumeration en = UnoRuntime.queryInterface(XEnumerationAccess.class, text).createEnumeration();
+        int n = 0;
+        while (en.hasMoreElements()) {
+            en.nextElement();
+            n++;
+        }
+        return n;
     }
 
     private void paragraph(Object paraObj) throws com.sun.star.uno.Exception {
@@ -195,7 +211,9 @@ public class LoToHwpx {
     private WParaPr paraPr(XPropertySet pp) throws com.sun.star.uno.Exception {
         WParaPr p = new WParaPr();
         int adjust = AnyConverter.toInt(pp.getPropertyValue("ParaAdjust"));
-        if (adjust == ParagraphAdjust.LEFT_value) p.align = "LEFT";
+        // 가져오기는 양쪽 정렬을 왼쪽 정렬로 바꾼다 (ConvPara: 양쪽 정렬이 줄바꿈 때 더 비슷). 왼쪽은 양쪽으로 추정한다
+        // (원본의 양쪽:왼쪽 비율은 약 7:3. 원래 왼쪽이던 문단은 양쪽으로 저장된다)
+        if (adjust == ParagraphAdjust.LEFT_value) p.align = "JUSTIFY";
         else if (adjust == ParagraphAdjust.RIGHT_value) p.align = "RIGHT";
         else if (adjust == ParagraphAdjust.CENTER_value) p.align = "CENTER";
         else if (adjust == ParagraphAdjust.STRETCH_value) p.align = "DISTRIBUTE";
@@ -222,8 +240,15 @@ public class LoToHwpx {
             p.lineSpacing = (int) Math.round(ls.Height / 0.352778 * 2);
             break;
         case LineSpacingMode.MINIMUM:
-            p.lineSpacingType = "AT_LEAST";
-            p.lineSpacing = ls.Height;
+            if (singleParaCell && Math.abs(ls.Height - 100) <= 2) {
+                // 가져오기는 문단 하나뿐인 셀의 줄 간격을 "최소 100" 으로 바꾼다 (ConvTable). 원래 값은 남지 않아
+                // 한글 기본값 PERCENT 160 으로 추정한다
+                p.lineSpacingType = "PERCENT";
+                p.lineSpacing = 160;
+            } else {
+                p.lineSpacingType = "AT_LEAST";
+                p.lineSpacing = ls.Height;
+            }
             break;
         case LineSpacingMode.LEADING:
             p.lineSpacingType = "BETWEEN_LINES";
