@@ -295,6 +295,7 @@ public class HwpRecurs {
             case "cra$":    // 호
             case "elo$":    // OLE
             case "nil$":    // 선
+            case "loc$":    // 개체연결선 (기존: 빠져 있어 묶음 밖의 연결선이 그려지지 않았음)
             case "noc$":    // 묶음 개체
             case "lle$":    // 타원
             case "lop$":    // 다각형
