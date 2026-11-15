@@ -12,6 +12,16 @@
 		<prop oor:name="UIName"><value xml:lang="x-default">Hwp2002_Reader</value></prop>
 		<prop oor:name="Flags"><value>IMPORT ALIEN 3RDPARTYFILTER</value></prop>
 	</node>
+	<node oor:name="Hwpx_Writer" oor:op="replace">
+		<prop oor:name="FileFormatVersion"><value>0</value></prop>
+		<prop oor:name="Type"><value>Hwp2002_File</value></prop>
+		<prop oor:name="DocumentService"><value>com.sun.star.text.TextDocument</value></prop>
+		<prop oor:name="UserData"/>
+		<prop oor:name="FilterService"><value>ebandal.libreoffice.H2OrestartExport</value></prop>
+		<prop oor:name="TemplateName"/>
+		<prop oor:name="UIName"><value xml:lang="x-default">HWPX (H2Orestart)</value></prop>
+		<prop oor:name="Flags"><value>EXPORT ALIEN 3RDPARTYFILTER</value></prop>
+	</node>
 
   </node>
 

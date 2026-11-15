@@ -24,7 +24,11 @@ cp source/ebandal/libreoffice/comp/RegistrationHandler.classes "$CLS/ebandal/lib
 printf 'Manifest-Version: 1.0\nRegistrationClassName: ebandal.libreoffice.comp.RegistrationHandler\nClass-Path: \n' > "$OUT/MANIFEST.MF"
 jar cfm "$OUT/oxt-stage/H2Orestart.jar" "$OUT/MANIFEST.MF" -C "$CLS" .
 
-# dist oxt 를 복사하고 jar 만 교체
+# dist oxt 를 복사하고 jar 와 등록 정보를 교체
 cp dist/H2Orestart.oxt "$OUT/H2Orestart-test.oxt"
-(cd "$OUT/oxt-stage" && jar uf ../H2Orestart-test.oxt H2Orestart.jar)
+# 등록 정보(필터/형식, 컴포넌트 목록)도 저장소의 것으로 교체
+mkdir -p "$OUT/oxt-stage/registry"
+cp registry/*.xcu "$OUT/oxt-stage/registry/"
+cp package.components "$OUT/oxt-stage/"
+(cd "$OUT/oxt-stage" && jar uf ../H2Orestart-test.oxt H2Orestart.jar registry package.components)
 echo "built: $OUT/H2Orestart-test.oxt"
