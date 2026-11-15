@@ -250,6 +250,11 @@ public class Ctrl_Table extends Ctrl_Common {
                     cellzone.endColAddr = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
                     offset += 2;
                     cellzone.borderFillIDRef = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+                    if (version < 5034) {
+                        // 5.0.3.3 이하 문서는 영역의 테두리/배경 ID 가 0 부터 (5.0.3.4 이상과 다른 참조는 1 부터).
+                        // HWP->HWPX 변환 쌍 39개 문서에서 버전으로 정확히 갈림
+                        cellzone.borderFillIDRef++;
+                    }
                     offset += 2;
                     table.cellzoneList.add(cellzone);
                 }

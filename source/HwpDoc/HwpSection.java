@@ -944,7 +944,9 @@ public class HwpSection {
                         if (newCtrl instanceof Ctrl_Container) {
                             if (((Ctrl_Container) newCtrl).list == null)
                                 ((Ctrl_Container) newCtrl).list = new ArrayList<Ctrl_GeneralShape>();
-                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level, buf, offset, version);
+                            // runLevel 은 자식 개체의 레벨이다. 하위 묶음의 자식은 한 단계 아래(level+1).
+                            // 기존: level 을 넘겨 하위 묶음 뒤의 형제 개체들까지 하위 묶음의 자식으로 들어갔다
+                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level + 1, buf, offset, version);
                         }
                     }
                     break;
@@ -994,7 +996,9 @@ public class HwpSection {
                         if (newCtrl instanceof Ctrl_Container) {
                             if (((Ctrl_Container) newCtrl).list == null)
                                 ((Ctrl_Container) newCtrl).list = new ArrayList<Ctrl_GeneralShape>();
-                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level, buf, offset, version);
+                            // runLevel 은 자식 개체의 레벨이다. 하위 묶음의 자식은 한 단계 아래(level+1).
+                            // 기존: level 을 넘겨 하위 묶음 뒤의 형제 개체들까지 하위 묶음의 자식으로 들어갔다
+                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level + 1, buf, offset, version);
                         }
                     }
                     break;
