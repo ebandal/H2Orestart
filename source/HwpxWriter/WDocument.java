@@ -32,6 +32,8 @@ public class WDocument {
     public final List<String>[] fonts = new List[LANGS.length];
     public final List<WCharPr> charPrList = new ArrayList<WCharPr>();
     public final List<WParaPr> paraPrList = new ArrayList<WParaPr>();
+    /** 탭 정의. 0 번은 탭 없음 */
+    public final List<WTabPr> tabPrList = new ArrayList<WTabPr>();
     public final List<WStyle> styleList = new ArrayList<WStyle>();
     /** 테두리/배경. ID 는 위치+1. 1: 선/채우기 없음, 2: 글자 모양 기본 (한글 새 문서와 같다) */
     public final List<WBorderFill> borderFillList = new ArrayList<WBorderFill>();
@@ -48,6 +50,15 @@ public class WDocument {
         WBorderFill charDefault = new WBorderFill();
         charDefault.fillColor = -1;     // 채우기 "none" (글자 모양 기본). 1 번과 구분하기 위한 표시
         borderFillList.add(charDefault);
+        tabPrList.add(new WTabPr());
+    }
+
+    /** 같은 탭 정의가 있으면 그 ID, 없으면 추가한 ID */
+    public int addTabPr(WTabPr t) {
+        int idx = tabPrList.indexOf(t);
+        if (idx >= 0) return idx;
+        tabPrList.add(t);
+        return tabPrList.size() - 1;
     }
 
     /** 같은 테두리/배경이 있으면 그 ID, 없으면 추가한 ID (1 부터) */

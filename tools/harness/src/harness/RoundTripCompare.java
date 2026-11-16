@@ -42,6 +42,7 @@ public class RoundTripCompare {
         String text;
         int depth;         // 0: 본문, 1 이상: 표 셀 깊이
         HwpRecord_ParaShape ps;
+        String tabs = "";   // 탭 정의 (자동 탭, 위치/종류)
         List<HwpRecord_CharShape> chars = new ArrayList<HwpRecord_CharShape>();   // 글자별
     }
 
@@ -119,6 +120,15 @@ public class RoundTripCompare {
         para.depth = depth;
         para.ps = p.paraShapeID >= 0 && p.paraShapeID < info.paraShapeList.size()
                 ? (HwpRecord_ParaShape) info.paraShapeList.get(p.paraShapeID) : null;
+        if (para.ps != null && para.ps.tabDef >= 0 && para.ps.tabDef < info.tabDefList.size()) {
+            HwpDoc.HwpElement.HwpRecord_TabDef td = (HwpDoc.HwpElement.HwpRecord_TabDef) info.tabDefList.get(para.ps.tabDef);
+            StringBuilder ts = new StringBuilder();
+            ts.append((td.attr & 1) != 0 ? "autoL " : "").append((td.attr & 2) != 0 ? "autoR " : "");
+            if (td.tabs != null) {
+                for (HwpDoc.HwpElement.HwpRecord_TabDef.Tab t : td.tabs) ts.append(t.pos).append(t.type).append(' ');
+            }
+            para.tabs = ts.toString().trim();
+        }
         StringBuilder sb = new StringBuilder();
         List<Ctrl_Table> tables = new ArrayList<Ctrl_Table>();
         List<HwpDoc.paragraph.Ctrl_Common> shapes = new ArrayList<HwpDoc.paragraph.Ctrl_Common>();
@@ -276,6 +286,7 @@ public class RoundTripCompare {
             d += cmpInt(doc, "ParaShape.marginPrev", a.ps.marginPrev, b.ps.marginPrev, out, w);
             d += cmpInt(doc, "ParaShape.marginNext", a.ps.marginNext, b.ps.marginNext, out, w);
             d += cmp(doc, "ParaShape.lineSpacingType", String.valueOf(a.ps.lineSpacingType), String.valueOf(b.ps.lineSpacingType), out, w);
+            d += cmp(doc, "ParaShape.tabs", a.tabs, b.tabs, out, w);
             if (a.ps.lineSpacingType == b.ps.lineSpacingType) {
                 d += cmpInt(doc, "ParaShape.lineSpacing", a.ps.lineSpacing, b.ps.lineSpacing, out, w);
             }

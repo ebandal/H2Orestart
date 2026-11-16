@@ -161,6 +161,38 @@ public class LoToHwpx {
         paraPrCopies.clear();
     }
 
+    /**
+     * 탭 정의: 가져오기(ConvPara.setParagraphProperties)의 역.
+     * 가져오기는 탭 위치를 mm 단위로 버림해 쓰고(최대 14.5cm), 채움 문자는 늘 '-' 이다.
+     * 자동 탭(채움 문자 빈칸)은 오른쪽 끝 자동 탭(오른쪽 정렬)과 내어쓰기용 자동 탭(왼쪽, 위치 0) 이다.
+     */
+    private static HwpxWriter.WTabPr tabPr(XPropertySet pp) throws com.sun.star.uno.Exception {
+        HwpxWriter.WTabPr t = new HwpxWriter.WTabPr();
+        Object o = pp.getPropertyValue("ParaTabStops");
+        if (!(o instanceof com.sun.star.style.TabStop[])) return t;
+        com.sun.star.style.TabStop[] tss = (com.sun.star.style.TabStop[]) o;
+        if (tss.length == 1 && tss[0].FillChar == ' ') {
+            if (tss[0].Alignment == com.sun.star.style.TabAlign.RIGHT) {
+                t.autoTabRight = true;
+                return t;
+            }
+            if (tss[0].Alignment == com.sun.star.style.TabAlign.LEFT && tss[0].Position == 0) {
+                t.autoTabLeft = true;
+                return t;
+            }
+        }
+        for (com.sun.star.style.TabStop ts : tss) {
+            if (ts.Alignment == com.sun.star.style.TabAlign.DEFAULT) continue;
+            String type = ts.Alignment == com.sun.star.style.TabAlign.RIGHT ? "RIGHT"
+                        : ts.Alignment == com.sun.star.style.TabAlign.CENTER ? "CENTER"
+                        : ts.Alignment == com.sun.star.style.TabAlign.DECIMAL ? "DECIMAL" : "LEFT";
+            // 가져오기: Position = (int)(기본값/200 HWPUNIT 을 1/100 mm 로) * 100. mm 를 HWPUNIT 으로 올림해 되돌린다
+            int mm = ts.Position / 100;
+            t.add(100 * hwp(mm), type);
+        }
+        return t;
+    }
+
     /** 문단 모양 id 의 정렬만 바꾼 문단 모양 id */
     private int withAlign(int paraPrId, String align) {
         WParaPr src = doc.paraPrList.get(paraPrId);
@@ -174,6 +206,7 @@ public class LoToHwpx {
         p.next = src.next;
         p.lineSpacingType = src.lineSpacingType;
         p.lineSpacing = src.lineSpacing;
+        p.tabPrId = src.tabPrId;
         return doc.addParaPr(p);
     }
 
@@ -1081,6 +1114,8 @@ public class LoToHwpx {
         p.right = Math.max(0, 2 * hwp(right));
         p.prev = Math.max(0, 2 * hwp(top));
         p.next = Math.max(0, 2 * hwp(bottom));
+
+        p.tabPrId = doc.addTabPr(tabPr(pp));
 
         LineSpacing ls = (LineSpacing) AnyConverter.toObject(LineSpacing.class, pp.getPropertyValue("ParaLineSpacing"));
         switch (ls.Mode) {

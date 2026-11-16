@@ -24,17 +24,20 @@ public class WParaPr {
     /** 줄 간격 종류: PERCENT, FIXED, BETWEEN_LINES, AT_LEAST */
     public String lineSpacingType = "PERCENT";
     public int lineSpacing = 160;
+    /** 탭 정의 ID */
+    public int tabPrId = 0;
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof WParaPr)) return false;
         WParaPr p = (WParaPr) o;
         return align.equals(p.align) && indent == p.indent && left == p.left && right == p.right && prev == p.prev
-                && next == p.next && lineSpacingType.equals(p.lineSpacingType) && lineSpacing == p.lineSpacing;
+                && next == p.next && lineSpacingType.equals(p.lineSpacingType) && lineSpacing == p.lineSpacing
+                && tabPrId == p.tabPrId;
     }
 
     @Override
     public int hashCode() {
-        return align.hashCode() + indent * 7 + left * 11 + right * 13 + prev * 17 + next * 19 + lineSpacing;
+        return align.hashCode() + indent * 7 + left * 11 + right * 13 + prev * 17 + next * 19 + lineSpacing + tabPrId * 23;
     }
 }

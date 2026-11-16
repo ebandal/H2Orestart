@@ -30,7 +30,7 @@ final class HeaderXml {
         fontfaces(sb, doc);
         borderFills(sb, doc);
         charProperties(sb, doc);
-        sb.append("<hh:tabProperties itemCnt=\"1\"><hh:tabPr id=\"0\" autoTabLeft=\"0\" autoTabRight=\"0\"/></hh:tabProperties>");
+        tabProperties(sb, doc);
         paraProperties(sb, doc);
         styles(sb, doc);
         sb.append("</hh:refList>");
@@ -122,11 +122,37 @@ final class HeaderXml {
           .append("<hh:lineSpacing type=\"").append(p.lineSpacingType).append("\" value=\"").append(p.lineSpacing).append("\" unit=\"HWPUNIT\"/>");
     }
 
+    /** 탭 정의. 탭마다 hp:switch 로 HWPUNIT 값과 기본값(두 배)을 쓴다 (한글 2022 와 같다. 가져오기는 기본값을 읽는다) */
+    private static void tabProperties(StringBuilder sb, WDocument doc) {
+        sb.append("<hh:tabProperties itemCnt=\"").append(doc.tabPrList.size()).append("\">");
+        for (int i = 0; i < doc.tabPrList.size(); i++) {
+            WTabPr t = doc.tabPrList.get(i);
+            sb.append("<hh:tabPr id=\"").append(i).append("\" autoTabLeft=\"").append(t.autoTabLeft ? 1 : 0)
+              .append("\" autoTabRight=\"").append(t.autoTabRight ? 1 : 0).append('"');
+            if (t.pos.isEmpty()) {
+                sb.append("/>");
+                continue;
+            }
+            sb.append('>');
+            for (int k = 0; k < t.pos.size(); k++) {
+                int pos = t.pos.get(k);
+                String type = t.type.get(k);
+                sb.append("<hp:switch><hp:case hp:required-namespace=\"http://www.hancom.co.kr/hwpml/2016/HwpUnitChar\">")
+                  .append("<hh:tabItem pos=\"").append(pos).append("\" type=\"").append(type).append("\" leader=\"NONE\" unit=\"HWPUNIT\"/>")
+                  .append("</hp:case><hp:default>")
+                  .append("<hh:tabItem pos=\"").append(pos * 2).append("\" type=\"").append(type).append("\" leader=\"NONE\"/>")
+                  .append("</hp:default></hp:switch>");
+            }
+            sb.append("</hh:tabPr>");
+        }
+        sb.append("</hh:tabProperties>");
+    }
+
     private static void paraProperties(StringBuilder sb, WDocument doc) {
         sb.append("<hh:paraProperties itemCnt=\"").append(doc.paraPrList.size()).append("\">");
         for (int i = 0; i < doc.paraPrList.size(); i++) {
             WParaPr p = doc.paraPrList.get(i);
-            sb.append("<hh:paraPr id=\"").append(i).append("\" tabPrIDRef=\"0\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\">");
+            sb.append("<hh:paraPr id=\"").append(i).append("\" tabPrIDRef=\"").append(p.tabPrId).append("\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\">");
             sb.append("<hh:align horizontal=\"").append(p.align).append("\" vertical=\"BASELINE\"/>");
             sb.append("<hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/>");
             sb.append("<hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/>");
