@@ -42,6 +42,9 @@ public class WShape {
     public String horzAlign = "LEFT";
     public int vertOffset;
     public int horzOffset;
+    /** 위치가 정렬(위/가운데/왼쪽...)이 아니라 기준에서의 거리로 정해졌는가 (내보내기에서만 쓴다) */
+    public boolean vertByOffset;
+    public boolean horzByOffset;
     /** SQUARE, TOP_AND_BOTTOM, BEHIND_TEXT, IN_FRONT_OF_TEXT */
     public String textWrap = "TOP_AND_BOTTOM";
     /** BOTH_SIDES, LEFT_ONLY, RIGHT_ONLY, LARGEST_ONLY */

@@ -921,6 +921,8 @@ public class LoToHwpx {
         XPropertySet op = UnoRuntime.queryInterface(XPropertySet.class, obj);
         if (si == null || op == null) return null;
         WShape s;
+        // 그리기 도형(SdrObject)으로 만드는 그림인가 (크기/위치를 도형에서 읽는다)
+        boolean drawingShape = false;
         if (si.supportsService("com.sun.star.text.TextGraphicObject")) {
             s = new WShape(WShape.Kind.PICTURE);
             if (!picture(op, s)) return null;
@@ -932,11 +934,26 @@ public class LoToHwpx {
         } else if (si.supportsService("com.sun.star.drawing.RectangleShape")) {
             com.sun.star.text.XText st = UnoRuntime.queryInterface(com.sun.star.text.XText.class, obj);
             if (st != null && !st.getString().isEmpty()) return null;     // 글이 든 도형은 아직 쓰지 않는다
-            s = new WShape(WShape.Kind.RECT);
-            drawLine(op, s);
             Object fs = op.getPropertyValue("FillStyle");
-            if (fs == com.sun.star.drawing.FillStyle.SOLID) {
-                s.fillColor = AnyConverter.toInt(op.getPropertyValue("FillColor")) & 0xFFFFFF;
+            if (fs == com.sun.star.drawing.FillStyle.BITMAP) {
+                // 그림으로 채운 사각형: 가져오기가 묶음 안의 그림을 이렇게 만든다 (ConvGraphics.insertPictureRECTAGLE).
+                // 그림 개체로 쓴다
+                s = new WShape(WShape.Kind.PICTURE);
+                drawingShape = true;
+                com.sun.star.graphic.XGraphic fg = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphic.class,
+                        op.getPropertyValue("FillBitmap"));
+                if (!pictureData(fg, s)) return null;
+                WShape ln = new WShape(WShape.Kind.RECT);
+                drawLine(op, ln);
+                s.lineStyle = "NONE".equals(ln.lineStyle) ? "NONE" : "SOLID";
+                s.lineColor = ln.lineColor;
+                s.lineWidth = ln.lineWidth;
+            } else {
+                s = new WShape(WShape.Kind.RECT);
+                drawLine(op, s);
+                if (fs == com.sun.star.drawing.FillStyle.SOLID) {
+                    s.fillColor = AnyConverter.toInt(op.getPropertyValue("FillColor")) & 0xFFFFFF;
+                }
             }
         } else if (si.supportsService("com.sun.star.drawing.EllipseShape")) {
             // 타원, 또는 호/부채꼴/활 (가져오기 insertELLIPSE, insertARC 의 역)
@@ -971,7 +988,8 @@ public class LoToHwpx {
             // 가져오기는 호를 가로/세로 2배 크기의 타원으로 만든다
             w = xs.getSize().Width / 2;
             h = xs.getSize().Height / 2;
-        } else if (s.kind != WShape.Kind.PICTURE && s.kind != WShape.Kind.TEXTBOX) {
+        } else if (drawingShape || (s.kind != WShape.Kind.PICTURE && s.kind != WShape.Kind.TEXTBOX)) {
+            drawingShape = true;
             w = xs.getSize().Width;
             h = xs.getSize().Height;
         } else {
@@ -984,6 +1002,17 @@ public class LoToHwpx {
         s.treatAsChar = at == com.sun.star.text.TextContentAnchorType.AS_CHARACTER;
         if (!s.treatAsChar) {
             position(op, s);
+            if (drawingShape) {
+                // 그리기 도형은 위치 속성(HoriOrientPosition)이 0 이고 도형 좌표에만 위치가 들어 있을 수 있다
+                // (가져오기가 묶음 안의 도형을 좌표로 놓는다). 그때는 도형 좌표를 쓴다
+                com.sun.star.awt.Point pos = xs.getPosition();
+                if (s.horzByOffset && s.horzOffset == 0 && pos.X != 0) s.horzOffset = hwp(pos.X);
+                if (s.vertByOffset && s.vertOffset == 0 && pos.Y != 0) s.vertOffset = hwp(pos.Y);
+            }
+            // 가져오기는 거리가 0 이면 정렬(왼쪽/위)로 놓는다. 정렬된 개체는 서로 겹치지 않게 밀려나므로,
+            // 거리 0 으로 놓인 개체는 1 HWPUNIT(= 0mm 로 읽힌다)으로 써서 다시 읽어도 거리로 놓이게 한다
+            if (s.horzByOffset && s.horzOffset == 0) s.horzOffset = 1;
+            if (s.vertByOffset && s.vertOffset == 0) s.vertOffset = 1;
             wrap(op, s);
         }
         if (s.kind == WShape.Kind.TEXTBOX) {
@@ -1084,6 +1113,7 @@ public class LoToHwpx {
         s.vertRelTo = vrel == com.sun.star.text.RelOrientation.PAGE_FRAME ? "PAPER"
                     : vrel == com.sun.star.text.RelOrientation.PAGE_PRINT_AREA ? "PAGE" : "PARA";
         if (vo == com.sun.star.text.VertOrientation.NONE) {
+            s.vertByOffset = true;
             s.vertAlign = "TOP";
             s.vertOffset = "PARA".equals(s.vertRelTo) ? Math.max(0, hwp(vpos)) : hwp(vpos);
         } else {
@@ -1097,6 +1127,7 @@ public class LoToHwpx {
         s.horzRelTo = hrel == com.sun.star.text.RelOrientation.PAGE_FRAME ? "PAPER"
                     : hrel == com.sun.star.text.RelOrientation.PAGE_PRINT_AREA ? "PAGE" : "PARA";
         if (ho == com.sun.star.text.HoriOrientation.NONE) {
+            s.horzByOffset = true;
             s.horzAlign = "LEFT";
             s.horzOffset = hwp(hpos);
         } else {
@@ -1169,10 +1200,7 @@ public class LoToHwpx {
     private boolean picture(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
         Object g = op.getPropertyValue("Graphic");
         com.sun.star.graphic.XGraphic graphic = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphic.class, g);
-        if (graphic == null || ctx == null) return false;
-        byte[] data = graphicPng(graphic);
-        if (data == null || data.length == 0) return false;
-        s.binItemId = doc.addBinItem("png", data);
+        if (!pictureData(graphic, s)) return false;
         // 테두리 (가져오기 Transform.toBorderLine2: 실선, 색, 굵기)
         Object tb = op.getPropertySetInfo().hasPropertyByName("TopBorder") ? op.getPropertyValue("TopBorder") : null;
         if (tb instanceof com.sun.star.table.BorderLine2) {
@@ -1184,6 +1212,15 @@ public class LoToHwpx {
                 s.lineWidth = hwp(bw);
             }
         }
+        return true;
+    }
+
+    /** 그래픽을 PNG 바이너리 항목으로 넣고 원본 크기를 정한다 */
+    private boolean pictureData(com.sun.star.graphic.XGraphic graphic, WShape s) throws com.sun.star.uno.Exception {
+        if (graphic == null || ctx == null) return false;
+        byte[] data = graphicPng(graphic);
+        if (data == null || data.length == 0) return false;
+        s.binItemId = doc.addBinItem("png", data);
         // 원본 그림 크기: 픽셀을 96 dpi 로 HWPUNIT 으로 (1 픽셀 = 75)
         XPropertySet gps = UnoRuntime.queryInterface(XPropertySet.class, graphic);
         int pw = 0, ph = 0;
@@ -1298,6 +1335,16 @@ public class LoToHwpx {
         text(xt, hf.paragraphs, bodyWidthMm100);
         inCellText = savedCell;
         singleParaCell = savedSingle;
+
+        // 표로 끝나는 머리말/꼬리말: LibreOffice 는 표 뒤에 빈 문단을 꼭 두지만, 가져오기는 표 문단의 끝으로 그 문단을
+        // 만든다. 따로 쓰면 다시 읽을 때 "표 다음 첫 문단" 간격 보정이 붙어 머리말/꼬리말이 커지므로 쓰지 않는다
+        int n = hf.paragraphs.size();
+        if (n >= 2 && hf.paragraphs.get(n - 2).table != null) {
+            WParagraph last = hf.paragraphs.get(n - 1);
+            if (last.table == null && last.text().isEmpty() && !last.hasShape() && !hasAutoNum(last)) {
+                hf.paragraphs.remove(n - 1);
+            }
+        }
 
         boolean empty = true;
         for (WParagraph p : hf.paragraphs) {
