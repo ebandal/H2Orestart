@@ -306,6 +306,13 @@ public class RoundTripCompare {
             charDiff(seen, "CharShape.textColor", String.format("%06X", x.textColor & 0xFFFFFF), String.format("%06X", y.textColor & 0xFFFFFF));
             charDiff(seen, "CharShape.fontName[hangul]", x.fontName[0], y.fontName[0]);
             charDiff(seen, "CharShape.fontName[latin]", x.fontName[1], y.fontName[1]);
+            charDiff(seen, "CharShape.ratio[hangul]", String.valueOf(x.ratio[0]), String.valueOf(y.ratio[0]));
+            charDiff(seen, "CharShape.spacing[hangul]", String.valueOf(x.spacing[0]), String.valueOf(y.spacing[0]));
+            charDiff(seen, "CharShape.relSize[latin]", String.valueOf(x.relSize[1]), String.valueOf(y.relSize[1]));
+            charDiff(seen, "CharShape.script", (x.superScript ? "sup" : "") + (x.subScript ? "sub" : ""), (y.superScript ? "sup" : "") + (y.subScript ? "sub" : ""));
+            charDiff(seen, "CharShape.shadeColor", String.format("%08X", x.shadeColor), String.format("%08X", y.shadeColor));
+            charDiff(seen, "CharShape.underlineShape", String.valueOf(x.underline != null && !"NONE".equals(x.underline.name()) ? x.underlineShape : null),
+                    String.valueOf(y.underline != null && !"NONE".equals(y.underline.name()) ? y.underlineShape : null));
         }
         for (Map.Entry<String, String[]> e : seen.entrySet()) {
             d += cmp(doc, e.getKey(), e.getValue()[0], e.getValue()[1], out, w);

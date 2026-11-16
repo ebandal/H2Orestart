@@ -89,18 +89,23 @@ final class HeaderXml {
             WCharPr c = doc.charPrList.get(i);
             sb.append("<hh:charPr id=\"").append(i).append("\" height=\"").append(c.height)
               .append("\" textColor=\"").append(Xml.color(c.textColor))
-              .append("\" shadeColor=\"none\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\">");
+              .append("\" shadeColor=\"").append(c.shadeColor == null ? "none" : Xml.color(c.shadeColor)).append("\" useFontSpace=\"0\" useKerning=\"0\" symMark=\"NONE\" borderFillIDRef=\"2\">");
             sb.append("<hh:fontRef");
             for (int l = 0; l < WDocument.LANGS.length; l++) {
                 sb.append(' ').append(WDocument.LANGS[l].toLowerCase()).append("=\"").append(c.fontRef[l]).append('"');
             }
             sb.append("/>");
-            sb.append("<hh:ratio").append(langAttrs("100")).append("/>");
-            sb.append("<hh:spacing").append(langAttrs("0")).append("/>");
-            sb.append("<hh:relSz").append(langAttrs("100")).append("/>");
+            sb.append("<hh:ratio").append(langAttrs(String.valueOf(c.ratio))).append("/>");
+            sb.append("<hh:spacing").append(langAttrs(String.valueOf(c.spacing))).append("/>");
+            // 상대 크기: 한글/한자/일어는 기준 크기, 서양 글꼴 언어는 서양 글꼴 크기 비율
+            String rl = String.valueOf(c.relSizeLatin);
+            sb.append("<hh:relSz hangul=\"100\" latin=\"").append(rl).append("\" hanja=\"100\" japanese=\"100\" other=\"")
+              .append(rl).append("\" symbol=\"").append(rl).append("\" user=\"").append(rl).append("\"/>");
             sb.append("<hh:offset").append(langAttrs("0")).append("/>");
             if (c.italic) sb.append("<hh:italic/>");
             if (c.bold) sb.append("<hh:bold/>");
+            if (c.superScript) sb.append("<hh:supscript/>");
+            if (c.subScript) sb.append("<hh:subscript/>");
             sb.append("<hh:underline type=\"").append(c.underline).append("\" shape=\"SOLID\" color=\"#000000\"/>");
             // 취소선 없음은 한글처럼 shape="NONE"
             sb.append("<hh:strikeout shape=\"").append(c.strikeout ? "SOLID" : "NONE").append("\" color=\"#000000\"/>");

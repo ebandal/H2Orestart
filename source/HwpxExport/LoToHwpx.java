@@ -45,6 +45,7 @@ import HwpxWriter.WParaPr;
 import HwpxWriter.WParagraph;
 import HwpxWriter.WSection;
 import HwpxWriter.WShape;
+import HwpxWriter.WNote;
 
 /**
  * LibreOffice Writer 문서(UNO) 를 HWPX 쓰기용 모델(WDocument) 로 옮긴다.
@@ -639,6 +640,16 @@ public class LoToHwpx {
             Object portion = en.nextElement();
             XPropertySet ps = UnoRuntime.queryInterface(XPropertySet.class, portion);
             String type = AnyConverter.toString(ps.getPropertyValue("TextPortionType"));
+            if ("Footnote".equals(type)) {
+                Object fo = ps.getPropertyValue("Footnote");
+                WNote n = note(fo);
+                if (n != null) {
+                    WParagraph.WRun r = new WParagraph.WRun(doc.addCharPr(charPr(ps)), "");
+                    r.note = n;
+                    p.runs.add(r);
+                }
+                continue;
+            }
             if ("TextField".equals(type)) {
                 textField(ps, portion, p);
                 continue;
@@ -665,7 +676,7 @@ public class LoToHwpx {
 
             // 같은 글자 모양이 이어지면 run 을 합친다 (한글도 같은 모양은 한 run)
             if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp && p.runs.get(p.runs.size() - 1).shape == null
-                    && p.runs.get(p.runs.size() - 1).autoNum == null) {
+                    && p.runs.get(p.runs.size() - 1).autoNum == null && p.runs.get(p.runs.size() - 1).note == null) {
                 p.runs.get(p.runs.size() - 1).text += s;
             } else {
                 p.runs.add(new WParagraph.WRun(cp, s));
@@ -1062,6 +1073,37 @@ public class LoToHwpx {
         }
     }
 
+    private int footNoteSeq, endNoteSeq;
+
+    /**
+     * 각주/미주 (가져오기 ConvFootnote.insertFootnote 의 역). 가져오기는 자동 번호가 있으면 "번호)" 를 각주 표시로
+     * 지정한다. 지정된 표시가 있으면 첫 문단 앞에 자동 번호를 넣어 다시 읽어도 같은 표시가 되게 한다.
+     * 각주 문단은 표 셀처럼 마지막 문단에 문단 끝을 넣지 않는다.
+     */
+    private WNote note(Object fo) throws com.sun.star.uno.Exception {
+        com.sun.star.text.XFootnote fn = UnoRuntime.queryInterface(com.sun.star.text.XFootnote.class, fo);
+        XText ft = UnoRuntime.queryInterface(XText.class, fo);
+        if (fn == null || ft == null) return null;
+        XServiceInfo si = UnoRuntime.queryInterface(XServiceInfo.class, fo);
+        WNote n = new WNote();
+        n.endNote = si != null && si.supportsService("com.sun.star.text.Endnote");
+        n.number = n.endNote ? ++endNoteSeq : ++footNoteSeq;
+        String label = fn.getLabel();
+        if (label != null && !label.isEmpty()) {
+            n.autoNumber = true;
+            String digits = label.replaceAll("[^0-9]", "");
+            n.suffixChar = label.endsWith(")") ? ")" : label.substring(label.length() - 1).replaceAll("[0-9]", "");
+            if (!digits.isEmpty()) n.number = Integer.parseInt(digits);
+        }
+        boolean savedCell = inCellText, savedSingle = singleParaCell;
+        inCellText = true;
+        singleParaCell = false;
+        text(ft, n.paragraphs, bodyWidthMm100);
+        inCellText = savedCell;
+        singleParaCell = savedSingle;
+        return n;
+    }
+
     /** 텍스트 필드 부분: 쪽 번호/전체 쪽수는 자동 번호 run, 다른 필드는 보이는 글자로 */
     private void textField(XPropertySet ps, Object portion, WParagraph p) throws com.sun.star.uno.Exception {
         Object f = ps.getPropertyValue("TextField");
@@ -1092,7 +1134,38 @@ public class LoToHwpx {
     private WCharPr charPr(XPropertySet ps) throws com.sun.star.uno.Exception {
         WCharPr c = new WCharPr();
         float pt = AnyConverter.toFloat(ps.getPropertyValue("CharHeight"));
-        c.height = Math.round(pt * 100);
+        // 기준 크기 = 동아시아 글꼴 크기. 서양 글꼴 크기는 상대 크기로 (가져오기: CharHeight = 기준 x 영문 상대 크기,
+        // CharHeightAsian = 기준 x 한글 상대 크기)
+        float ptAsian = ps.getPropertySetInfo().hasPropertyByName("CharHeightAsian")
+                ? AnyConverter.toFloat(ps.getPropertyValue("CharHeightAsian")) : pt;
+        if (ptAsian <= 0) ptAsian = pt;
+        c.height = Math.round(ptAsian * 100);
+        if (Math.abs(pt - ptAsian) > 0.01f) {
+            c.relSizeLatin = Math.round(pt * 100f / ptAsian);
+        }
+        // 장평 (가져오기: CharScaleWidth = 한글 장평)
+        if (ps.getPropertySetInfo().hasPropertyByName("CharScaleWidth")) {
+            int sw = AnyConverter.toShort(ps.getPropertyValue("CharScaleWidth"));
+            if (sw > 0) c.ratio = Math.max(50, Math.min(200, sw));
+        }
+        // 자간 (가져오기 getCharKerning: 1/100 mm = 기준 크기(pt) x 자간% x 0.35278)
+        if (ps.getPropertySetInfo().hasPropertyByName("CharKerning")) {
+            int k = AnyConverter.toShort(ps.getPropertyValue("CharKerning"));
+            if (k != 0 && ptAsian > 0) {
+                c.spacing = spacingFor(k, ptAsian);
+            }
+        }
+        // 위/아래 첨자 (가져오기: CharEscapement +-14000 / 자동)
+        short esc = AnyConverter.toShort(ps.getPropertyValue("CharEscapement"));
+        c.superScript = esc > 0;
+        c.subScript = esc < 0;
+        // 음영 (가져오기: 음영 색을 CharBackColor 로)
+        boolean backTransparent = !ps.getPropertySetInfo().hasPropertyByName("CharBackTransparent")
+                || AnyConverter.toBoolean(ps.getPropertyValue("CharBackTransparent"));
+        int back = AnyConverter.toInt(ps.getPropertyValue("CharBackColor"));
+        if (!backTransparent && back != -1) {
+            c.shadeColor = back & 0xFFFFFF;
+        }
         int color = AnyConverter.toInt(ps.getPropertyValue("CharColor"));
         c.textColor = color == -1 ? 0 : color & 0xFFFFFF;
         float weight = AnyConverter.toFloat(ps.getPropertyValue("CharWeight"));
@@ -1115,6 +1188,30 @@ public class LoToHwpx {
         }
         c.fontRef = ref;
         return c;
+    }
+
+    /**
+     * 자간(%): 다시 읽었을 때 같은 CharKerning 이 되는 값. 가져오기는 round(크기 x 자간 x 0.35278) (1/100 mm) 로
+     * 넣고, LibreOffice 는 자간을 twip 으로 저장해 읽을 때 1/100 mm 로 다시 바꾼다 (예: -40 → -23 twip → -41).
+     * 이 과정을 거쳐 k 가 되는 자간을 고른다 (없으면 가장 가까운 값).
+     */
+    static int spacingFor(int k, float pt) {
+        int naive = (int) Math.round(k * 100.0 / (pt * 35.278));
+        int best = naive, bestErr = Integer.MAX_VALUE;
+        for (int d = 0; d <= 3; d++) {
+            for (int sgn = -1; sgn <= 1; sgn += 2) {
+                int sp = Math.max(-50, Math.min(50, naive + sgn * d));
+                int k1 = (int) Math.round(pt * sp / 100.0 * 35.278);
+                int tw = (int) Math.round(k1 * 1440.0 / 2540.0);
+                int k2 = (int) Math.round(tw * 2540.0 / 1440.0);
+                int err = Math.abs(k2 - k);
+                if (err < bestErr) {
+                    bestErr = err;
+                    best = sp;
+                }
+            }
+        }
+        return best;
     }
 
     private int addFont(int lang, String face) {

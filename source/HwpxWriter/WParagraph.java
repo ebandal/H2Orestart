@@ -60,10 +60,14 @@ public class WParagraph {
         public String text;
         /** 이 run 의 그리기 개체 (텍스트 앞에 쓴다). 없으면 null */
         public WShape shape;
+        /** 각주/미주. 없으면 null */
+        public WNote note;
         /** 자동 번호 (hp:autoNum) 종류: PAGE, TOTAL_PAGE. 없으면 null */
         public String autoNum;
         /** 자동 번호 모양 (DIGIT, ROMAN_CAPITAL, ...) */
         public String autoNumFormat = "DIGIT";
+        /** 자동 번호 뒤 글자 */
+        public String autoNumSuffix = "";
 
         public WRun(int charPrId, String text) {
             this.charPrId = charPrId;

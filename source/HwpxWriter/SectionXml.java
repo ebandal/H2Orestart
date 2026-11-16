@@ -108,10 +108,18 @@ final class SectionXml {
     private static void run(StringBuilder sb, WSection sec, WParagraph.WRun r) {
         sb.append("<hp:run charPrIDRef=\"").append(r.charPrId).append("\">");
         String t = r.text == null ? "" : r.text;
+        if (r.note != null) {
+            note(sb, sec, r.note);
+            if (t.isEmpty()) {
+                sb.append("</hp:run>");
+                return;
+            }
+        }
         if (r.autoNum != null) {
             // 자동 번호 (쪽 번호, 전체 쪽수)
             sb.append("<hp:ctrl><hp:autoNum num=\"1\" numType=\"").append(r.autoNum).append("\">")
-              .append("<hp:autoNumFormat type=\"").append(r.autoNumFormat).append("\" userChar=\"\" prefixChar=\"\" suffixChar=\"\" supscript=\"0\"/>")
+              .append("<hp:autoNumFormat type=\"").append(r.autoNumFormat).append("\" userChar=\"\" prefixChar=\"\" suffixChar=\"")
+              .append(Xml.esc(r.autoNumSuffix)).append("\" supscript=\"0\"/>")
               .append("</hp:autoNum></hp:ctrl>");
             if (t.isEmpty()) {
                 sb.append("</hp:run>");
@@ -226,6 +234,28 @@ final class SectionXml {
         sb.append("<hp:outMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
         sb.append("<hp:shapeComment>").append(s.kind == WShape.Kind.PICTURE ? "그림입니다." : s.kind == WShape.Kind.LINE ? "선입니다." : "사각형입니다.").append("</hp:shapeComment>");
         sb.append("</").append(tag).append('>');
+    }
+
+    /** 각주/미주. 첫 문단 앞에 번호(자동 번호)를 둔다 (한글 2022 와 같다) */
+    private static void note(StringBuilder sb, WSection sec, WNote n) {
+        String tag = n.endNote ? "hp:endNote" : "hp:footNote";
+        sb.append("<hp:ctrl><").append(tag).append(" number=\"").append(n.number).append("\" suffixChar=\"")
+          .append(Xml.esc(n.suffixChar)).append("\" instId=\"").append(2000000000 + n.number).append("\">");
+        sb.append("<hp:subList id=\"\" textDirection=\"HORIZONTAL\" lineWrap=\"BREAK\" vertAlign=\"TOP\" linkListIDRef=\"0\" linkListNextIDRef=\"0\" textWidth=\"0\" textHeight=\"0\" hasTextRef=\"0\" hasNumRef=\"0\">");
+        if (n.paragraphs.isEmpty()) {
+            n.paragraphs.add(new WParagraph());
+        }
+        if (n.autoNumber) {
+            WParagraph first = n.paragraphs.get(0);
+            WParagraph.WRun num = new WParagraph.WRun(first.runs.isEmpty() ? 0 : first.runs.get(0).charPrId, "");
+            num.autoNum = n.endNote ? "ENDNOTE" : "FOOTNOTE";
+            num.autoNumSuffix = n.suffixChar;
+            first.runs.add(0, num);
+        }
+        for (WParagraph p : n.paragraphs) {
+            paragraph(sb, sec, p, false);
+        }
+        sb.append("</hp:subList></").append(tag).append("></hp:ctrl>");
     }
 
     /** 머리말/꼬리말과 쪽 번호 위치. 구역 정의 다음에 둔다 (가져오기가 구역의 쪽 스타일을 먼저 만든다) */

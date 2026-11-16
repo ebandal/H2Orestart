@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,11 +64,14 @@ public class Ctrl_Note extends Ctrl {
         // id는 처리하지 않는다. List<Ctrl_Note>에 순차적으로 추가한다.
         // String id = attributes.getNamedItem("id").getNodeValue();
 
+        paras = new ArrayList<HwpParagraph>();
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
             
+            // 한글 HWPX 는 hp: 접두어를 쓴다 (기존: 접두어 없는 이름만 찾아 각주/미주 내용이 비었다)
             switch(child.getNodeName()) {
+            case "hp:subList":
             case "subList":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
@@ -76,6 +80,7 @@ public class Ctrl_Note extends Ctrl {
                     for (int j=0; j<childNodeList.getLength(); j++) {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
+                        case "hp:p":
                         case "p":
                             HwpParagraph cellP = new HwpParagraph(grandChild, version, context);
                             paras.add(cellP);

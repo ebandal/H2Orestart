@@ -30,17 +30,31 @@ public class WCharPr {
     /** 밑줄: NONE, BOTTOM, CENTER, TOP */
     public String underline = "NONE";
     public boolean strikeout;
+    /** 장평 (%) */
+    public int ratio = 100;
+    /** 자간 (%) */
+    public int spacing = 0;
+    /** 서양 글꼴 언어(영문, 기타, 기호, 사용자)의 상대 크기 (%). 한글/한자/일어는 100 */
+    public int relSizeLatin = 100;
+    public boolean superScript;
+    public boolean subScript;
+    /** 음영 색 (0xRRGGBB). null 이면 없음 */
+    public Integer shadeColor;
 
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof WCharPr)) return false;
         WCharPr c = (WCharPr) o;
         return height == c.height && textColor == c.textColor && Arrays.equals(fontRef, c.fontRef)
-                && bold == c.bold && italic == c.italic && underline.equals(c.underline) && strikeout == c.strikeout;
+                && bold == c.bold && italic == c.italic && underline.equals(c.underline) && strikeout == c.strikeout
+                && ratio == c.ratio && spacing == c.spacing && relSizeLatin == c.relSizeLatin
+                && superScript == c.superScript && subScript == c.subScript
+                && (shadeColor == null ? c.shadeColor == null : shadeColor.equals(c.shadeColor));
     }
 
     @Override
     public int hashCode() {
-        return height * 31 + textColor + Arrays.hashCode(fontRef) + (bold ? 1 : 0) + (italic ? 2 : 0);
+        return height * 31 + textColor + Arrays.hashCode(fontRef) + (bold ? 1 : 0) + (italic ? 2 : 0)
+                + ratio * 7 + spacing * 11 + relSizeLatin * 13 + (superScript ? 4 : 0) + (subScript ? 8 : 0);
     }
 }
