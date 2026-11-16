@@ -27,4 +27,21 @@ public class WSection {
     public int marginHeader = 4252, marginFooter = 4252, marginGutter = 0;
 
     public final List<WParagraph> paragraphs = new ArrayList<WParagraph>();
+
+    /** 머리말/꼬리말 (hp:header, hp:footer). 첫 문단의 구역 정의 뒤에 쓴다 */
+    public static class HeaderFooter {
+        public boolean header;
+        /** BOTH, EVEN, ODD */
+        public String applyPageType = "BOTH";
+        public final List<WParagraph> paragraphs = new ArrayList<WParagraph>();
+    }
+
+    public final List<HeaderFooter> headerFooters = new ArrayList<HeaderFooter>();
+
+    /** 쪽 번호 위치 (hp:pageNum). null 이면 쓰지 않는다 */
+    public String pageNumPos;
+    /** 쪽 번호 모양 (DIGIT, ROMAN_CAPITAL, ...) */
+    public String pageNumFormat = "DIGIT";
+    /** 쪽 번호 양옆 문자 (예: "-" 이면 "- 1 -"). 없으면 "" */
+    public String pageNumSideChar = "";
 }

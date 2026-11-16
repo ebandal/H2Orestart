@@ -122,6 +122,7 @@ public class RoundTripCompare {
         StringBuilder sb = new StringBuilder();
         List<Ctrl_Table> tables = new ArrayList<Ctrl_Table>();
         List<HwpDoc.paragraph.Ctrl_Common> shapes = new ArrayList<HwpDoc.paragraph.Ctrl_Common>();
+        List<Ctrl> others = new ArrayList<Ctrl>();      // 머리말/꼬리말, 쪽 번호 위치
         if (p.p != null) {
             for (Ctrl c : p.p) {
                 if (c instanceof ParaText) {
@@ -139,6 +140,12 @@ public class RoundTripCompare {
                     default:          sb.append('‑'); break;
                     }
                     para.chars.add(charShape(info, ((Ctrl_Character) c).charShapeId));
+                } else if (c instanceof HwpDoc.paragraph.Ctrl_AutoNumber) {
+                    // 자동 번호(쪽 번호 등)는 글자 하나로
+                    sb.append('#');
+                    para.chars.add(null);
+                } else if (c instanceof HwpDoc.paragraph.Ctrl_HeadFoot || c instanceof HwpDoc.paragraph.Ctrl_PageNumPos) {
+                    others.add(c);
                 } else if (c instanceof Ctrl_Table) {
                     tables.add((Ctrl_Table) c);
                 } else if (c instanceof HwpDoc.paragraph.Ctrl_ShapePic
@@ -150,6 +157,25 @@ public class RoundTripCompare {
         }
         para.text = sb.toString();
         out.add(para);
+        // 머리말/꼬리말: 종류와 적용 쪽을 가상 문단으로, 내용 문단은 이어서. 쪽 번호 위치도 가상 문단으로
+        for (Ctrl c : others) {
+            Para sig = new Para();
+            sig.depth = depth;
+            if (c instanceof HwpDoc.paragraph.Ctrl_HeadFoot) {
+                HwpDoc.paragraph.Ctrl_HeadFoot hf = (HwpDoc.paragraph.Ctrl_HeadFoot) c;
+                sig.text = (hf.isHeader ? "§HEADER " : "§FOOTER ") + hf.whichPage;
+                out.add(sig);
+                if (hf.paras != null) {
+                    for (HwpParagraph hp : hf.paras) {
+                        addPara(info, hp, out, depth + 1);
+                    }
+                }
+            } else {
+                HwpDoc.paragraph.Ctrl_PageNumPos pn = (HwpDoc.paragraph.Ctrl_PageNumPos) c;
+                sig.text = "§PAGENUM " + pn.pos + " " + pn.numShape + " [" + pn.constantDash + "]";
+                out.add(sig);
+            }
+        }
         // 그림/글상자: 종류, 크기, 위치, 배치를 가상 문단으로. 글상자 문단은 이어서
         for (HwpDoc.paragraph.Ctrl_Common sh : shapes) {
             Para sig = new Para();

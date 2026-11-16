@@ -246,8 +246,8 @@ public class LoToHwpx {
                 XServiceInfo si = UnoRuntime.queryInterface(XServiceInfo.class, elem);
                 if (si == null) continue;
                 if (si.supportsService("com.sun.star.text.Paragraph")) {
-                    // 가져오기의 표 다음 문단 간격 보정은 본문에서만 한다
-                    paragraph(elem, target, afterTable && target == section.paragraphs);
+                    // 가져오기의 표 다음 문단 간격 보정은 본문/머리말/글상자에서 한다 (표 셀은 하지 않는다: ConvTable)
+                    paragraph(elem, target, afterTable && !inCellText);
                     if (target == section.paragraphs) {
                         lastBodyPara = UnoRuntime.queryInterface(XPropertySet.class, elem);
                     }
@@ -482,6 +482,10 @@ public class LoToHwpx {
             Object portion = en.nextElement();
             XPropertySet ps = UnoRuntime.queryInterface(XPropertySet.class, portion);
             String type = AnyConverter.toString(ps.getPropertyValue("TextPortionType"));
+            if ("TextField".equals(type)) {
+                textField(ps, portion, p);
+                continue;
+            }
             if ("Frame".equals(type)) {
                 // 글자처럼 놓인 개체 (그림, 글상자)
                 com.sun.star.container.XContentEnumerationAccess cea =
@@ -503,7 +507,8 @@ public class LoToHwpx {
             int cp = doc.addCharPr(charPr(ps));
 
             // 같은 글자 모양이 이어지면 run 을 합친다 (한글도 같은 모양은 한 run)
-            if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp && p.runs.get(p.runs.size() - 1).shape == null) {
+            if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp && p.runs.get(p.runs.size() - 1).shape == null
+                    && p.runs.get(p.runs.size() - 1).autoNum == null) {
                 p.runs.get(p.runs.size() - 1).text += s;
             } else {
                 p.runs.add(new WParagraph.WRun(cp, s));
@@ -751,6 +756,139 @@ public class LoToHwpx {
         }
     }
 
+    /**
+     * 머리말/꼬리말: 쪽 스타일의 머리말/꼬리말 텍스트 (가져오기 ConvPage.setHeaderFooter 의 역).
+     * 공유(HeaderIsShared)면 양쪽(BOTH), 아니면 홀수쪽(오른쪽 텍스트)과 짝수쪽(왼쪽 텍스트).
+     * 쪽 번호만 든 머리말/꼬리말은 쪽 번호 위치(hp:pageNum)로 쓴다 (가져오기 ConvPage.putPageNum 의 역).
+     */
+    private void headersFooters(XPropertySet ps) throws com.sun.star.uno.Exception {
+        for (int k = 0; k < 2; k++) {
+            boolean header = k == 0;
+            String pre = header ? "Header" : "Footer";
+            if (!AnyConverter.toBoolean(ps.getPropertyValue(pre + "IsOn"))) continue;
+            if (AnyConverter.toBoolean(ps.getPropertyValue(pre + "IsShared"))) {
+                headerFooter(header, "BOTH", ps.getPropertyValue(pre + "Text"));
+            } else {
+                headerFooter(header, "ODD", ps.getPropertyValue(pre + "TextRight"));
+                headerFooter(header, "EVEN", ps.getPropertyValue(pre + "TextLeft"));
+            }
+        }
+    }
+
+    private void headerFooter(boolean header, String type, Object textObj) throws com.sun.star.uno.Exception {
+        XText xt = UnoRuntime.queryInterface(XText.class, textObj);
+        if (xt == null) return;
+        WSection.HeaderFooter hf = new WSection.HeaderFooter();
+        hf.header = header;
+        hf.applyPageType = type;
+        boolean savedCell = inCellText, savedSingle = singleParaCell;
+        inCellText = false;
+        singleParaCell = false;
+        text(xt, hf.paragraphs, bodyWidthMm100);
+        inCellText = savedCell;
+        singleParaCell = savedSingle;
+
+        boolean empty = true;
+        for (WParagraph p : hf.paragraphs) {
+            if (!p.text().isEmpty() || p.hasShape() || hasAutoNum(p)) empty = false;
+        }
+        if (empty) return;      // 가져오기는 빈 머리말/꼬리말도 켜 둔다 (쪽 여백)
+        if ("BOTH".equals(type) && section.pageNumPos == null && pageNumOnly(xt, hf, header)) return;
+        section.headerFooters.add(hf);
+    }
+
+    private static boolean hasAutoNum(WParagraph p) {
+        for (WParagraph.WRun r : p.runs) {
+            if (r.autoNum != null) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 쪽 번호만 있는가 ("1" 또는 "- 1 -"). 그렇다면 쪽 번호 위치를 정한다.
+     * 가져오기(putPageNum)는 머리말/꼬리말 전체를 쪽 번호 필드로 바꾸고 양옆에 "줄표 " / " 줄표" 를 넣는다.
+     */
+    private boolean pageNumOnly(XText xt, WSection.HeaderFooter hf, boolean header) throws com.sun.star.uno.Exception {
+        if (hf.paragraphs.size() != 1) return false;
+        WParagraph p = hf.paragraphs.get(0);
+        StringBuilder before = new StringBuilder(), after = new StringBuilder();
+        WParagraph.WRun field = null;
+        for (WParagraph.WRun r : p.runs) {
+            if (r.shape != null) return false;
+            if (r.autoNum != null) {
+                if (field != null || !"PAGE".equals(r.autoNum)) return false;
+                field = r;
+            } else if (r.text != null) {
+                (field == null ? before : after).append(r.text);
+            }
+        }
+        if (field == null) return false;
+        String b = before.toString(), a = after.toString();
+        String side;
+        if (b.isEmpty() && a.isEmpty()) {
+            side = "";
+        } else if (b.length() == 2 && b.charAt(1) == ' ' && a.length() == 2 && a.charAt(0) == ' ' && b.charAt(0) == a.charAt(1)) {
+            side = String.valueOf(b.charAt(0));
+        } else {
+            return false;
+        }
+        short adjust = ParagraphAdjust.CENTER_value;
+        XEnumerationAccess ea = UnoRuntime.queryInterface(XEnumerationAccess.class, xt);
+        XEnumeration en = ea.createEnumeration();
+        if (en.hasMoreElements()) {
+            XPropertySet pp = UnoRuntime.queryInterface(XPropertySet.class, en.nextElement());
+            if (pp != null) adjust = (short) AnyConverter.toInt(pp.getPropertyValue("ParaAdjust"));
+        }
+        String h = adjust == ParagraphAdjust.LEFT_value ? "LEFT" : adjust == ParagraphAdjust.RIGHT_value ? "RIGHT" : "CENTER";
+        section.pageNumPos = (header ? "TOP_" : "BOTTOM_") + h;
+        section.pageNumFormat = field.autoNumFormat;
+        section.pageNumSideChar = side;
+        return true;
+    }
+
+    /** 쪽 번호 필드 모양 (LibreOffice NumberingType → HWPX 번호 모양). 가져오기 putPageNum 의 역 */
+    private static String numberFormat(short nt) {
+        switch (nt) {
+        case com.sun.star.style.NumberingType.CIRCLE_NUMBER:              return "CIRCLED_DIGIT";
+        case com.sun.star.style.NumberingType.ROMAN_UPPER:                return "ROMAN_CAPITAL";
+        case com.sun.star.style.NumberingType.ROMAN_LOWER:                return "ROMAN_SMALL";
+        case com.sun.star.style.NumberingType.CHARS_UPPER_LETTER:         return "LATIN_CAPITAL";
+        case com.sun.star.style.NumberingType.CHARS_LOWER_LETTER:         return "LATIN_SMALL";
+        case com.sun.star.style.NumberingType.HANGUL_SYLLABLE_KO:         return "HANGUL_SYLLABLE";
+        case com.sun.star.style.NumberingType.HANGUL_CIRCLED_SYLLABLE_KO: return "CIRCLED_HANGUL_SYLLABLE";
+        case com.sun.star.style.NumberingType.HANGUL_JAMO_KO:             return "HANGUL_JAMO";
+        case com.sun.star.style.NumberingType.HANGUL_CIRCLED_JAMO_KO:     return "CIRCLED_HANGUL_JAMO";
+        default:                                                          return "DIGIT";
+        }
+    }
+
+    /** 텍스트 필드 부분: 쪽 번호/전체 쪽수는 자동 번호 run, 다른 필드는 보이는 글자로 */
+    private void textField(XPropertySet ps, Object portion, WParagraph p) throws com.sun.star.uno.Exception {
+        Object f = ps.getPropertyValue("TextField");
+        XServiceInfo fsi = UnoRuntime.queryInterface(XServiceInfo.class, f);
+        int cp = doc.addCharPr(charPr(ps));
+        if (fsi != null && (fsi.supportsService("com.sun.star.text.textfield.PageNumber")
+                         || fsi.supportsService("com.sun.star.text.textfield.PageCount"))) {
+            WParagraph.WRun r = new WParagraph.WRun(cp, "");
+            boolean page = fsi.supportsService("com.sun.star.text.textfield.PageNumber");
+            r.autoNum = page ? "PAGE" : "TOTAL_PAGE";
+            XPropertySet fp = UnoRuntime.queryInterface(XPropertySet.class, f);
+            if (fp != null && fp.getPropertySetInfo().hasPropertyByName("NumberingType")) {
+                r.autoNumFormat = numberFormat(AnyConverter.toShort(fp.getPropertyValue("NumberingType")));
+            }
+            p.runs.add(r);
+            return;
+        }
+        String s = UnoRuntime.queryInterface(XTextRange.class, portion).getString();
+        if (s.isEmpty()) return;
+        if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp
+                && p.runs.get(p.runs.size() - 1).shape == null && p.runs.get(p.runs.size() - 1).autoNum == null) {
+            p.runs.get(p.runs.size() - 1).text += s;
+        } else {
+            p.runs.add(new WParagraph.WRun(cp, s));
+        }
+    }
+
     private WCharPr charPr(XPropertySet ps) throws com.sun.star.uno.Exception {
         WCharPr c = new WCharPr();
         float pt = AnyConverter.toFloat(ps.getPropertyValue("CharHeight"));
@@ -921,6 +1059,7 @@ public class LoToHwpx {
             } else {
                 section.marginFooter = 0;
             }
+            headersFooters(ps);
         } catch (com.sun.star.uno.Exception e) {
             log.log(Level.SEVERE, e.toString(), e);
         }

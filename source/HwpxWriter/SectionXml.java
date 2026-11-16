@@ -44,6 +44,7 @@ final class SectionXml {
             sb.append("<hp:run charPrIDRef=\"").append(p.runs.isEmpty() ? 0 : p.runs.get(0).charPrId).append("\">");
             secPr(sb, sec);
             sb.append("<hp:ctrl><hp:colPr id=\"\" type=\"NEWSPAPER\" layout=\"LEFT\" colCount=\"1\" sameSz=\"1\" sameGap=\"0\"/></hp:ctrl>");
+            headerFooters(sb, sec);
             sb.append("</hp:run>");
         }
         if (p.table != null) {
@@ -107,6 +108,16 @@ final class SectionXml {
     private static void run(StringBuilder sb, WSection sec, WParagraph.WRun r) {
         sb.append("<hp:run charPrIDRef=\"").append(r.charPrId).append("\">");
         String t = r.text == null ? "" : r.text;
+        if (r.autoNum != null) {
+            // 자동 번호 (쪽 번호, 전체 쪽수)
+            sb.append("<hp:ctrl><hp:autoNum num=\"1\" numType=\"").append(r.autoNum).append("\">")
+              .append("<hp:autoNumFormat type=\"").append(r.autoNumFormat).append("\" userChar=\"\" prefixChar=\"\" suffixChar=\"\" supscript=\"0\"/>")
+              .append("</hp:autoNum></hp:ctrl>");
+            if (t.isEmpty()) {
+                sb.append("</hp:run>");
+                return;
+            }
+        }
         if (r.shape != null) {
             shape(sb, sec, r.shape);
             if (t.isEmpty()) {
@@ -200,6 +211,30 @@ final class SectionXml {
         sb.append("<hp:outMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
         sb.append("<hp:shapeComment>").append(s.kind == WShape.Kind.PICTURE ? "그림입니다." : "사각형입니다.").append("</hp:shapeComment>");
         sb.append("</").append(tag).append('>');
+    }
+
+    /** 머리말/꼬리말과 쪽 번호 위치. 구역 정의 다음에 둔다 (가져오기가 구역의 쪽 스타일을 먼저 만든다) */
+    private static void headerFooters(StringBuilder sb, WSection sec) {
+        int textWidth = sec.pageWidth - sec.marginLeft - sec.marginRight;
+        for (WSection.HeaderFooter hf : sec.headerFooters) {
+            String tag = hf.header ? "hp:header" : "hp:footer";
+            sb.append("<hp:ctrl><").append(tag).append(" id=\"\" applyPageType=\"").append(hf.applyPageType).append("\">");
+            sb.append("<hp:subList id=\"\" textDirection=\"HORIZONTAL\" lineWrap=\"BREAK\" vertAlign=\"").append(hf.header ? "TOP" : "BOTTOM")
+              .append("\" linkListIDRef=\"0\" linkListNextIDRef=\"0\" textWidth=\"").append(textWidth)
+              .append("\" textHeight=\"").append(hf.header ? sec.marginHeader : sec.marginFooter)
+              .append("\" hasTextRef=\"0\" hasNumRef=\"0\">");
+            if (hf.paragraphs.isEmpty()) {
+                hf.paragraphs.add(new WParagraph());
+            }
+            for (WParagraph p : hf.paragraphs) {
+                paragraph(sb, sec, p, false);
+            }
+            sb.append("</hp:subList></").append(tag).append("></hp:ctrl>");
+        }
+        if (sec.pageNumPos != null) {
+            sb.append("<hp:ctrl><hp:pageNum pos=\"").append(sec.pageNumPos).append("\" formatType=\"").append(sec.pageNumFormat)
+              .append("\" sideChar=\"").append(Xml.esc(sec.pageNumSideChar)).append("\"/></hp:ctrl>");
+        }
     }
 
     private static void points(StringBuilder sb, int w, int h) {
