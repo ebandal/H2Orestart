@@ -144,7 +144,8 @@ public class RoundTripCompare {
                     // 자동 번호(쪽 번호 등)는 글자 하나로
                     sb.append('#');
                     para.chars.add(null);
-                } else if (c instanceof HwpDoc.paragraph.Ctrl_HeadFoot || c instanceof HwpDoc.paragraph.Ctrl_PageNumPos) {
+                } else if (c instanceof HwpDoc.paragraph.Ctrl_HeadFoot || c instanceof HwpDoc.paragraph.Ctrl_PageNumPos
+                        || c instanceof HwpDoc.paragraph.Ctrl_SectionDef) {
                     others.add(c);
                 } else if (c instanceof Ctrl_Table) {
                     tables.add((Ctrl_Table) c);
@@ -170,6 +171,13 @@ public class RoundTripCompare {
                         addPara(info, hp, out, depth + 1);
                     }
                 }
+            } else if (c instanceof HwpDoc.paragraph.Ctrl_SectionDef) {
+                // 구역 시작: 용지 크기/방향/여백
+                HwpDoc.section.Page pg = ((HwpDoc.paragraph.Ctrl_SectionDef) c).page;
+                sig.text = pg == null ? "§SECTION" : "§SECTION " + pg.width + "x" + pg.height + (pg.landscape ? " landscape" : "")
+                        + " L" + pg.marginLeft + " R" + pg.marginRight + " T" + pg.marginTop + " B" + pg.marginBottom
+                        + " H" + pg.marginHeader + " F" + pg.marginFooter;
+                out.add(sig);
             } else {
                 HwpDoc.paragraph.Ctrl_PageNumPos pn = (HwpDoc.paragraph.Ctrl_PageNumPos) c;
                 sig.text = "§PAGENUM " + pn.pos + " " + pn.numShape + " [" + pn.constantDash + "]";

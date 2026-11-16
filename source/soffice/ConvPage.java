@@ -61,6 +61,7 @@ import com.sun.star.text.TextColumn;
 import com.sun.star.text.XText;
 import com.sun.star.text.XTextColumns;
 import com.sun.star.text.XTextCursor;
+import com.sun.star.text.XParagraphCursor;
 import com.sun.star.text.XTextDocument;
 import com.sun.star.text.XTextField;
 import com.sun.star.uno.Exception;
@@ -874,7 +875,9 @@ public class ConvPage {
     }
 
     public static void makeNextPage(WriterContext wContext) {
-        if (secdIndex > 0) {
+        // 지금 문단에 내용이 있을 때만 문단을 나눈다. 앞 문단 끝에서 이미 새 (빈) 문단에 있으면 나누지 않는다
+        // (기존: 두 번째 구역부터 쪽 나눔마다 빈 문단이 하나씩 더 생겼다. 첫 구역에서는 나누지 않았다)
+        if (secdIndex > 0 && currentParagraphHasContent(wContext)) {
             wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
         }
 
@@ -885,6 +888,17 @@ public class ConvPage {
                 | WrappedTargetException e) {
             log.log(Level.SEVERE, e.toString(), e);
         }
+    }
+
+    private static boolean currentParagraphHasContent(WriterContext wContext) {
+        XParagraphCursor pc = UnoRuntime.queryInterface(XParagraphCursor.class,
+                wContext.mText.createTextCursorByRange(wContext.mTextCursor.getEnd()));
+        if (pc == null) {
+            return true;
+        }
+        pc.gotoStartOfParagraph(false);
+        pc.gotoEndOfParagraph(true);
+        return !pc.getString().isEmpty();
     }
 
     public static void makeNextColumn(WriterContext wContext) {

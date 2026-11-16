@@ -56,7 +56,8 @@ public class LoToHwpx {
     private static final Logger log = Logger.getLogger(LoToHwpx.class.getName());
 
     private final WDocument doc = WDocument.createDefault();
-    private final WSection section = new WSection();
+    /** 지금 쓰는 구역 */
+    private WSection section = new WSection();
     /** 글꼴 크기 측정용 (가져오기의 글꼴별 줄 간격 보정값을 같은 방식으로 구한다). 없으면 기본값 */
     private com.sun.star.awt.XDevice device;
     private final java.util.Map<String, Double> alphaCache = new java.util.HashMap<String, Double>();
@@ -81,10 +82,8 @@ public class LoToHwpx {
         if (textDoc == null) {
             throw new IllegalArgumentException("not a text document");
         }
-        c.doc.sections.add(c.section);
         c.textDoc = textDoc;
-        c.page(textDoc);
-        c.text(textDoc.getText(), c.section.paragraphs, c.bodyWidthMm100);
+        c.body(textDoc);
         c.finishParaPrs();
         // 가져오기는 마지막 문단 끝에서 빈 문단을 하나 더 만든다. 저장할 때마다 늘지 않도록 끝의 빈 문단 하나를 뺀다
         java.util.List<WParagraph> body = c.section.paragraphs;
@@ -233,16 +232,94 @@ public class LoToHwpx {
     /** 본문 폭 (1/100 mm). 표 가로 위치 계산에 쓴다 */
     private int bodyWidthMm100 = 16000;
 
+    /**
+     * 본문을 구역으로 나눠 쓴다. 가져오기는 구역마다 쪽 스타일("HWP n")을 만들고 구역 첫 문단에 쪽 스타일을
+     * 지정한다(PageDescName). 쪽 스타일이 바뀌는 문단/표에서 새 구역을 시작한다.
+     */
+    private void body(XTextDocument textDoc) {
+        java.util.List<Object> all = elementsOf(textDoc.getText());
+        java.util.List<java.util.List<Object>> parts = new java.util.ArrayList<java.util.List<Object>>();
+        java.util.List<String> styles = new java.util.ArrayList<String>();
+        String cur = null;
+        for (Object elem : all) {
+            String pd = pageDescName(elem);
+            if (parts.isEmpty()) {
+                cur = !pd.isEmpty() ? pd : pageStyleName(elem);
+                parts.add(new java.util.ArrayList<Object>());
+                styles.add(cur);
+            } else if (!pd.isEmpty() && !pd.equals(cur)) {
+                cur = pd;
+                parts.add(new java.util.ArrayList<Object>());
+                styles.add(cur);
+            }
+            parts.get(parts.size() - 1).add(elem);
+        }
+        if (parts.isEmpty()) {
+            parts.add(new java.util.ArrayList<Object>());
+            styles.add("Standard");
+        }
+        for (int i = 0; i < parts.size(); i++) {
+            if (i > 0) section = new WSection();
+            doc.sections.add(section);
+            page(styles.get(i));
+            elements(parts.get(i), section.paragraphs, bodyWidthMm100);
+            if (i > 0 && !section.paragraphs.isEmpty()) {
+                // 구역 시작은 새 쪽이다. 쪽 나눔을 함께 쓰면 가져오기가 빈 문단을 하나 더 만든다 (ConvPage.makeNextPage)
+                section.paragraphs.get(0).pageBreak = false;
+            }
+        }
+    }
+
+    private static String pageDescName(Object elem) {
+        try {
+            XPropertySet ps = UnoRuntime.queryInterface(XPropertySet.class, elem);
+            if (ps != null && ps.getPropertySetInfo().hasPropertyByName("PageDescName")) {
+                Object v = ps.getPropertyValue("PageDescName");
+                if (v instanceof String) return (String) v;
+            }
+        } catch (com.sun.star.uno.Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+        return "";
+    }
+
+    private static String pageStyleName(Object elem) {
+        try {
+            XPropertySet ps = UnoRuntime.queryInterface(XPropertySet.class, elem);
+            if (ps != null && ps.getPropertySetInfo().hasPropertyByName("PageStyleName")) {
+                return AnyConverter.toString(ps.getPropertyValue("PageStyleName"));
+            }
+        } catch (com.sun.star.uno.Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+        return "Standard";
+    }
+
+    private static java.util.List<Object> elementsOf(XText text) {
+        java.util.List<Object> list = new java.util.ArrayList<Object>();
+        XEnumerationAccess ea = UnoRuntime.queryInterface(XEnumerationAccess.class, text);
+        if (ea == null) return list;
+        XEnumeration en = ea.createEnumeration();
+        try {
+            while (en.hasMoreElements()) {
+                list.add(en.nextElement());
+            }
+        } catch (com.sun.star.uno.Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+        return list;
+    }
+
     /** text 의 문단과 표를 target 에 넣는다. avail: 이 텍스트 영역의 폭 (1/100 mm) */
     private void text(XText text, java.util.List<WParagraph> target, int avail) {
-        XEnumerationAccess ea = UnoRuntime.queryInterface(XEnumerationAccess.class, text);
-        if (ea == null) return;
-        XEnumeration en = ea.createEnumeration();
+        elements(elementsOf(text), target, avail);
+    }
+
+    private void elements(java.util.List<Object> elems, java.util.List<WParagraph> target, int avail) {
         int start = target.size();
         boolean afterTable = false;
         try {
-            while (en.hasMoreElements()) {
-                Object elem = en.nextElement();
+            for (Object elem : elems) {
                 XServiceInfo si = UnoRuntime.queryInterface(XServiceInfo.class, elem);
                 if (si == null) continue;
                 if (si.supportsService("com.sun.star.text.Paragraph")) {
@@ -1016,18 +1093,9 @@ public class LoToHwpx {
         return alpha;
     }
 
-    /** 본문 첫 문단의 쪽 스타일로 용지 크기/여백을 정한다 */
-    private void page(XTextDocument textDoc) {
+    /** 쪽 스타일로 지금 구역의 용지 크기/여백, 머리말/꼬리말을 정한다 */
+    private void page(String pageStyle) {
         try {
-            XEnumerationAccess ea = UnoRuntime.queryInterface(XEnumerationAccess.class, textDoc.getText());
-            XEnumeration en = ea.createEnumeration();
-            String pageStyle = "Standard";
-            if (en.hasMoreElements()) {
-                XPropertySet first = UnoRuntime.queryInterface(XPropertySet.class, en.nextElement());
-                if (first != null && first.getPropertySetInfo().hasPropertyByName("PageStyleName")) {
-                    pageStyle = AnyConverter.toString(first.getPropertyValue("PageStyleName"));
-                }
-            }
             XStyleFamiliesSupplier sfs = UnoRuntime.queryInterface(XStyleFamiliesSupplier.class, textDoc);
             XNameAccess families = sfs.getStyleFamilies();
             XNameAccess pages = UnoRuntime.queryInterface(XNameAccess.class, families.getByName("PageStyles"));
