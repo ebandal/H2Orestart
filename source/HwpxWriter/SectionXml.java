@@ -73,7 +73,7 @@ final class SectionXml {
           .append("\" cellSpacing=\"0\" borderFillIDRef=\"").append(t.borderFillId).append("\" noAdjust=\"0\">");
         sb.append("<hp:sz width=\"").append(t.width).append("\" widthRelTo=\"ABSOLUTE\" height=\"").append(t.height)
           .append("\" heightRelTo=\"ABSOLUTE\" protect=\"0\"/>");
-        sb.append("<hp:pos treatAsChar=\"0\" affectLSpacing=\"0\" flowWithText=\"1\" allowOverlap=\"0\" holdAnchorAndSO=\"0\"")
+        sb.append("<hp:pos treatAsChar=\"").append(t.treatAsChar ? 1 : 0).append("\" affectLSpacing=\"0\" flowWithText=\"1\" allowOverlap=\"0\" holdAnchorAndSO=\"0\"")
           .append(" vertRelTo=\"PARA\" horzRelTo=\"PARA\" vertAlign=\"TOP\" horzAlign=\"LEFT\" vertOffset=\"").append(t.vertOffset)
           .append("\" horzOffset=\"").append(t.horzOffset).append("\"/>");
         sb.append("<hp:outMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");

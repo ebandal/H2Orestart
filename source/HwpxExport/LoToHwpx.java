@@ -97,6 +97,9 @@ public class LoToHwpx {
                     // 표 뒤 문단에 적용하고, 그 문단은 따로 설정하지 않는다. 같은 보정값으로 되돌린다
                     try {
                         prev.paraPrId = c.doc.addParaPr(c.paraPr(c.lastBodyPara, TABLE_PARA_ALPHA, false));
+                        if (prev.table.paraAlign != null) {
+                            prev.paraPrId = c.withAlign(prev.paraPrId, prev.table.paraAlign);
+                        }
                     } catch (com.sun.star.uno.Exception e) {
                         log.log(Level.WARNING, e.toString(), e);
                     }
@@ -151,8 +154,27 @@ public class LoToHwpx {
         pending.clear();
         for (WParagraph[] cp : paraPrCopies) {
             cp[0].paraPrId = cp[1].paraPrId;
+            if (cp[0].table != null && cp[0].table.paraAlign != null) {
+                cp[0].paraPrId = withAlign(cp[0].paraPrId, cp[0].table.paraAlign);
+            }
         }
         paraPrCopies.clear();
+    }
+
+    /** 문단 모양 id 의 정렬만 바꾼 문단 모양 id */
+    private int withAlign(int paraPrId, String align) {
+        WParaPr src = doc.paraPrList.get(paraPrId);
+        if (align.equals(src.align)) return paraPrId;
+        WParaPr p = new WParaPr();
+        p.align = align;
+        p.indent = src.indent;
+        p.left = src.left;
+        p.right = src.right;
+        p.prev = src.prev;
+        p.next = src.next;
+        p.lineSpacingType = src.lineSpacingType;
+        p.lineSpacing = src.lineSpacing;
+        return doc.addParaPr(p);
     }
 
     /** 다시 읽을 때 이 글자 모양에 적용될 줄 간격 보정값 */
@@ -330,7 +352,7 @@ public class LoToHwpx {
                     }
                     afterTable = false;
                 } else if (si.supportsService("com.sun.star.text.TextTable")) {
-                    table(elem, target, avail);
+                    table(elem, target, avail, afterTable);
                     afterTable = true;
                 }
             }
@@ -377,7 +399,7 @@ public class LoToHwpx {
      *       세로 병합은 위 칸의 RowSpan 이고 덮인 칸은 셀 이름 목록에서 빠진다.
      *       모든 행의 구분선 위치를 합쳐 격자 열을 만들고, 칸이 걸친 격자 열 수를 colSpan 으로 한다.
      */
-    private void table(Object tableObj, java.util.List<WParagraph> target, int avail) throws com.sun.star.uno.Exception {
+    private void table(Object tableObj, java.util.List<WParagraph> target, int avail, boolean afterTable) throws com.sun.star.uno.Exception {
         com.sun.star.text.XTextTable xt = UnoRuntime.queryInterface(com.sun.star.text.XTextTable.class, tableObj);
         XPropertySet tp = UnoRuntime.queryInterface(XPropertySet.class, tableObj);
         com.sun.star.table.XCellRange range = UnoRuntime.queryInterface(com.sun.star.table.XCellRange.class, tableObj);
@@ -414,8 +436,11 @@ public class LoToHwpx {
         Integer[] gx = grid.toArray(new Integer[0]);
         int nCols = gx.length - 1;
         int[] colWidth = new int[nCols];
+        // 열 경계 위치를 누적으로 변환해 열 폭 합이 표 폭(hwp(Width))과 같게 한다 (열마다 올림하면 저장할 때마다 표가 넓어진다)
         for (int j = 0; j < nCols; j++) {
-            colWidth[j] = hwp((int) Math.round((gx[j + 1] - gx[j]) * (double) widthMm / relSum));
+            int x0 = hwp((int) Math.round(gx[j] * (double) widthMm / relSum));
+            int x1 = hwp((int) Math.round(gx[j + 1] * (double) widthMm / relSum));
+            colWidth[j] = x1 - x0;
         }
         java.util.Map<Integer, Integer> gridIndex = new java.util.HashMap<Integer, Integer>();
         for (int j = 0; j < gx.length; j++) gridIndex.put(gx[j], j);
@@ -434,6 +459,28 @@ public class LoToHwpx {
         t.horzOffset = hwp(Math.max(0, tableLeft(tp, widthMm, avail)));
         int top = AnyConverter.toInt(tp.getPropertyValue("TopMargin"));
         t.vertOffset = top > 0 ? hwp(top) : 0;
+        // 표 바로 뒤의 표는 떠 있는 표로 둔다. 가져오기는 표 다음의 글자처럼 취급하는 표 앞에 빈 문단을 넣는다
+        // (HwpRecurs: firstParaAfterTable && treatAsChar)
+        if (!split && top <= 0 && !afterTable) {
+            // 글자처럼 취급하는 표로 쓴다 (한글 문서의 표는 대부분 이렇다. 떠 있는 표는 한글에서 쪽 경계의 글과 겹칠 수
+            // 있다). 가져오기(ConvTable.setParaPosition)는 이런 표를 나누지 않고, 가로 위치를 표 문단의 정렬과
+            // "가로 위치 - 쪽 왼쪽 여백" 으로 정한다
+            t.treatAsChar = true;
+            t.vertOffset = 0;
+            short hori = AnyConverter.toShort(tp.getPropertyValue("HoriOrient"));
+            int leftMargin = AnyConverter.toInt(tp.getPropertyValue("LeftMargin"));
+            t.horzOffset = 0;
+            if (hori == com.sun.star.text.HoriOrientation.CENTER || hori == com.sun.star.text.HoriOrientation.FULL) {
+                t.paraAlign = "CENTER";
+            } else if (hori == com.sun.star.text.HoriOrientation.RIGHT) {
+                t.paraAlign = "RIGHT";
+            } else if (leftMargin > 0 && !inCellText) {
+                t.paraAlign = "DISTRIBUTE";     // 가져오기: 왼쪽 여백(LeftMargin)으로 놓는다 (HoriOrient NONE)
+                t.horzOffset = section.marginLeft + hwp(leftMargin);
+            } else {
+                t.paraAlign = "LEFT";
+            }
+        }
 
         for (int r = 0; r < nRows; r++) {
             int[] b = bounds[r];

@@ -26,8 +26,12 @@ public class WTable {
     /** 쪽 경계에서 나눔: CELL(나눔), TABLE(셀 단위로 나눔), NONE */
     public String pageBreak = "CELL";
     public boolean repeatHeader;
-    /** 문단 기준 위치 (HWPUNIT) */
+    /** 문단 기준 위치 (HWPUNIT). 글자처럼 취급하는 표는 가로 위치만 (쪽 왼쪽 끝에서) */
     public int horzOffset, vertOffset;
+    /** 글자처럼 취급 (문단 안의 큰 글자처럼 놓인다. 쪽에서 나누지 않는다) */
+    public boolean treatAsChar;
+    /** 글자처럼 취급하는 표의 가로 정렬 = 표 문단의 정렬 (LEFT, RIGHT, CENTER, DISTRIBUTE). null 이면 바꾸지 않는다 */
+    public String paraAlign;
     public int borderFillId = 1;
     /** 행 우선 순서 */
     public final List<WCell> cells = new ArrayList<WCell>();
