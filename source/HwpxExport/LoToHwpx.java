@@ -82,12 +82,23 @@ public class LoToHwpx {
         c.doc.sections.add(c.section);
         c.page(textDoc);
         c.text(textDoc.getText(), c.section.paragraphs, c.bodyWidthMm100);
+        c.finishParaPrs();
         // 가져오기는 마지막 문단 끝에서 빈 문단을 하나 더 만든다. 저장할 때마다 늘지 않도록 끝의 빈 문단 하나를 뺀다
         java.util.List<WParagraph> body = c.section.paragraphs;
         if (body.size() > 1) {
             WParagraph last = body.get(body.size() - 1);
             if (last.table == null && last.text().isEmpty()) {
                 body.remove(body.size() - 1);
+                WParagraph prev = body.get(body.size() - 1);
+                if (prev.table != null && c.lastBodyPara != null) {
+                    // 본문이 표로 끝난다. 가져오기는 표를 넣으며 표 문단의 문단 모양을 고정 보정값(ConvPara.PARA_SPACING)으로
+                    // 표 뒤 문단에 적용하고, 그 문단은 따로 설정하지 않는다. 같은 보정값으로 되돌린다
+                    try {
+                        prev.paraPrId = c.doc.addParaPr(c.paraPr(c.lastBodyPara, TABLE_PARA_ALPHA, false));
+                    } catch (com.sun.star.uno.Exception e) {
+                        log.log(Level.WARNING, e.toString(), e);
+                    }
+                }
             }
         }
         return c.doc;
@@ -100,6 +111,76 @@ public class LoToHwpx {
         double v = mm100 * 59529.0 / 21000.0;
         return (int) (mm100 >= 0 ? Math.ceil(v - 1e-9) : Math.floor(v + 1e-9));
     }
+
+    /** 가져오기가 표 문단의 문단 모양을 적용할 때 쓰는 줄 간격 보정값 (ConvTable.insertTable, ConvPara.PARA_SPACING) */
+    private static final double TABLE_PARA_ALPHA = 0.85;
+
+    /**
+     * 줄 간격(PERCENT) 보정값을 나중에 정하는 문단 모양. 가져오기는 글자 모양의 보정값을 그 글자 모양이 쓰는 글꼴 중
+     * 글꼴 목록(언어 순서)에서 가장 뒤에 있는 글꼴로 정하므로(HwpDocInfo.setFontNameLineSpaceAlpha), 글꼴 목록이
+     * 다 만들어진 뒤에 계산한다.
+     */
+    private static class PendingPr {
+        final WParagraph para;
+        final WParaPr pr;
+        final int rawHeight;        // LibreOffice 비례 줄 간격
+        int alphaCp;                // 보정값을 정하는 글자 모양 (가져오기가 문단 속성을 마지막으로 설정할 때의 글자 모양)
+        PendingPr(WParagraph para, WParaPr pr, int alphaCp) {
+            this.para = para;
+            this.pr = pr;
+            this.rawHeight = pr.lineSpacing;
+            this.alphaCp = alphaCp;
+        }
+    }
+    private final java.util.Map<WParagraph, PendingPr> pending = new java.util.LinkedHashMap<WParagraph, PendingPr>();
+    /** 표 문단 → 문단 모양을 따라갈 표 뒤 문단 */
+    private final java.util.List<WParagraph[]> paraPrCopies = new java.util.ArrayList<WParagraph[]>();
+    /** paraPr() 가 줄 간격 보정을 미뤘는지 */
+    private boolean deferredAlpha;
+
+    /** 미뤄 둔 문단 모양을 확정한다 */
+    private void finishParaPrs() {
+        for (PendingPr pp : pending.values()) {
+            double alpha = importAlpha(pp.alphaCp);
+            pp.pr.lineSpacing = (int) Math.ceil(pp.rawHeight / alpha - 1e-9);    // 가져오기: (short)(v*보정값), 버림의 역
+            pp.para.paraPrId = doc.addParaPr(pp.pr);
+        }
+        pending.clear();
+        for (WParagraph[] cp : paraPrCopies) {
+            cp[0].paraPrId = cp[1].paraPrId;
+        }
+        paraPrCopies.clear();
+    }
+
+    /** 다시 읽을 때 이 글자 모양에 적용될 줄 간격 보정값 */
+    private double importAlpha(int charPrId) {
+        WCharPr c = doc.charPrList.get(charPrId);
+        String best = null;
+        int bestPos = -1;
+        for (int l = 0; l < WDocument.LANGS.length; l++) {
+            String face = doc.fonts[l].get(c.fontRef[l]);
+            int pos = lastFontPosition(face);
+            if (pos > bestPos) {
+                bestPos = pos;
+                best = face;
+            }
+        }
+        return lineSpaceAlpha(best);
+    }
+
+    /** 글꼴 목록 전체(언어 순서로 이어 붙인 것)에서 이 이름이 마지막으로 나오는 위치 */
+    private int lastFontPosition(String face) {
+        int offset = 0, last = -1;
+        for (int l = 0; l < WDocument.LANGS.length; l++) {
+            int i = doc.fonts[l].lastIndexOf(face);
+            if (i >= 0) last = offset + i;
+            offset += doc.fonts[l].size();
+        }
+        return last;
+    }
+
+    /** 본문의 마지막 문단 (문단 속성) */
+    private XPropertySet lastBodyPara;
 
     /** 본문 폭 (1/100 mm). 표 가로 위치 계산에 쓴다 */
     private int bodyWidthMm100 = 16000;
@@ -117,7 +198,11 @@ public class LoToHwpx {
                 XServiceInfo si = UnoRuntime.queryInterface(XServiceInfo.class, elem);
                 if (si == null) continue;
                 if (si.supportsService("com.sun.star.text.Paragraph")) {
-                    paragraph(elem, target, afterTable);
+                    // 가져오기의 표 다음 문단 간격 보정은 본문에서만 한다
+                    paragraph(elem, target, afterTable && target == section.paragraphs);
+                    if (target == section.paragraphs) {
+                        lastBodyPara = UnoRuntime.queryInterface(XPropertySet.class, elem);
+                    }
                     afterTable = false;
                 } else if (si.supportsService("com.sun.star.text.TextTable")) {
                     table(elem, target, avail);
@@ -129,10 +214,27 @@ public class LoToHwpx {
         }
         // 표 문단의 문단 모양: 가져오기는 표 문단의 문단 모양을 표 뒤 문단에 먼저 적용한다 (그 문단에 글자가 없으면
         // 그대로 남는다). 표 뒤 문단과 같은 모양으로 써서 다시 읽어도 같게 한다
+        // 셀의 마지막 문단: 가져오기는 문단 끝을 넣지 않으므로 마지막 글자 run 의 모양으로 문단 속성을 마지막 설정한다
+        if (target != section.paragraphs && target.size() > start) {
+            WParagraph last = target.get(target.size() - 1);
+            PendingPr pp = pending.get(last);
+            if (pp != null) {
+                for (int k = last.runs.size() - 1; k >= 0; k--) {
+                    if (last.runs.get(k).text != null && !last.runs.get(k).text.isEmpty()) {
+                        pp.alphaCp = last.runs.get(k).charPrId;
+                        break;
+                    }
+                }
+            }
+        }
         for (int i = start; i + 1 < target.size(); i++) {
             WParagraph p = target.get(i);
             if (p.table != null && target.get(i + 1).table == null) {
-                p.paraPrId = target.get(i + 1).paraPrId;
+                paraPrCopies.add(new WParagraph[] { p, target.get(i + 1) });
+                // 문단 끝 글자 모양도 같게: 문서 끝 표는 가져오기가 표 문단 모양으로 끝 문단을 만들고, 줄 간격 보정값을
+                // 표 문단의 글자 모양(글꼴)으로 계산한다
+                p.runs.clear();
+                p.runs.add(new WParagraph.WRun(target.get(i + 1).lastCharPrId(), ""));
             }
         }
     }
@@ -340,7 +442,12 @@ public class LoToHwpx {
         if (p.runs.isEmpty() || p.runs.get(p.runs.size() - 1).charPrId != endCp) {
             p.runs.add(new WParagraph.WRun(endCp, ""));
         }
-        p.paraPrId = doc.addParaPr(paraPr(pp, fontForAlpha(pp), afterTable));
+        WParaPr wpp = paraPr(pp, 0, afterTable);
+        if (deferredAlpha) {
+            pending.put(p, new PendingPr(p, wpp, endCp));
+        } else {
+            p.paraPrId = doc.addParaPr(wpp);
+        }
         target.add(p);
     }
 
@@ -381,18 +488,10 @@ public class LoToHwpx {
         return idx;
     }
 
-    private static String fontForAlpha(XPropertySet ps) {
-        try {
-            String face = AnyConverter.toString(ps.getPropertyValue("CharFontNameAsian"));
-            if (face == null || face.isEmpty()) face = AnyConverter.toString(ps.getPropertyValue("CharFontName"));
-            return face;
-        } catch (com.sun.star.uno.Exception e) {
-            return null;
-        }
-    }
-
-    private WParaPr paraPr(XPropertySet pp, String alphaFont, boolean afterTable) throws com.sun.star.uno.Exception {
+    /** alpha: 가져오기가 PERCENT 줄 간격에 곱한 보정값. 0 이면 LibreOffice 값을 그대로 두고 deferredAlpha 를 켠다 */
+    private WParaPr paraPr(XPropertySet pp, double alpha, boolean afterTable) throws com.sun.star.uno.Exception {
         WParaPr p = new WParaPr();
+        deferredAlpha = false;
         int adjust = AnyConverter.toInt(pp.getPropertyValue("ParaAdjust"));
         // 가져오기는 양쪽 정렬을 왼쪽 정렬로 바꾼다 (ConvPara: 양쪽 정렬이 줄바꿈 때 더 비슷). 왼쪽은 양쪽으로 추정한다
         // (원본의 양쪽:왼쪽 비율은 약 7:3. 원래 왼쪽이던 문단은 양쪽으로 저장된다)
@@ -416,9 +515,10 @@ public class LoToHwpx {
         // 내어쓰기(음수)는 가져오기가 왼쪽 여백에 더해 두었으므로 빼서 되돌린다
         p.indent = 2 * hwp(first);
         p.left = 2 * hwp(left) + (p.indent < 0 ? p.indent : 0);
-        p.right = 2 * hwp(right);
-        p.prev = 2 * hwp(top);
-        p.next = 2 * hwp(bottom);
+        // 가져오기는 음수 오른쪽/위/아래 여백을 0 으로 읽는다 (ConvPara). 음수(예: 캡션 문단)는 0 으로 쓴다
+        p.right = Math.max(0, 2 * hwp(right));
+        p.prev = Math.max(0, 2 * hwp(top));
+        p.next = Math.max(0, 2 * hwp(bottom));
 
         LineSpacing ls = (LineSpacing) AnyConverter.toObject(LineSpacing.class, pp.getPropertyValue("ParaLineSpacing"));
         switch (ls.Mode) {
@@ -445,7 +545,12 @@ public class LoToHwpx {
         default:
             // 가져오기는 글꼴별 보정값을 곱했다 (ConvPage.adjustFontIfNotExists). 같은 값으로 나눈다
             p.lineSpacingType = "PERCENT";
-            p.lineSpacing = (int) Math.ceil(ls.Height / lineSpaceAlpha(alphaFont) - 1e-9);    // 가져오기: (short)(v*보정값), 버림의 역
+            if (alpha <= 0) {
+                p.lineSpacing = ls.Height;
+                deferredAlpha = true;
+            } else {
+                p.lineSpacing = (int) Math.ceil(ls.Height / alpha - 1e-9);    // 가져오기: (short)(v*보정값), 버림의 역
+            }
             break;
         }
         return p;

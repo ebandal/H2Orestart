@@ -97,6 +97,10 @@ public class ConvTable {
     public static void insertTable(WriterContext wContext, Ctrl_Table table, short paraShapeID, HwpCallback callback, int step) throws HwpParseException {
         // 테이블 그리기 전, 문단모양 설정한다. 문단에 Frame을 넣기때문에 문단 margin에 맞게 여백이 들어가야 한다.
         HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
+        if (paraShape != null) {
+            // 함께 쓰는 레코드에 앞 문단의 표 다음 간격 표시가 남아 있을 수 있다. 표 문단에는 적용하지 않는다
+            paraShape.firstAfterTable = false;
+        }
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
         ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
@@ -1325,15 +1329,21 @@ public class ConvTable {
         }
     }
 
-    /** 셀 문단의 문단 모양. 셀에 문단이 하나뿐이면 줄 간격을 최소 100 으로 한다 (LibreOffice 와 한글의 간격 차이 해소) */
+    /**
+     * 셀 문단의 문단 모양 (복사본). 셀에 문단이 하나뿐이면 줄 간격을 최소 100 으로 한다 (LibreOffice 와 한글의 간격 차이 해소).
+     * 표 다음 문단 간격 보정은 본문에서만 한다 (함께 쓰는 레코드에 남은 값을 지운다)
+     */
     private static HwpRecord_ParaShape cellParaShape(HwpRecord_ParaShape paraShape, TblCell cell) {
-        if (paraShape == null || cell.paras.size() != 1) {
+        if (paraShape == null) {
             return paraShape;
         }
         try {
             HwpRecord_ParaShape temp = HwpRecord_ParaShape.clone(paraShape);
-            temp.lineSpacing = 100;
-            temp.lineSpacingType = 0x3;
+            temp.firstAfterTable = false;
+            if (cell.paras.size() == 1) {
+                temp.lineSpacing = 100;
+                temp.lineSpacingType = 0x3;
+            }
             return temp;
         } catch (java.lang.ClassNotFoundException | IOException e) {
             log.log(Level.SEVERE, e.toString(), e);

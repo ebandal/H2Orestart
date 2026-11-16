@@ -87,8 +87,12 @@ public class HwpRecurs {
 
         if (para.p==null) {
             if (callback==null || callback.onParaBreak()==false) {
-                beforeParaBreak(wContext, para.paraShapeID, oldCharShapeID, false, step);
+                beforeParaBreak(wContext, para.paraShapeID, oldCharShapeID, false,
+                                callback==null?false:callback.firstParaAfterTable, step);
                 wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+            }
+            if (callback!=null) {
+                callback.onFirstAfterTable(false);
             }
             return;
         }
@@ -152,7 +156,8 @@ public class HwpRecurs {
                     case PARAGRAPH_BREAK:
                          if (callback==null || oweParaBreak==false) {
                             if (callback==null || callback.onParaBreak()==false) {
-                                beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
+                                beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false,
+                                                callback==null?false:callback.firstParaAfterTable, step);
                                 wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
                             }
                             if (callback!=null) {
@@ -375,10 +380,17 @@ public class HwpRecurs {
         }
     }
 
+    /**
+     * firstParaAfterTable: 표 바로 다음 문단인지. 문단 모양 레코드는 문단들이 함께 쓰므로 매번 설정한다
+     * (안 하면 앞 문단에서 남은 값으로 같은 모양의 빈 문단에도 표 다음 간격이 더해진다)
+     */
     public static void beforeParaBreak(WriterContext wContext,
                                         short paraShapeID, short charShapeID,
-                                        boolean append, int step) {
+                                        boolean append, boolean firstParaAfterTable, int step) {
         HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
+        if (paraShape != null) {
+            paraShape.firstAfterTable = firstParaAfterTable;
+        }
         HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);
 
         beforeParaBreak(wContext, paraShape, charShape, append, false, step);
