@@ -938,13 +938,40 @@ public class LoToHwpx {
             if (fs == com.sun.star.drawing.FillStyle.SOLID) {
                 s.fillColor = AnyConverter.toInt(op.getPropertyValue("FillColor")) & 0xFFFFFF;
             }
+        } else if (si.supportsService("com.sun.star.drawing.EllipseShape")) {
+            // 타원, 또는 호/부채꼴/활 (가져오기 insertELLIPSE, insertARC 의 역)
+            Object kind = op.getPropertyValue("CircleKind");
+            if (kind == com.sun.star.drawing.CircleKind.FULL) {
+                s = new WShape(WShape.Kind.ELLIPSE);
+            } else {
+                s = new WShape(WShape.Kind.ARC);
+                s.arcType = kind == com.sun.star.drawing.CircleKind.SECTION ? "PIE"
+                          : kind == com.sun.star.drawing.CircleKind.CUT ? "CHORD" : "NORMAL";
+            }
+            drawLine(op, s);
+            fill(op, s);
+        } else if (si.supportsService("com.sun.star.drawing.OpenBezierShape")
+                || si.supportsService("com.sun.star.drawing.ClosedBezierShape")) {
+            s = new WShape(WShape.Kind.CURVE);
+            drawLine(op, s);
+            if (si.supportsService("com.sun.star.drawing.ClosedBezierShape")) fill(op, s);
+            if (!curvePoints(op, s)) return null;
+        } else if (si.supportsService("com.sun.star.drawing.PolyPolygonShape")) {
+            s = new WShape(WShape.Kind.POLYGON);
+            drawLine(op, s);
+            fill(op, s);
+            if (!polygonPoints(op, s)) return null;
         } else {
             return null;
         }
         s.zOrder = shapeSeq++;
         int w, h;
         com.sun.star.drawing.XShape xs = UnoRuntime.queryInterface(com.sun.star.drawing.XShape.class, obj);
-        if (s.kind == WShape.Kind.LINE || s.kind == WShape.Kind.RECT) {
+        if (s.kind == WShape.Kind.ARC) {
+            // 가져오기는 호를 가로/세로 2배 크기의 타원으로 만든다
+            w = xs.getSize().Width / 2;
+            h = xs.getSize().Height / 2;
+        } else if (s.kind != WShape.Kind.PICTURE && s.kind != WShape.Kind.TEXTBOX) {
             w = xs.getSize().Width;
             h = xs.getSize().Height;
         } else {
@@ -962,7 +989,91 @@ public class LoToHwpx {
         if (s.kind == WShape.Kind.TEXTBOX) {
             textBox(obj, op, s, w);
         }
+        if (s.kind == WShape.Kind.ARC) {
+            arcAxes(op, s);
+        }
         return s;
+    }
+
+    /** 채우기 색 (단색만) */
+    private static void fill(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        if (op.getPropertyValue("FillStyle") == com.sun.star.drawing.FillStyle.SOLID) {
+            s.fillColor = AnyConverter.toInt(op.getPropertyValue("FillColor")) & 0xFFFFFF;
+        }
+    }
+
+    /**
+     * 호의 중심과 두 축: 가져오기(ConvGraphics.insertARC)는 중심에서 제1축, 제2축을 본 각도를 시작/끝 각도로 쓴다.
+     * 90도 단위의 1/4 호는 한글의 좌표 구성(개체 영역의 모서리와 변)으로, 그 밖의 각도는 방향만 맞춘다.
+     */
+    private static void arcAxes(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        int a1 = AnyConverter.toInt(op.getPropertyValue("CircleStartAngle")) / 100;
+        int a2 = AnyConverter.toInt(op.getPropertyValue("CircleEndAngle")) / 100;
+        a1 = ((a1 % 360) + 360) % 360;
+        a2 = ((a2 % 360) + 360) % 360;
+        int w = s.width, h = s.height;
+        if (a1 % 90 == 0 && a2 == (a1 + 90) % 360) {
+            switch (a1) {
+            case 0:     arcSet(s, 0, h, w, h, 0, 0);   break;
+            case 90:    arcSet(s, w, h, w, 0, 0, h);   break;
+            case 180:   arcSet(s, w, 0, 0, 0, w, h);   break;
+            default:    arcSet(s, 0, 0, 0, h, w, 0);   break;
+            }
+            return;
+        }
+        int[] d1 = arcDirection(a1), d2 = arcDirection(a2);
+        arcSet(s, w, h, w + d1[0], h + d1[1], w + d2[0], h + d2[1]);
+    }
+
+    private static void arcSet(WShape s, int cx, int cy, int x1, int y1, int x2, int y2) {
+        s.arcCenter[0] = cx;    s.arcCenter[1] = cy;
+        s.arcAxis1[0] = x1;     s.arcAxis1[1] = y1;
+        s.arcAxis2[0] = x2;     s.arcAxis2[1] = y2;
+    }
+
+    /** 각도(도) 방향의 벡터 (y 는 아래쪽이 +). 가져오기가 각도를 정수로 버리므로 버려도 같은 값이 되게 반 도 치우친다 */
+    private static int[] arcDirection(int deg) {
+        final int r = 100000;
+        if (deg % 180 == 0) return new int[] { deg == 0 ? r : -r, 0 };
+        double a = Math.toRadians(deg < 180 ? deg + 0.5 : deg - 0.5);
+        return new int[] { (int) Math.round(r * Math.cos(a)), (int) Math.round(-r * Math.sin(a)) };
+    }
+
+    /** 다각형 꼭짓점: 도형 왼쪽 위 기준으로 옮겨 쓴다 (가져오기 insertPOLYGON 의 역) */
+    private static boolean polygonPoints(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        Object v = op.getPropertyValue("PolyPolygon");
+        if (!(v instanceof com.sun.star.awt.Point[][])) return false;
+        com.sun.star.awt.Point[][] pp = (com.sun.star.awt.Point[][]) v;
+        if (pp.length == 0 || pp[0].length < 2) return false;
+        addPoints(s, pp[0], null, pp[0]);
+        return true;
+    }
+
+    /** 곡선이 지나는 점: 조절점은 가져오기가 다시 계산하므로 지나는 점만 쓴다 (가져오기 insertCURVE 의 역) */
+    private static boolean curvePoints(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        Object v = op.getPropertyValue("PolyPolygonBezier");
+        if (!(v instanceof com.sun.star.drawing.PolyPolygonBezierCoords)) return false;
+        com.sun.star.drawing.PolyPolygonBezierCoords c = (com.sun.star.drawing.PolyPolygonBezierCoords) v;
+        if (c.Coordinates.length == 0 || c.Coordinates[0].length < 2) return false;
+        addPoints(s, c.Coordinates[0], c.Flags[0], c.Coordinates[0]);
+        return s.points.size() >= 2;
+    }
+
+    /** flags 가 있으면 NORMAL 인 점만 넣는다. 원점은 all 의 가장 왼쪽 위 */
+    private static void addPoints(WShape s, com.sun.star.awt.Point[] pts, com.sun.star.drawing.PolygonFlags[] flags,
+                                  com.sun.star.awt.Point[] all) {
+        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+        for (int i = 0; i < all.length; i++) {
+            // 원점은 지나는 점 기준 (조절점은 가져오기가 다시 계산한다)
+            if (flags != null && flags[i] == com.sun.star.drawing.PolygonFlags.CONTROL) continue;
+            minX = Math.min(minX, all[i].X);
+            minY = Math.min(minY, all[i].Y);
+        }
+        for (int i = 0; i < pts.length; i++) {
+            // 조절점만 뺀다 (LibreOffice 는 지나는 점을 SMOOTH/SYMMETRIC 으로 돌려주기도 한다)
+            if (flags != null && flags[i] == com.sun.star.drawing.PolygonFlags.CONTROL) continue;
+            s.points.add(new int[] { hwp(pts[i].X - minX), hwp(pts[i].Y - minY) });
+        }
     }
 
     /** 위치: 가져오기(ConvGraphics.setPositionLO)의 역. 기준 위치에서의 거리는 모두 위/왼쪽 기준으로 쓴다 */
@@ -1062,6 +1173,17 @@ public class LoToHwpx {
         byte[] data = graphicPng(graphic);
         if (data == null || data.length == 0) return false;
         s.binItemId = doc.addBinItem("png", data);
+        // 테두리 (가져오기 Transform.toBorderLine2: 실선, 색, 굵기)
+        Object tb = op.getPropertySetInfo().hasPropertyByName("TopBorder") ? op.getPropertyValue("TopBorder") : null;
+        if (tb instanceof com.sun.star.table.BorderLine2) {
+            com.sun.star.table.BorderLine2 b = (com.sun.star.table.BorderLine2) tb;
+            int bw = b.LineWidth > 0 ? b.LineWidth : b.OuterLineWidth;
+            if (bw > 0 && b.LineStyle != com.sun.star.table.BorderLineStyle.NONE) {
+                s.lineStyle = "SOLID";
+                s.lineColor = b.Color & 0xFFFFFF;
+                s.lineWidth = hwp(bw);
+            }
+        }
         // 원본 그림 크기: 픽셀을 96 dpi 로 HWPUNIT 으로 (1 픽셀 = 75)
         XPropertySet gps = UnoRuntime.queryInterface(XPropertySet.class, graphic);
         int pw = 0, ph = 0;
@@ -1179,7 +1301,8 @@ public class LoToHwpx {
 
         boolean empty = true;
         for (WParagraph p : hf.paragraphs) {
-            if (!p.text().isEmpty() || p.hasShape() || hasAutoNum(p)) empty = false;
+            // 표만 든 머리말/꼬리말도 내용이 있는 것이다 (표 안에 그림, 쪽 번호가 들어 있을 수 있다)
+            if (!p.text().isEmpty() || p.hasShape() || hasAutoNum(p) || p.table != null) empty = false;
         }
         if (empty) return;      // 가져오기는 빈 머리말/꼬리말도 켜 둔다 (쪽 여백)
         if ("BOTH".equals(type) && section.pageNumPos == null && pageNumOnly(xt, hf, header)) return;

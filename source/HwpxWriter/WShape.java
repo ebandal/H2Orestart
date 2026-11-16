@@ -23,8 +23,8 @@ import java.util.List;
  * 크기/위치 단위는 HWPUNIT.
  */
 public class WShape {
-    /** 그림, 글상자, 선, 사각형(글 없음) */
-    public enum Kind { PICTURE, TEXTBOX, LINE, RECT }
+    /** 그림, 글상자, 선, 사각형(글 없음), 타원, 호, 다각형, 곡선 */
+    public enum Kind { PICTURE, TEXTBOX, LINE, RECT, ELLIPSE, ARC, POLYGON, CURVE }
 
     public final Kind kind;
     public int width;
@@ -67,6 +67,18 @@ public class WShape {
     /** 글 세로 정렬: TOP, CENTER, BOTTOM */
     public String textVertAlign = "TOP";
     public final List<WParagraph> paragraphs = new ArrayList<WParagraph>();
+
+    // 다각형, 곡선
+    /** 꼭짓점(다각형) 또는 곡선이 지나는 점. 개체 왼쪽 위 기준 (HWPUNIT) */
+    public final List<int[]> points = new ArrayList<int[]>();
+
+    // 호
+    /** NORMAL(호), PIE(부채꼴), CHORD(활) */
+    public String arcType = "NORMAL";
+    /** 중심, 제1축(시작), 제2축(끝) 좌표 */
+    public final int[] arcCenter = new int[2];
+    public final int[] arcAxis1 = new int[2];
+    public final int[] arcAxis2 = new int[2];
 
     public WShape(Kind kind) {
         this.kind = kind;

@@ -158,11 +158,11 @@ final class SectionXml {
     /** 그림(hp:pic) 또는 글상자(hp:rect + hp:drawText). 요소 구성은 한글 2022 출력과 같다 */
     private static void shape(StringBuilder sb, WSection sec, WShape s) {
         int id = 1000000000 + s.zOrder;
-        String tag = s.kind == WShape.Kind.PICTURE ? "hp:pic" : s.kind == WShape.Kind.LINE ? "hp:line" : "hp:rect";
+        String tag = shapeTag(s.kind);
         sb.append('<').append(tag).append(" id=\"").append(id).append("\" zOrder=\"").append(s.zOrder)
           .append("\" numberingType=\"PICTURE\" textWrap=\"").append(s.textWrap).append("\" textFlow=\"").append(s.textFlow)
           .append("\" lock=\"0\" dropcapstyle=\"None\" href=\"\" groupLevel=\"0\" instid=\"").append(id + 1)
-          .append(s.kind == WShape.Kind.PICTURE ? "\" reverse=\"0\">" : s.kind == WShape.Kind.LINE ? "\" isReverseHV=\"0\">" : "\" ratio=\"0\">");
+          .append('"').append(shapeAttrs(s)).append('>');
         sb.append("<hp:offset x=\"0\" y=\"0\"/>");
         sb.append("<hp:orgSz width=\"").append(s.width).append("\" height=\"").append(s.height).append("\"/>");
         sb.append("<hp:curSz width=\"").append(s.width).append("\" height=\"").append(s.height).append("\"/>");
@@ -173,6 +173,12 @@ final class SectionXml {
           .append("<hc:scaMatrix e1=\"1\" e2=\"0\" e3=\"0\" e4=\"0\" e5=\"1\" e6=\"0\"/>")
           .append("<hc:rotMatrix e1=\"1\" e2=\"0\" e3=\"0\" e4=\"0\" e5=\"1\" e6=\"0\"/></hp:renderingInfo>");
         if (s.kind == WShape.Kind.PICTURE) {
+            if (!"NONE".equals(s.lineStyle)) {
+                // 그림 테두리 (가져오기: Ctrl_ShapePic 이 hp:lineShape 를 테두리로 읽는다)
+                sb.append("<hp:lineShape color=\"").append(Xml.color(s.lineColor)).append("\" width=\"").append(s.lineWidth)
+                  .append("\" style=\"").append(s.lineStyle)
+                  .append("\" endCap=\"ROUND\" headStyle=\"NORMAL\" tailStyle=\"NORMAL\" headfill=\"0\" tailfill=\"0\" headSz=\"SMALL_SMALL\" tailSz=\"SMALL_SMALL\" outlineStyle=\"OUTER\" alpha=\"0\"/>");
+            }
             sb.append("<hc:img binaryItemIDRef=\"").append(s.binItemId).append("\" bright=\"0\" contrast=\"0\" effect=\"REAL_PIC\" alpha=\"0\"/>");
             sb.append("<hp:imgRect>");
             points(sb, s.width, s.height);
@@ -182,6 +188,38 @@ final class SectionXml {
             sb.append("<hp:inMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
             sb.append("<hp:imgDim dimwidth=\"").append(s.imgWidth).append("\" dimheight=\"").append(s.imgHeight).append("\"/>");
             sb.append("<hp:effects/>");
+        } else if (s.kind == WShape.Kind.ELLIPSE || s.kind == WShape.Kind.ARC
+                || s.kind == WShape.Kind.POLYGON || s.kind == WShape.Kind.CURVE) {
+            // 타원, 호, 다각형, 곡선
+            sb.append("<hp:lineShape color=\"").append(Xml.color(s.lineColor)).append("\" width=\"").append(s.lineWidth)
+              .append("\" style=\"").append(s.lineStyle)
+              .append("\" endCap=\"FLAT\" headStyle=\"NORMAL\" tailStyle=\"NORMAL\" headfill=\"1\" tailfill=\"1\" headSz=\"MEDIUM_MEDIUM\" tailSz=\"MEDIUM_MEDIUM\" outlineStyle=\"NORMAL\" alpha=\"0\"/>");
+            if (s.fillColor != null) {
+                sb.append("<hc:fillBrush><hc:winBrush faceColor=\"").append(Xml.color(s.fillColor))
+                  .append("\" hatchColor=\"#000000\" alpha=\"0\"/></hc:fillBrush>");
+            }
+            sb.append("<hp:shadow type=\"NONE\" color=\"#B2B2B2\" offsetX=\"0\" offsetY=\"0\" alpha=\"0\"/>");
+            if (s.kind == WShape.Kind.ELLIPSE) {
+                sb.append("<hc:center x=\"").append(s.width / 2).append("\" y=\"").append(s.height / 2).append("\"/>")
+                  .append("<hc:ax1 x=\"").append(s.width).append("\" y=\"").append(s.height / 2).append("\"/>")
+                  .append("<hc:ax2 x=\"").append(s.width / 2).append("\" y=\"0\"/>")
+                  .append("<hc:start1 x=\"0\" y=\"0\"/><hc:end1 x=\"0\" y=\"0\"/><hc:start2 x=\"0\" y=\"0\"/><hc:end2 x=\"0\" y=\"0\"/>");
+            } else if (s.kind == WShape.Kind.ARC) {
+                sb.append("<hc:center x=\"").append(s.arcCenter[0]).append("\" y=\"").append(s.arcCenter[1]).append("\"/>")
+                  .append("<hc:ax1 x=\"").append(s.arcAxis1[0]).append("\" y=\"").append(s.arcAxis1[1]).append("\"/>")
+                  .append("<hc:ax2 x=\"").append(s.arcAxis2[0]).append("\" y=\"").append(s.arcAxis2[1]).append("\"/>");
+            } else if (s.kind == WShape.Kind.POLYGON) {
+                for (int[] pt : s.points) {
+                    sb.append("<hc:pt x=\"").append(pt[0]).append("\" y=\"").append(pt[1]).append("\"/>");
+                }
+            } else {
+                // 곡선: 이웃한 두 점마다 세그먼트 하나
+                for (int i = 0; i + 1 < s.points.size(); i++) {
+                    int[] a = s.points.get(i), b = s.points.get(i + 1);
+                    sb.append("<hp:seg type=\"CURVE\" x1=\"").append(a[0]).append("\" y1=\"").append(a[1])
+                      .append("\" x2=\"").append(b[0]).append("\" y2=\"").append(b[1]).append("\"/>");
+                }
+            }
         } else if (s.kind == WShape.Kind.LINE || s.kind == WShape.Kind.RECT) {
             // 선, 글 없는 사각형
             sb.append("<hp:lineShape color=\"").append(Xml.color(s.lineColor)).append("\" width=\"").append(s.lineWidth)
@@ -232,7 +270,7 @@ final class SectionXml {
           // 거리는 부호 없는 32비트로 쓴다 (한글: -1 → 4294967295. 가져오기도 parseUnsignedInt)
           .append("\" vertOffset=\"").append(s.vertOffset & 0xFFFFFFFFL).append("\" horzOffset=\"").append(s.horzOffset & 0xFFFFFFFFL).append("\"/>");
         sb.append("<hp:outMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
-        sb.append("<hp:shapeComment>").append(s.kind == WShape.Kind.PICTURE ? "그림입니다." : s.kind == WShape.Kind.LINE ? "선입니다." : "사각형입니다.").append("</hp:shapeComment>");
+        sb.append("<hp:shapeComment>").append(shapeComment(s.kind)).append("</hp:shapeComment>");
         sb.append("</").append(tag).append('>');
     }
 
@@ -279,6 +317,43 @@ final class SectionXml {
         if (sec.pageNumPos != null) {
             sb.append("<hp:ctrl><hp:pageNum pos=\"").append(sec.pageNumPos).append("\" formatType=\"").append(sec.pageNumFormat)
               .append("\" sideChar=\"").append(Xml.esc(sec.pageNumSideChar)).append("\"/></hp:ctrl>");
+        }
+    }
+
+    private static String shapeTag(WShape.Kind k) {
+        switch (k) {
+        case PICTURE:   return "hp:pic";
+        case LINE:      return "hp:line";
+        case ELLIPSE:   return "hp:ellipse";
+        case ARC:       return "hp:arc";
+        case POLYGON:   return "hp:polygon";
+        case CURVE:     return "hp:curve";
+        default:        return "hp:rect";
+        }
+    }
+
+    /** 개체 종류별 고유 속성 (여는 태그의 마지막 속성) */
+    private static String shapeAttrs(WShape s) {
+        switch (s.kind) {
+        case PICTURE:   return " reverse=\"0\"";
+        case LINE:      return " isReverseHV=\"0\"";
+        case ELLIPSE:   return " intervalDirty=\"0\" hasArcPr=\"0\" arcType=\"NORMAL\"";
+        case ARC:       return " type=\"" + s.arcType + "\"";
+        case POLYGON:
+        case CURVE:     return "";
+        default:        return " ratio=\"0\"";
+        }
+    }
+
+    private static String shapeComment(WShape.Kind k) {
+        switch (k) {
+        case PICTURE:   return "그림입니다.";
+        case LINE:      return "선입니다.";
+        case ELLIPSE:   return "타원입니다.";
+        case ARC:       return "호입니다.";
+        case POLYGON:   return "다각형입니다.";
+        case CURVE:     return "곡선입니다.";
+        default:        return "사각형입니다.";
         }
     }
 
