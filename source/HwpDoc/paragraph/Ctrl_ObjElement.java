@@ -22,6 +22,7 @@ package HwpDoc.paragraph;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -213,19 +214,32 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                         
                         switch(grandChild.getNodeName()) {
                         case "hc:transMatrix":
-                            if (matrix!=null) {
-                                setMatrix(grandChild, matrix, 0);
+                            if (matrix == null) {
+                                matrix = new double[6];
                             }
+                            setMatrix(grandChild, matrix, 0);
                             break;
                         case "hc:scaMatrix":
-                            if (matrixSeq!=null) {
-                                setMatrix(grandChild, matrixSeq, scaMatCnt*12+0);
+                            {
+                                int offset = scaMatCnt * 12 + 0;
+                                if (matrixSeq == null) {
+                                    matrixSeq = new double[offset + 12];
+                                } else if (offset + 6 > matrixSeq.length) {
+                                    matrixSeq = Arrays.copyOf(matrixSeq, offset + 12);
+                                }
+                                setMatrix(grandChild, matrixSeq, offset);
                                 scaMatCnt++;
                             }
                             break;
                         case "hc:rotMatrix":
-                            if (matrixSeq!=null) {
-                                setMatrix(grandChild, matrixSeq, rotMatCnt*12+6);
+                            {
+                                int offset = rotMatCnt * 12 + 6;
+                                if (matrixSeq == null) {
+                                    matrixSeq = new double[offset + 12];
+                                } else if (offset + 6 > matrixSeq.length) {
+                                    matrixSeq = Arrays.copyOf(matrixSeq, offset + 12);
+                                }
+                                setMatrix(grandChild, matrixSeq, offset);
                                 rotMatCnt++;
                             }
                             break;
@@ -237,7 +251,7 @@ public class Ctrl_ObjElement extends Ctrl_Common {
                         	}
                         }
                     }
-                    matCnt = scaMatCnt;
+                    matCnt = (short) Math.max(scaMatCnt, rotMatCnt);
                 }
                 node.removeChild(child);
                 break;

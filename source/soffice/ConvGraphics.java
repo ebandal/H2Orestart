@@ -96,8 +96,11 @@ import HwpDoc.paragraph.Ctrl;
 import HwpDoc.paragraph.Ctrl_AutoNumber;
 import HwpDoc.paragraph.Ctrl_Character;
 import HwpDoc.paragraph.Ctrl_Common;
+import HwpDoc.paragraph.Ctrl_Common.HeightRelTo;
+import HwpDoc.paragraph.Ctrl_Common.WidthRelTo;
 import HwpDoc.paragraph.Ctrl_Container;
 import HwpDoc.paragraph.Ctrl_GeneralShape;
+import HwpDoc.paragraph.Ctrl_SectionDef;
 import HwpDoc.paragraph.Ctrl_ShapeArc;
 import HwpDoc.paragraph.Ctrl_ShapeCurve;
 import HwpDoc.paragraph.Ctrl_ShapeEllipse;
@@ -175,6 +178,91 @@ public class ConvGraphics {
         }
     }
 
+    /**
+     * 개체 공통속성의 폭을 hwpunit으로 구한다.
+     * widthRelTo가 ABSOLUTE가 아니면 width는 기준 영역에 대한 비율(10000 = 100%)이다.
+     */
+    static int getObjectWidth(Ctrl_Common obj) {
+        int width = Math.abs(obj.width);
+        if (obj.widthRelto == null || obj.widthRelto == WidthRelTo.ABSOLUTE) {
+            return width;
+        }
+        Ctrl_SectionDef secd = ConvPage.getCurrentPage();
+        if (secd == null || secd.page == null) {
+            return width;
+        }
+        Page page = secd.page;
+        long base = page.landscape ? page.height : page.width;
+        if (obj.widthRelto != WidthRelTo.PAPER) {
+            // PAGE: 종이에서 좌우 여백을 뺀 영역. COLUMN, PARA는 단/문단 폭을 알 수 없어 쪽 영역으로 근사한다.
+            base -= page.marginLeft + page.marginRight;
+        }
+        return (int) (base * width / 10000);
+    }
+
+    /**
+     * 개체 공통속성의 높이를 hwpunit으로 구한다.
+     * heightRelTo가 ABSOLUTE가 아니면 height는 기준 영역에 대한 비율(10000 = 100%)이다.
+     */
+    static int getObjectHeight(Ctrl_Common obj) {
+        int height = Math.abs(obj.height);
+        if (obj.heightRelto == null || obj.heightRelto == HeightRelTo.ABSOLUTE) {
+            return height;
+        }
+        Ctrl_SectionDef secd = ConvPage.getCurrentPage();
+        if (secd == null || secd.page == null) {
+            return height;
+        }
+        Page page = secd.page;
+        long base = page.landscape ? page.width : page.height;
+        if (obj.heightRelto != HeightRelTo.PAPER) {
+            // PAGE: 종이에서 위아래 여백과 머리말/꼬리말 여백을 뺀 영역
+            base -= page.marginTop + page.marginBottom + page.marginHeader + page.marginFooter;
+        }
+        return (int) (base * height / 10000);
+    }
+
+    /**
+     * 그림의 크기(hwpunit). curWidth/curHeight는 묶기/풀기를 거친 그림에서 실제 크기와 다를 수 있으므로(issue #84)
+     * 개체 공통속성의 크기를 쓴다. 다만 회전된 그림은 공통속성 크기가 회전 후 외접 사각형이라 curWidth/curHeight를 유지한다.
+     */
+    private static int[] getPictureSize(Ctrl_ShapePic pic) {
+        int width = getObjectWidth(pic);
+        int height = getObjectHeight(pic);
+        boolean absolute = (pic.widthRelto == null || pic.widthRelto == WidthRelTo.ABSOLUTE)
+                            && (pic.heightRelto == null || pic.heightRelto == HeightRelTo.ABSOLUTE);
+        if ((pic.rotat != 0 && absolute) || width == 0 || height == 0) {
+            if (pic.curWidth != 0 && pic.curHeight != 0) {
+                width = Math.abs(pic.curWidth);
+                height = Math.abs(pic.curHeight);
+            }
+        }
+        return new int[] { width, height };
+    }
+
+    /**
+     * 묶음에 속하지 않은 도형의 크기(hwpunit). 기본은 curWidth/curHeight 이고, 값이 없으면 개체 공통속성 크기를 쓴다.
+     * 공통속성의 크기가 비율(widthRelTo/heightRelTo가 ABSOLUTE가 아님)로 지정된 방향은 기준 영역에서 환산한 값을 쓴다.
+     * 비율 지정 도형은 curWidth/curHeight 가 0 이거나 옛 값일 수 있다.
+     */
+    private static int[] getShapeSize(Ctrl_GeneralShape shape) {
+        int width = Math.abs(shape.curWidth);
+        int height = Math.abs(shape.curHeight);
+        if (width == 0 || height == 0) {
+            width = getObjectWidth(shape);
+            height = getObjectHeight(shape);
+        }
+        if (shape.nGrp == 0) {
+            if (shape.widthRelto != null && shape.widthRelto != WidthRelTo.ABSOLUTE) {
+                width = getObjectWidth(shape);
+            }
+            if (shape.heightRelto != null && shape.heightRelto != HeightRelTo.ABSOLUTE) {
+                height = getObjectHeight(shape);
+            }
+        }
+        return new int[] { width, height };
+    }
+
     private static void insertPICTURE(WriterContext wContext, Ctrl_ShapePic pic, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasCaption = pic.caption == null ? false : pic.caption.size() == 0 ? false : true;
 
@@ -191,13 +279,10 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                /* transform을 거치지 않는 TextGrapicObject는 curWidth curHeight 로 크기 설정 */
-                sizeWidth = Math.abs(pic.curWidth);
-                sizeHeight = Math.abs(pic.curHeight);
-                if (sizeWidth==0 || sizeHeight==0) {
-                    sizeWidth = Math.abs(pic.width);
-                    sizeHeight = Math.abs(pic.height);
-                }
+                /* transform을 거치지 않는 TextGrapicObject는 개체 공통속성의 width height 로 크기 설정 */
+                int[] picSize = getPictureSize(pic);
+                sizeWidth = picSize[0];
+                sizeHeight = picSize[1];
             } else {
                 sizeWidth = shapeWidth;
                 sizeHeight = shapeHeight;
@@ -404,7 +489,7 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                /* transform을 거치지 않는 TextGrapicObject는 curWidth curHeight 로 크기 설정 */
+                /* transform을 거치지 않는 TextGrapicObject는 width height 로 크기 설정 */
                 sizeWidth = Math.abs(vid.width);
                 sizeHeight = Math.abs(vid.height);
                 if (sizeWidth==0 || sizeHeight==0) {
@@ -728,12 +813,9 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = Math.abs(shape.curWidth);
-                sizeHeight = Math.abs(shape.curHeight);
-                if (sizeWidth==0 || sizeHeight==0) {
-                    sizeWidth = Math.abs(shape.width);
-                    sizeHeight = Math.abs(shape.height);
-                }
+                int[] shapeSize = getShapeSize(shape);
+                sizeWidth = shapeSize[0];
+                sizeHeight = shapeSize[1];
                 if (shape.rotat != 0) {
                     Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                     Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -866,12 +948,9 @@ public class ConvGraphics {
             if (shape.nGrp == 0) {
                 int sizeWidth = 0, sizeHeight = 0;
                 if (shapeWidth <= 0 && shapeHeight <= 0) {
-                    sizeWidth = Math.abs(shape.curWidth);
-                    sizeHeight = Math.abs(shape.curHeight);
-                    if (sizeWidth==0 || sizeHeight==0) {
-                        sizeWidth = Math.abs(shape.width);
-                        sizeHeight = Math.abs(shape.height);
-                    }
+                    int[] shapeSize = getShapeSize(shape);
+                    sizeWidth = shapeSize[0];
+                    sizeHeight = shapeSize[1];
                     if (shape.rotat != 0) {
                         Point2D ptSrc = new Point2D.Double(shape.curWidth, shape.curHeight);
                         Point2D ptDst = Transform.rotateValue(shape.rotat, ptSrc);
@@ -1029,14 +1108,11 @@ public class ConvGraphics {
                 if (pic.nGrp == 0) {
                     int sizeWidth = 0, sizeHeight = 0;
                     if (shapeWidth <= 0 && shapeHeight <= 0) {
-                        sizeWidth = Math.abs(pic.curWidth);
-                        sizeHeight = Math.abs(pic.curHeight);
-                        if (sizeWidth==0 || sizeHeight==0) {
-                            sizeWidth = Math.abs(pic.width);
-                            sizeHeight = Math.abs(pic.height);
-                        }
+                        int[] picSize = getPictureSize(pic);
+                        sizeWidth = picSize[0];
+                        sizeHeight = picSize[1];
                         if (pic.rotat != 0) {
-                            Point2D ptSrc = new Point2D.Double(pic.curWidth, pic.curHeight);
+                            Point2D ptSrc = new Point2D.Double(sizeWidth, sizeHeight);
                             Point2D ptDst = Transform.rotateValue(pic.rotat, ptSrc);
                             sizeWidth = (int) ptDst.getX();
                             sizeHeight = (int) ptDst.getY();
@@ -1335,12 +1411,9 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = Math.abs(ell.curWidth);
-                sizeHeight = Math.abs(ell.curHeight);
-                if (sizeWidth==0 || sizeHeight==0) {
-                    sizeWidth = Math.abs(ell.width);
-                    sizeHeight = Math.abs(ell.height);
-                }
+                int[] shapeSize = getShapeSize(ell);
+                sizeWidth = shapeSize[0];
+                sizeHeight = shapeSize[1];
             } else {
                 sizeWidth = shapeWidth;
                 sizeHeight = shapeHeight;
@@ -1467,12 +1540,9 @@ public class ConvGraphics {
             // int sizeHeight = shapeHeight <= 0 ? pol.curHeight : shapeHeight;
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = Math.abs(pol.curWidth);
-                sizeHeight = Math.abs(pol.curHeight);
-                if (sizeWidth==0 || sizeHeight==0) {
-                    sizeWidth = Math.abs(pol.width);
-                    sizeHeight = Math.abs(pol.height);
-                }
+                int[] shapeSize = getShapeSize(pol);
+                sizeWidth = shapeSize[0];
+                sizeHeight = shapeSize[1];
             } else {
                 sizeWidth = shapeWidth;
                 sizeHeight = shapeHeight;
@@ -1529,6 +1599,11 @@ public class ConvGraphics {
             	XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
             	// 투명하게 해야 도형이 보인다.
             	frameProps.setPropertyValue("FillTransparence", 100);
+            } else {
+                // 글상자/캡션이 없는 다각형은 본문에 직접 넣는다. (v0.6.6 정리 때 빠진 삽입 복원)
+                wContext.mText.insertTextContent(wContext.mTextCursor, xTextContentShape, false);
+                // 좌표를 넣으면 크기가 좌표 범위로 바뀌므로 크기를 다시 지정한다.
+                xShape.setSize(aSize);
             }
 
             if (wContext.version >= 72) {
@@ -1597,12 +1672,9 @@ public class ConvGraphics {
             }
 
             int sizeWidth = 0, sizeHeight = 0;
-            sizeWidth = Math.abs(cur.curWidth);
-            sizeHeight = Math.abs(cur.curHeight);
-            if (sizeWidth==0 || sizeHeight==0) {
-                sizeWidth = Math.abs(cur.width);
-                sizeHeight = Math.abs(cur.height);
-            }
+            int[] shapeSize = getShapeSize(cur);
+            sizeWidth = shapeSize[0];
+            sizeHeight = shapeSize[1];
 
             Object shapeObj = wContext.mMSF.createInstance(shapeString);
             XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, shapeObj);
@@ -1816,12 +1888,9 @@ public class ConvGraphics {
 
             int sizeWidth = 0, sizeHeight = 0;
             if (shapeWidth <= 0 && shapeHeight <= 0) {
-                sizeWidth = Math.abs(arc.curWidth);
-                sizeHeight = Math.abs(arc.curHeight);
-                if (sizeWidth==0 || sizeHeight==0) {
-                    sizeWidth = Math.abs(arc.width);
-                    sizeHeight = Math.abs(arc.height);
-                }
+                int[] shapeSize = getShapeSize(arc);
+                sizeWidth = shapeSize[0];
+                sizeHeight = shapeSize[1];
             } else {
                 sizeWidth = shapeWidth;
                 sizeHeight = shapeHeight;

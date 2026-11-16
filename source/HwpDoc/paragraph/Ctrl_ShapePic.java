@@ -37,6 +37,7 @@ import HwpDoc.IContext;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.Exception.NotImplementedException;
 import HwpDoc.HwpElement.HwpRecord_BinData.Compressed;
+import HwpDoc.HwpElement.HwpRecordTypes.LineStyle2;
 
 public class Ctrl_ShapePic extends Ctrl_GeneralShape {
     private static final Logger log = Logger.getLogger(Ctrl_ShapePic.class.getName());
@@ -85,7 +86,15 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
         NamedNodeMap attributes = node.getAttributes();
         // attributes.getNamedItem("reverse").getNodeValue();
         String numStr;
-        
+
+        // hp:lineShape(그림 테두리)는 Ctrl_GeneralShape에서 lineColor/lineThick/lineStyle로 읽는다.
+        // 그림은 borderColor/borderThick 으로 테두리를 그리므로 HWP와 같은 필드로 옮겨준다.
+        if (lineStyle != null && lineStyle != LineStyle2.NONE) {
+            borderColor = lineColor;
+            borderThick = lineThick;
+            borderAttr = lineStyle.ordinal();
+        }
+
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
