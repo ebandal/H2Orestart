@@ -1195,6 +1195,38 @@ public class ConvTable {
             HwpCallback callback = new HwpCallback() {
                 @Override
                 public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {
+                    // 머리말/꼬리말 안의 표에 들어있는 쪽번호, 전체쪽수는 필드로 넣는다.
+                    if (autoNumber.numType != Ctrl_AutoNumber.NumType.PAGE
+                            && autoNumber.numType != Ctrl_AutoNumber.NumType.TOTAL_PAGE) {
+                        return;
+                    }
+                    try {
+                        XTextField numField;
+                        if (autoNumber.numType == Ctrl_AutoNumber.NumType.TOTAL_PAGE) {
+                            numField = UnoRuntime.queryInterface(XTextField.class,
+                                    wContext.mMSF.createInstance("com.sun.star.text.textfield.PageCount"));
+                        } else {
+                            numField = UnoRuntime.queryInterface(XTextField.class,
+                                    wContext.mMSF.createInstance("com.sun.star.text.textfield.PageNumber"));
+                        }
+                        XPropertySet numFieldProp = UnoRuntime.queryInterface(XPropertySet.class, numField);
+                        numFieldProp.setPropertyValue("NumberingType", com.sun.star.style.NumberingType.ARABIC);
+                        if (autoNumber.numType == Ctrl_AutoNumber.NumType.PAGE) {
+                            numFieldProp.setPropertyValue("SubType", PageNumberType.CURRENT);
+                        }
+
+                        childContext.mTextCursor.gotoEnd(false);
+                        HwpRecord_CharShape fieldCharShape = wContext.getCharShape(charShapeID[0]);
+                        if (fieldCharShape != null) {
+                            XPropertySet cursorProps = UnoRuntime.queryInterface(XPropertySet.class, childContext.mTextCursor);
+                            ConvPara.setCharacterProperties(cursorProps, fieldCharShape,
+                                    wContext.getBorderFill(fieldCharShape.borderFillIDRef), step);
+                        }
+                        childContext.mText.insertTextContent(childContext.mTextCursor, numField, false);
+                        childContext.mTextCursor.gotoEnd(false);
+                    } catch (Exception e) {
+                        log.log(Level.SEVERE, e.toString(), e);
+                    }
                 };
 
                 @Override
@@ -1221,6 +1253,7 @@ public class ConvTable {
                         log.log(Level.SEVERE, e.toString(), e);
                     }
                     HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
+                    charShapeID[0] = (short) charShapeId;
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
                                                paraShapeTemp, charShape, append, true, step);
                     return true;
