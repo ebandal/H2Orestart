@@ -73,18 +73,21 @@ public class Ctrl_ShapeArc extends Ctrl_GeneralShape {
             Node child = nodeList.item(i);
             NamedNodeMap childAttrs = child.getAttributes();
             switch(child.getNodeName()) {
+            case "hc:center":   // 실제 HWPX는 hc: 접두어를 쓴다
             case "hp:center":   // 중심좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 centerX = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 centerY = Integer.parseInt(numStr);
                 break;
+            case "hc:ax1":   // 실제 HWPX는 hc: 접두어를 쓴다
             case "hp:ax1":  // 제1축 좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 axixX1 = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y").getNodeValue();
                 axixY1 = Integer.parseInt(numStr);
                 break;
+            case "hc:ax2":   // 실제 HWPX는 hc: 접두어를 쓴다
             case "hp:ax2":  // 제2축 좌표
                 numStr = childAttrs.getNamedItem("x").getNodeValue();
                 axixX2 = Integer.parseInt(numStr);

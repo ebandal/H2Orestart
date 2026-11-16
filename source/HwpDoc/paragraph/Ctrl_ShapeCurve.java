@@ -59,9 +59,10 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
         String numStr;
         NodeList nodeList = node.getChildNodes();
         
-        nPoints = nodeList.getLength();
-        points = new Point[nodeList.getLength()];
-        segmentType = new byte[nodeList.getLength()];
+        // 세그먼트 n개는 점 n+1개를 만든다. (각 세그먼트의 시작점 + 마지막 세그먼트의 끝점)
+        java.util.List<Point> pointList = new java.util.ArrayList<Point>();
+        java.util.List<Byte> segTypeList = new java.util.ArrayList<Byte>();
+        Point lastEnd = null;
         
         for (int i=0; i<nodeList.getLength(); i++) {
             Node child = nodeList.item(i);
@@ -70,22 +71,29 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
             case "hp:seg":   // 곡선 세그먼트
                 switch(childAttrs.getNamedItem("type").getNodeValue()) {    // 곡선 세그먼트 형식
                 case "CURVE":
-                    segmentType[i] = 1;     break;
+                    segTypeList.add((byte) 1);     break;
                 case "LINE":
-                    segmentType[i] = 0;     break;
+                    segTypeList.add((byte) 0);     break;
                 default:
                     if (log.isLoggable(Level.FINE)) {
                         throw new NotImplementedException("Ctrl_ShapeCurve");
                     }
+                    segTypeList.add((byte) 0);
                     break;
                 }
-                points[i] = new Point();
+                Point start = new Point();
                 numStr = childAttrs.getNamedItem("x1").getNodeValue();
-                points[i].x = Integer.parseInt(numStr);
+                start.x = Integer.parseInt(numStr);
                 numStr = childAttrs.getNamedItem("y1").getNodeValue();
-                points[i].y = Integer.parseInt(numStr);
-                // childAttrs.getNamedItem("x2").getNodeValue();
-                // childAttrs.getNamedItem("y2").getNodeValue();
+                start.y = Integer.parseInt(numStr);
+                pointList.add(start);
+                if (childAttrs.getNamedItem("x2") != null && childAttrs.getNamedItem("y2") != null) {
+                    lastEnd = new Point();
+                    lastEnd.x = Integer.parseInt(childAttrs.getNamedItem("x2").getNodeValue());
+                    lastEnd.y = Integer.parseInt(childAttrs.getNamedItem("y2").getNodeValue());
+                } else {
+                    lastEnd = null;
+                }
                 break;
             case "#text":   // issue #79 대응
                 break;
@@ -96,6 +104,15 @@ public class Ctrl_ShapeCurve extends Ctrl_GeneralShape {
                 }
                 break;
             }
+        }
+        if (lastEnd != null) {
+            pointList.add(lastEnd);
+        }
+        nPoints = pointList.size();
+        points = pointList.toArray(new Point[0]);
+        segmentType = new byte[segTypeList.size()];
+        for (int i=0; i<segmentType.length; i++) {
+            segmentType[i] = segTypeList.get(i);
         }
     }
 
