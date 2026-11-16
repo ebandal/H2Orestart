@@ -44,6 +44,7 @@ import HwpxWriter.WDocument;
 import HwpxWriter.WParaPr;
 import HwpxWriter.WParagraph;
 import HwpxWriter.WSection;
+import HwpxWriter.WShape;
 
 /**
  * LibreOffice Writer 문서(UNO) 를 HWPX 쓰기용 모델(WDocument) 로 옮긴다.
@@ -66,6 +67,7 @@ public class LoToHwpx {
 
     public static WDocument convert(XComponent component, com.sun.star.uno.XComponentContext context) {
         LoToHwpx c = new LoToHwpx();
+        c.ctx = context;
         if (context != null) {
             try {
                 Object o = context.getServiceManager().createInstanceWithContext("com.sun.star.awt.Toolkit", context);
@@ -80,6 +82,7 @@ public class LoToHwpx {
             throw new IllegalArgumentException("not a text document");
         }
         c.doc.sections.add(c.section);
+        c.textDoc = textDoc;
         c.page(textDoc);
         c.text(textDoc.getText(), c.section.paragraphs, c.bodyWidthMm100);
         c.finishParaPrs();
@@ -87,7 +90,7 @@ public class LoToHwpx {
         java.util.List<WParagraph> body = c.section.paragraphs;
         if (body.size() > 1) {
             WParagraph last = body.get(body.size() - 1);
-            if (last.table == null && last.text().isEmpty()) {
+            if (last.table == null && !last.hasShape() && last.text().isEmpty()) {
                 body.remove(body.size() - 1);
                 WParagraph prev = body.get(body.size() - 1);
                 if (prev.table != null && c.lastBodyPara != null) {
@@ -125,6 +128,7 @@ public class LoToHwpx {
         final WParaPr pr;
         final int rawHeight;        // LibreOffice 비례 줄 간격
         int alphaCp;                // 보정값을 정하는 글자 모양 (가져오기가 문단 속성을 마지막으로 설정할 때의 글자 모양)
+        double fixedAlpha;          // 0 보다 크면 글자 모양 대신 이 보정값 (가져오기가 개체를 넣으며 마지막으로 설정)
         PendingPr(WParagraph para, WParaPr pr, int alphaCp) {
             this.para = para;
             this.pr = pr;
@@ -141,7 +145,7 @@ public class LoToHwpx {
     /** 미뤄 둔 문단 모양을 확정한다 */
     private void finishParaPrs() {
         for (PendingPr pp : pending.values()) {
-            double alpha = importAlpha(pp.alphaCp);
+            double alpha = pp.fixedAlpha > 0 ? pp.fixedAlpha : importAlpha(pp.alphaCp);
             pp.pr.lineSpacing = (int) Math.ceil(pp.rawHeight / alpha - 1e-9);    // 가져오기: (short)(v*보정값), 버림의 역
             pp.para.paraPrId = doc.addParaPr(pp.pr);
         }
@@ -182,6 +186,50 @@ public class LoToHwpx {
     /** 본문의 마지막 문단 (문단 속성) */
     private XPropertySet lastBodyPara;
 
+    private com.sun.star.uno.XComponentContext ctx;
+    private XTextDocument textDoc;
+    /** LibreOffice 문단 스타일 이름 → 스타일 ID */
+    private final java.util.Map<String, Integer> styleIds = new java.util.HashMap<String, Integer>();
+
+    /**
+     * 문단 스타일 ID. 가져오기는 HWP 스타일마다 "HWP  {id} {이름}" 문단 스타일을 만들고 스타일의 글자 모양을 넣는다.
+     * 문단에 직접 글자 속성이 없으면(개체만 있는 문단 등) 스타일의 글자 속성이 보이므로, 스타일의 글자 모양도 쓴다.
+     */
+    private int styleId(String loName) {
+        if (loName == null || loName.isEmpty()) return 0;
+        Integer id = styleIds.get(loName);
+        if (id != null) return id;
+        HwpxWriter.WStyle st = new HwpxWriter.WStyle();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("^HWP\\s+\\d+\\s(.*)$").matcher(loName);
+        st.name = m.matches() ? m.group(1) : loName;
+        try {
+            XNameAccess fams = UnoRuntime.queryInterface(XStyleFamiliesSupplier.class, textDoc).getStyleFamilies();
+            XNameAccess paraStyles = UnoRuntime.queryInterface(XNameAccess.class, fams.getByName("ParagraphStyles"));
+            if (paraStyles.hasByName(loName)) {
+                XPropertySet sp = UnoRuntime.queryInterface(XPropertySet.class, paraStyles.getByName(loName));
+                st.charPrId = doc.addCharPr(charPr(sp));
+            }
+        } catch (com.sun.star.uno.Exception e) {
+            log.log(Level.WARNING, e.toString(), e);
+        }
+        if (styleIds.isEmpty()) {
+            // 처음 쓰는 스타일을 0 번(기본 스타일) 자리에 둔다
+            st.engName = doc.styleList.get(0).engName;
+            doc.styleList.set(0, st);
+            id = 0;
+        } else {
+            doc.styleList.add(st);
+            id = doc.styleList.size() - 1;
+        }
+        st.nextStyleId = id;
+        styleIds.put(loName, id);
+        return id;
+    }
+    /** 지금 쓰는 텍스트가 표 셀인가 (셀의 마지막 문단은 가져오기가 문단 끝을 넣지 않는다) */
+    private boolean inCellText;
+    /** 그리기 개체 순서 (zOrder, id) */
+    private int shapeSeq;
+
     /** 본문 폭 (1/100 mm). 표 가로 위치 계산에 쓴다 */
     private int bodyWidthMm100 = 16000;
 
@@ -215,13 +263,20 @@ public class LoToHwpx {
         // 표 문단의 문단 모양: 가져오기는 표 문단의 문단 모양을 표 뒤 문단에 먼저 적용한다 (그 문단에 글자가 없으면
         // 그대로 남는다). 표 뒤 문단과 같은 모양으로 써서 다시 읽어도 같게 한다
         // 셀의 마지막 문단: 가져오기는 문단 끝을 넣지 않으므로 마지막 글자 run 의 모양으로 문단 속성을 마지막 설정한다
-        if (target != section.paragraphs && target.size() > start) {
+        if (inCellText && target.size() > start) {
             WParagraph last = target.get(target.size() - 1);
             PendingPr pp = pending.get(last);
             if (pp != null) {
                 for (int k = last.runs.size() - 1; k >= 0; k--) {
-                    if (last.runs.get(k).text != null && !last.runs.get(k).text.isEmpty()) {
-                        pp.alphaCp = last.runs.get(k).charPrId;
+                    WParagraph.WRun r = last.runs.get(k);
+                    if (r.shape != null && !last.text().isEmpty()) {
+                        // 글자 뒤에 개체가 마지막이면 가져오기는 개체를 넣으며 고정 보정값(PARA_SPACING)으로 문단 속성을
+                        // 마지막 설정한다. 글자가 없으면 문단 끝(ConvTable)에서 문단 끝 글자 모양으로 설정한다
+                        pp.fixedAlpha = TABLE_PARA_ALPHA;
+                        break;
+                    }
+                    if (r.text != null && !r.text.isEmpty()) {
+                        pp.alphaCp = r.charPrId;
                         break;
                     }
                 }
@@ -333,7 +388,10 @@ public class LoToHwpx {
                     boolean saved = singleParaCell;
                     singleParaCell = countParagraphs(cellText) == 1;
                     int cellMm = (int) Math.round((b[i + 1] - b[i]) * (double) widthMm / relSum);
+                    boolean savedCell = inCellText;
+                    inCellText = true;
                     text(cellText, c.paragraphs, cellMm);
+                    inCellText = savedCell;
                     singleParaCell = saved;
                 }
                 t.cells.add(c);
@@ -411,6 +469,7 @@ public class LoToHwpx {
     private void paragraph(Object paraObj, java.util.List<WParagraph> target, boolean afterTable) throws com.sun.star.uno.Exception {
         XPropertySet pp = UnoRuntime.queryInterface(XPropertySet.class, paraObj);
         WParagraph p = new WParagraph();
+        p.styleId = styleId(AnyConverter.toString(pp.getPropertyValue("ParaStyleName")));
 
         Object bt = pp.getPropertyValue("BreakType");
         if (bt instanceof BreakType && (bt == BreakType.PAGE_BEFORE || bt == BreakType.PAGE_BOTH)) {
@@ -423,22 +482,45 @@ public class LoToHwpx {
             Object portion = en.nextElement();
             XPropertySet ps = UnoRuntime.queryInterface(XPropertySet.class, portion);
             String type = AnyConverter.toString(ps.getPropertyValue("TextPortionType"));
+            if ("Frame".equals(type)) {
+                // 글자처럼 놓인 개체 (그림, 글상자)
+                com.sun.star.container.XContentEnumerationAccess cea =
+                        UnoRuntime.queryInterface(com.sun.star.container.XContentEnumerationAccess.class, portion);
+                if (cea != null) {
+                    XEnumeration ce = cea.createContentEnumeration("com.sun.star.text.TextContent");
+                    while (ce.hasMoreElements()) {
+                        WShape sh = shape(ce.nextElement());
+                        if (sh != null) {
+                            p.runs.add(new WParagraph.WRun(doc.addCharPr(charPr(ps)), sh));
+                        }
+                    }
+                }
+                continue;
+            }
             if (!"Text".equals(type)) continue;
             String s = UnoRuntime.queryInterface(XTextRange.class, portion).getString();
             if (s.isEmpty()) continue;
             int cp = doc.addCharPr(charPr(ps));
 
             // 같은 글자 모양이 이어지면 run 을 합친다 (한글도 같은 모양은 한 run)
-            if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp) {
+            if (!p.runs.isEmpty() && p.runs.get(p.runs.size() - 1).charPrId == cp && p.runs.get(p.runs.size() - 1).shape == null) {
                 p.runs.get(p.runs.size() - 1).text += s;
             } else {
                 p.runs.add(new WParagraph.WRun(cp, s));
             }
         }
+        floatingShapes(paraObj, p);
         // 문단 끝 글자 모양 = 문단의 글자 속성. 가져오기는 문단 끝(beforeParaBreak)에서 이 모양으로 문단 속성을
         // 마지막으로 설정한다 (줄 간격 보정값 포함). HWPX 파서는 마지막 run 의 모양을 문단 끝 모양으로 쓰므로,
         // 마지막 run 과 다르면 빈 run 을 덧붙인다
         int endCp = doc.addCharPr(charPr(pp));
+        if (p.text().isEmpty()) {
+            // 글자 없이 개체만 있는 문단: 개체 run 의 글자 모양은 가져오기에서 쓰이지 않고(빈칸 등도 없음) 문단 끝 모양만
+            // 문단에 적용된다. 개체 run 도 문단 끝 모양으로 써서 다시 읽어도 문단 글자 모양(줄 간격 보정 글꼴)이 같게 한다
+            for (WParagraph.WRun r : p.runs) {
+                if (r.shape != null) r.charPrId = endCp;
+            }
+        }
         if (p.runs.isEmpty() || p.runs.get(p.runs.size() - 1).charPrId != endCp) {
             p.runs.add(new WParagraph.WRun(endCp, ""));
         }
@@ -449,6 +531,224 @@ public class LoToHwpx {
             p.paraPrId = doc.addParaPr(wpp);
         }
         target.add(p);
+    }
+
+    /**
+     * 문단에 붙은(글자처럼 취급하지 않는) 개체를 문단 앞에 넣는다. 가져오기는 이런 개체를 넣은 뒤 빈칸 하나를
+     * 덧붙인다 (ConvGraphics, LibreOffice 7.2 이상). 개체를 문단 맨 앞에 쓰므로 다시 읽으면 빈칸이 문단 앞에 생긴다.
+     * 개체마다 문단 앞의 빈칸 하나를 뺀다.
+     */
+    private void floatingShapes(Object paraObj, WParagraph p) throws com.sun.star.uno.Exception {
+        com.sun.star.container.XContentEnumerationAccess cea =
+                UnoRuntime.queryInterface(com.sun.star.container.XContentEnumerationAccess.class, paraObj);
+        if (cea == null) return;
+        XEnumeration ce = cea.createContentEnumeration("com.sun.star.text.TextContent");
+        java.util.List<WShape> shapes = new java.util.ArrayList<WShape>();
+        while (ce.hasMoreElements()) {
+            WShape sh = shape(ce.nextElement());
+            if (sh != null && !sh.treatAsChar) shapes.add(sh);
+        }
+        if (shapes.isEmpty()) return;
+        int cp = p.runs.isEmpty() ? doc.addCharPr(charPr(UnoRuntime.queryInterface(XPropertySet.class, paraObj)))
+                                  : p.runs.get(0).charPrId;
+        for (int k = 0; k < shapes.size(); k++) {
+            // 문단 앞의 빈칸 하나 빼기
+            for (WParagraph.WRun r : p.runs) {
+                if (r.shape != null || r.text == null || r.text.isEmpty()) continue;
+                if (r.text.charAt(0) == ' ') r.text = r.text.substring(1);
+                break;
+            }
+        }
+        for (int k = shapes.size() - 1; k >= 0; k--) {
+            p.runs.add(0, new WParagraph.WRun(cp, shapes.get(k)));
+        }
+        // 빈 run 정리 (개체 run 은 남긴다)
+        for (java.util.Iterator<WParagraph.WRun> it = p.runs.iterator(); it.hasNext();) {
+            WParagraph.WRun r = it.next();
+            if (r.shape == null && (r.text == null || r.text.isEmpty())) it.remove();
+        }
+    }
+
+    /** 그림(TextGraphicObject) 또는 글상자(TextFrame). 다른 개체는 null */
+    private WShape shape(Object obj) throws com.sun.star.uno.Exception {
+        XServiceInfo si = UnoRuntime.queryInterface(XServiceInfo.class, obj);
+        XPropertySet op = UnoRuntime.queryInterface(XPropertySet.class, obj);
+        if (si == null || op == null) return null;
+        WShape s;
+        if (si.supportsService("com.sun.star.text.TextGraphicObject")) {
+            s = new WShape(WShape.Kind.PICTURE);
+            if (!picture(op, s)) return null;
+        } else if (si.supportsService("com.sun.star.text.TextFrame")) {
+            s = new WShape(WShape.Kind.TEXTBOX);
+        } else {
+            return null;
+        }
+        s.zOrder = shapeSeq++;
+        int w = AnyConverter.toInt(op.getPropertyValue("Width"));
+        int h = AnyConverter.toInt(op.getPropertyValue("Height"));
+        s.width = hwp(w);
+        s.height = hwp(h);
+        Object at = op.getPropertyValue("AnchorType");
+        s.treatAsChar = at == com.sun.star.text.TextContentAnchorType.AS_CHARACTER;
+        if (!s.treatAsChar) {
+            position(op, s);
+            wrap(op, s);
+        }
+        if (s.kind == WShape.Kind.TEXTBOX) {
+            textBox(obj, op, s, w);
+        }
+        return s;
+    }
+
+    /** 위치: 가져오기(ConvGraphics.setPositionLO)의 역. 기준 위치에서의 거리는 모두 위/왼쪽 기준으로 쓴다 */
+    private static void position(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        short vo = AnyConverter.toShort(op.getPropertyValue("VertOrient"));
+        short vrel = AnyConverter.toShort(op.getPropertyValue("VertOrientRelation"));
+        int vpos = AnyConverter.toInt(op.getPropertyValue("VertOrientPosition"));
+        s.vertRelTo = vrel == com.sun.star.text.RelOrientation.PAGE_FRAME ? "PAPER"
+                    : vrel == com.sun.star.text.RelOrientation.PAGE_PRINT_AREA ? "PAGE" : "PARA";
+        if (vo == com.sun.star.text.VertOrientation.NONE) {
+            s.vertAlign = "TOP";
+            s.vertOffset = "PARA".equals(s.vertRelTo) ? Math.max(0, hwp(vpos)) : hwp(vpos);
+        } else {
+            s.vertAlign = vo == com.sun.star.text.VertOrientation.CENTER ? "CENTER"
+                        : vo == com.sun.star.text.VertOrientation.BOTTOM ? "BOTTOM" : "TOP";
+            s.vertOffset = 0;
+        }
+        short ho = AnyConverter.toShort(op.getPropertyValue("HoriOrient"));
+        short hrel = AnyConverter.toShort(op.getPropertyValue("HoriOrientRelation"));
+        int hpos = AnyConverter.toInt(op.getPropertyValue("HoriOrientPosition"));
+        s.horzRelTo = hrel == com.sun.star.text.RelOrientation.PAGE_FRAME ? "PAPER"
+                    : hrel == com.sun.star.text.RelOrientation.PAGE_PRINT_AREA ? "PAGE" : "PARA";
+        if (ho == com.sun.star.text.HoriOrientation.NONE) {
+            s.horzAlign = "LEFT";
+            s.horzOffset = hwp(hpos);
+        } else {
+            s.horzAlign = ho == com.sun.star.text.HoriOrientation.CENTER ? "CENTER"
+                        : ho == com.sun.star.text.HoriOrientation.RIGHT ? "RIGHT" : "LEFT";
+            s.horzOffset = 0;
+        }
+    }
+
+    /** 본문과의 배치: 가져오기(ConvGraphics.setWrapStyle)의 역 */
+    private static void wrap(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        Object tw = op.getPropertyValue("TextWrap");
+        boolean opaque = AnyConverter.toBoolean(op.getPropertyValue("Opaque"));
+        com.sun.star.text.WrapTextMode m = tw instanceof com.sun.star.text.WrapTextMode
+                ? (com.sun.star.text.WrapTextMode) tw : com.sun.star.text.WrapTextMode.NONE;
+        switch (m.getValue()) {
+        case com.sun.star.text.WrapTextMode.THROUGH_value:
+            s.textWrap = opaque ? "IN_FRONT_OF_TEXT" : "BEHIND_TEXT";
+            break;
+        case com.sun.star.text.WrapTextMode.PARALLEL_value:
+            s.textWrap = "SQUARE";
+            s.textFlow = "BOTH_SIDES";
+            break;
+        case com.sun.star.text.WrapTextMode.LEFT_value:
+            s.textWrap = "SQUARE";
+            s.textFlow = "LEFT_ONLY";
+            break;
+        case com.sun.star.text.WrapTextMode.RIGHT_value:
+            s.textWrap = "SQUARE";
+            s.textFlow = "RIGHT_ONLY";
+            break;
+        case com.sun.star.text.WrapTextMode.DYNAMIC_value:
+            // 가져오기는 글상자의 "글 앞으로" 와 그림의 "어울림-큰 쪽" 을 DYNAMIC 으로 둔다
+            if (s.kind == WShape.Kind.TEXTBOX) {
+                s.textWrap = "IN_FRONT_OF_TEXT";
+            } else {
+                s.textWrap = "SQUARE";
+                s.textFlow = "LARGEST_ONLY";
+            }
+            break;
+        default:
+            s.textWrap = "TOP_AND_BOTTOM";
+            break;
+        }
+    }
+
+    /** 그림: 그래픽을 PNG 로 저장해 바이너리 항목으로 넣는다 */
+    private boolean picture(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        Object g = op.getPropertyValue("Graphic");
+        com.sun.star.graphic.XGraphic graphic = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphic.class, g);
+        if (graphic == null || ctx == null) return false;
+        Object gp = ctx.getServiceManager().createInstanceWithContext("com.sun.star.graphic.GraphicProvider", ctx);
+        com.sun.star.graphic.XGraphicProvider prov = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphicProvider.class, gp);
+        // 임시 파일로 저장해 읽는다 (가져오기 ConvGraphics 와 같은 방법. 출력 스트림 어댑터로는 0 바이트가 나왔다)
+        byte[] data;
+        java.io.File tmp = null;
+        try {
+            tmp = java.io.File.createTempFile("H2O_EXP_", ".png");
+            com.sun.star.beans.PropertyValue[] pv = new com.sun.star.beans.PropertyValue[2];
+            pv[0] = new com.sun.star.beans.PropertyValue();
+            pv[0].Name = "URL";
+            pv[0].Value = tmp.toURI().toURL().toExternalForm();
+            pv[1] = new com.sun.star.beans.PropertyValue();
+            pv[1].Name = "MimeType";
+            pv[1].Value = "image/png";
+            prov.storeGraphic(graphic, pv);
+            data = java.nio.file.Files.readAllBytes(tmp.toPath());
+        } catch (java.io.IOException e) {
+            log.log(Level.WARNING, e.toString(), e);
+            return false;
+        } finally {
+            if (tmp != null && !tmp.delete()) tmp.deleteOnExit();
+        }
+        if (data == null || data.length == 0) return false;
+        s.binItemId = doc.addBinItem("png", data);
+        // 원본 그림 크기: 픽셀을 96 dpi 로 HWPUNIT 으로 (1 픽셀 = 75)
+        XPropertySet gps = UnoRuntime.queryInterface(XPropertySet.class, graphic);
+        int pw = 0, ph = 0;
+        if (gps != null && gps.getPropertySetInfo().hasPropertyByName("SizePixel")) {
+            Object sz = gps.getPropertyValue("SizePixel");
+            if (sz instanceof com.sun.star.awt.Size) {
+                pw = ((com.sun.star.awt.Size) sz).Width;
+                ph = ((com.sun.star.awt.Size) sz).Height;
+            }
+        }
+        s.imgWidth = pw > 0 ? pw * 75 : 7500;
+        s.imgHeight = ph > 0 ? ph * 75 : 7500;
+        return true;
+    }
+
+    /** 글상자: 테두리, 채우기, 글 여백, 세로 정렬, 내용 (가져오기 ConvGraphics.insertTextFrame 의 역) */
+    private void textBox(Object obj, XPropertySet op, WShape s, int widthMm) throws com.sun.star.uno.Exception {
+        Object tb = op.getPropertyValue("TopBorder");
+        if (tb instanceof com.sun.star.table.BorderLine2 && ((com.sun.star.table.BorderLine2) tb).LineWidth > 0) {
+            com.sun.star.table.BorderLine2 b = (com.sun.star.table.BorderLine2) tb;
+            s.lineColor = b.Color & 0xFFFFFF;
+            s.lineWidth = hwp(b.LineWidth);
+            switch (b.LineStyle) {
+            // HWPX 선 이름은 그려지는 모양과 반대 (DOT = 긴 점선, DASH = 점선). LineStyle2.fromXml 의 역
+            case com.sun.star.table.BorderLineStyle.DASHED:       s.lineStyle = "DOT";          break;
+            case com.sun.star.table.BorderLineStyle.DOTTED:       s.lineStyle = "DASH";         break;
+            case com.sun.star.table.BorderLineStyle.DASH_DOT:     s.lineStyle = "DASH_DOT";     break;
+            case com.sun.star.table.BorderLineStyle.DASH_DOT_DOT: s.lineStyle = "DASH_DOT_DOT"; break;
+            default:                                              s.lineStyle = "SOLID";        break;
+            }
+        }
+        Object fs = op.getPropertyValue("FillStyle");
+        if (fs == com.sun.star.drawing.FillStyle.SOLID) {
+            s.fillColor = AnyConverter.toInt(op.getPropertyValue("FillColor")) & 0xFFFFFF;
+        }
+        // 글 여백: 가져오기는 (여백 - 1mm) 를 테두리 간격으로 쓰고 1mm 이하는 0 으로 둔다
+        String[] dist = { "LeftBorderDistance", "RightBorderDistance", "TopBorderDistance", "BottomBorderDistance" };
+        for (int k = 0; k < 4; k++) {
+            int d = AnyConverter.toInt(op.getPropertyValue(dist[k]));
+            s.textMargin[k] = d <= 0 ? 283 : hwp(d + 100);
+        }
+        Object va = op.getPropertyValue("TextVerticalAdjust");
+        s.textVertAlign = va == com.sun.star.drawing.TextVerticalAdjust.CENTER ? "CENTER"
+                        : va == com.sun.star.drawing.TextVerticalAdjust.BOTTOM ? "BOTTOM" : "TOP";
+        com.sun.star.text.XTextFrame frame = UnoRuntime.queryInterface(com.sun.star.text.XTextFrame.class, obj);
+        if (frame != null) {
+            boolean savedCell = inCellText, savedSingle = singleParaCell;
+            inCellText = false;
+            singleParaCell = false;
+            text(frame.getText(), s.paragraphs, widthMm);
+            inCellText = savedCell;
+            singleParaCell = savedSingle;
+        }
     }
 
     private WCharPr charPr(XPropertySet ps) throws com.sun.star.uno.Exception {

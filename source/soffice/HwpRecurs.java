@@ -321,6 +321,11 @@ public class HwpRecurs {
             case "ruc$":    // 곡선
             case "div$":    // 비디오
             case "tat$":    // 글맵시
+                if (append == false) {
+                    // 문단의 첫 내용이 개체이면 문단 끝 글자 모양을 먼저 적용한다. 개체를 넣은 뒤에는 문단이 비어 있지 않아
+                    // 문단 끝(beforeParaBreak)에서 설정한 글자 속성이 남지 않고 앞 문단의 글자 속성이 이어진다
+                    setEmptyParaCharShape(wContext, para, step);
+                }
                 ConvGraphics.insertGraphic(wContext, (Ctrl_GeneralShape)ctrl, para.paraShapeID, step);
                 break;
             case "deqe":    // 한글97 수식
@@ -384,6 +389,35 @@ public class HwpRecurs {
      * firstParaAfterTable: 표 바로 다음 문단인지. 문단 모양 레코드는 문단들이 함께 쓰므로 매번 설정한다
      * (안 하면 앞 문단에서 남은 값으로 같은 모양의 빈 문단에도 표 다음 간격이 더해진다)
      */
+    /** 빈 문단(커서 위치)에 문단 끝(PARAGRAPH_BREAK) 의 글자 모양을 적용한다 */
+    private static void setEmptyParaCharShape(WriterContext wContext, HwpParagraph para, int step) {
+        Ctrl_Character brk = null;
+        for (Ctrl c : para.p) {
+            if (c instanceof Ctrl_Character && ((Ctrl_Character)c).ctrlChar == Ctrl_Character.CtrlCharType.PARAGRAPH_BREAK) {
+                brk = (Ctrl_Character) c;
+            }
+        }
+        if (brk == null) {
+            return;
+        }
+        HwpRecord_CharShape charShape = wContext.getCharShape((short) brk.charShapeId);
+        if (charShape == null) {
+            return;
+        }
+        XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
+        if (paraCursor == null) {
+            return;
+        }
+        paraCursor.gotoEnd(false);
+        XPropertySet props = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
+        try {
+            HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+            ConvPara.setCharacterProperties(props, charShape, borderFill, step);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
     public static void beforeParaBreak(WriterContext wContext,
                                         short paraShapeID, short charShapeID,
                                         boolean append, boolean firstParaAfterTable, int step) {

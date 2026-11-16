@@ -39,6 +39,14 @@ public class WParagraph {
         return runs.isEmpty() ? 0 : runs.get(runs.size() - 1).charPrId;
     }
 
+    /** 그리기 개체(그림/글상자)가 있는가 */
+    public boolean hasShape() {
+        for (WRun r : runs) {
+            if (r.shape != null) return true;
+        }
+        return false;
+    }
+
     /** 같은 run 의 텍스트를 이어 붙인 문자열 */
     public String text() {
         StringBuilder sb = new StringBuilder();
@@ -50,10 +58,18 @@ public class WParagraph {
     public static class WRun {
         public int charPrId;
         public String text;
+        /** 이 run 의 그리기 개체 (텍스트 앞에 쓴다). 없으면 null */
+        public WShape shape;
 
         public WRun(int charPrId, String text) {
             this.charPrId = charPrId;
             this.text = text;
+        }
+
+        public WRun(int charPrId, WShape shape) {
+            this.charPrId = charPrId;
+            this.text = "";
+            this.shape = shape;
         }
     }
 }

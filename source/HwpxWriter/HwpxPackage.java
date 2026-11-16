@@ -39,6 +39,11 @@ public final class HwpxPackage {
         stored(zip, "mimetype", "application/hwp+zip");
         stored(zip, "version.xml", versionXml());
         deflated(zip, "Contents/header.xml", HeaderXml.build(doc));
+        // 그림은 이미 압축된 형식이 많아 한글처럼 압축하지 않고 넣는다 (BMP 등은 압축)
+        for (WDocument.BinItem b : doc.binItems) {
+            boolean compressed = !("png".equals(b.ext) || "jpg".equals(b.ext) || "gif".equals(b.ext));
+            zip.add(b.path(), b.data, compressed);
+        }
         for (int i = 0; i < doc.sections.size(); i++) {
             deflated(zip, "Contents/section" + i + ".xml", SectionXml.build(doc, doc.sections.get(i)));
         }
@@ -97,6 +102,10 @@ public final class HwpxPackage {
         sb.append("<opf:manifest><opf:item id=\"header\" href=\"Contents/header.xml\" media-type=\"application/xml\"/>");
         for (int i = 0; i < doc.sections.size(); i++) {
             sb.append("<opf:item id=\"section").append(i).append("\" href=\"Contents/section").append(i).append(".xml\" media-type=\"application/xml\"/>");
+        }
+        for (WDocument.BinItem b : doc.binItems) {
+            sb.append("<opf:item id=\"").append(b.id).append("\" href=\"").append(b.path())
+              .append("\" media-type=\"").append(b.mediaType()).append("\" isEmbeded=\"1\"/>");
         }
         sb.append("<opf:item id=\"settings\" href=\"settings.xml\" media-type=\"application/xml\"/></opf:manifest>");
         sb.append("<opf:spine><opf:itemref idref=\"header\" linear=\"yes\"/>");

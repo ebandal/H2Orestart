@@ -90,6 +90,37 @@ public class WDocument {
         return paraPrList.size() - 1;
     }
 
+    /** 그림 등 바이너리 항목 (BinData/{id}.{ext}) */
+    public static class BinItem {
+        public final String id;
+        public final String ext;
+        public final byte[] data;
+
+        public BinItem(String id, String ext, byte[] data) {
+            this.id = id;
+            this.ext = ext;
+            this.data = data;
+        }
+
+        public String path() {
+            return "BinData/" + id + "." + ext;
+        }
+
+        /** content.hpf 의 media-type. 한글은 jpg 를 image/jpg 로 쓴다 (가져오기는 image/ 뒤를 형식 이름으로 쓴다) */
+        public String mediaType() {
+            return "image/" + ext;
+        }
+    }
+
+    public final List<BinItem> binItems = new ArrayList<BinItem>();
+
+    /** 바이너리 항목을 추가하고 id (image1, image2, ...) 를 돌려준다 */
+    public String addBinItem(String ext, byte[] data) {
+        String id = "image" + (binItems.size() + 1);
+        binItems.add(new BinItem(id, ext, data));
+        return id;
+    }
+
     /** 한글의 새 문서와 같은 기본 글꼴/글자 모양/문단 모양/스타일(바탕글) 을 넣은 문서 */
     public static WDocument createDefault() {
         WDocument doc = new WDocument();

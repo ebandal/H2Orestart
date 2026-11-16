@@ -55,8 +55,8 @@ final class SectionXml {
             sb.append("<hp:run charPrIDRef=\"").append(p.lastCharPrId()).append("\"><hp:t/></hp:run>");
         }
         for (WParagraph.WRun r : p.runs) {
-            if (p.table != null && (r.text == null || r.text.isEmpty())) continue;
-            run(sb, r);
+            if (p.table != null && r.shape == null && (r.text == null || r.text.isEmpty())) continue;
+            run(sb, sec, r);
         }
         sb.append("</hp:p>");
     }
@@ -104,9 +104,17 @@ final class SectionXml {
     }
 
     /** 텍스트를 hp:t 로 쓰고 탭/줄바꿈/묶음 빈칸/하이픈은 hp:t 안의 hp:tab, hp:lineBreak, hp:nbSpace, hp:hyphen 으로 쓴다 */
-    private static void run(StringBuilder sb, WParagraph.WRun r) {
-        sb.append("<hp:run charPrIDRef=\"").append(r.charPrId).append("\"><hp:t>");
+    private static void run(StringBuilder sb, WSection sec, WParagraph.WRun r) {
+        sb.append("<hp:run charPrIDRef=\"").append(r.charPrId).append("\">");
         String t = r.text == null ? "" : r.text;
+        if (r.shape != null) {
+            shape(sb, sec, r.shape);
+            if (t.isEmpty()) {
+                sb.append("</hp:run>");
+                return;
+            }
+        }
+        sb.append("<hp:t>");
         int start = 0;
         for (int i = 0; i < t.length(); i++) {
             char c = t.charAt(i);
@@ -126,6 +134,77 @@ final class SectionXml {
         }
         sb.append(Xml.esc(t.substring(start)));
         sb.append("</hp:t></hp:run>");
+    }
+
+    /** 그림(hp:pic) 또는 글상자(hp:rect + hp:drawText). 요소 구성은 한글 2022 출력과 같다 */
+    private static void shape(StringBuilder sb, WSection sec, WShape s) {
+        int id = 1000000000 + s.zOrder;
+        String tag = s.kind == WShape.Kind.PICTURE ? "hp:pic" : "hp:rect";
+        sb.append('<').append(tag).append(" id=\"").append(id).append("\" zOrder=\"").append(s.zOrder)
+          .append("\" numberingType=\"PICTURE\" textWrap=\"").append(s.textWrap).append("\" textFlow=\"").append(s.textFlow)
+          .append("\" lock=\"0\" dropcapstyle=\"None\" href=\"\" groupLevel=\"0\" instid=\"").append(id + 1)
+          .append(s.kind == WShape.Kind.PICTURE ? "\" reverse=\"0\">" : "\" ratio=\"0\">");
+        sb.append("<hp:offset x=\"0\" y=\"0\"/>");
+        sb.append("<hp:orgSz width=\"").append(s.width).append("\" height=\"").append(s.height).append("\"/>");
+        sb.append("<hp:curSz width=\"").append(s.width).append("\" height=\"").append(s.height).append("\"/>");
+        sb.append("<hp:flip horizontal=\"0\" vertical=\"0\"/>");
+        sb.append("<hp:rotationInfo angle=\"0\" centerX=\"").append(s.width / 2).append("\" centerY=\"").append(s.height / 2)
+          .append("\" rotateimage=\"1\"/>");
+        sb.append("<hp:renderingInfo><hc:transMatrix e1=\"1\" e2=\"0\" e3=\"0\" e4=\"0\" e5=\"1\" e6=\"0\"/>")
+          .append("<hc:scaMatrix e1=\"1\" e2=\"0\" e3=\"0\" e4=\"0\" e5=\"1\" e6=\"0\"/>")
+          .append("<hc:rotMatrix e1=\"1\" e2=\"0\" e3=\"0\" e4=\"0\" e5=\"1\" e6=\"0\"/></hp:renderingInfo>");
+        if (s.kind == WShape.Kind.PICTURE) {
+            sb.append("<hc:img binaryItemIDRef=\"").append(s.binItemId).append("\" bright=\"0\" contrast=\"0\" effect=\"REAL_PIC\" alpha=\"0\"/>");
+            sb.append("<hp:imgRect>");
+            points(sb, s.width, s.height);
+            sb.append("</hp:imgRect>");
+            // 자르기 없음 = 원본 그림 전체
+            sb.append("<hp:imgClip left=\"0\" right=\"").append(s.imgWidth).append("\" top=\"0\" bottom=\"").append(s.imgHeight).append("\"/>");
+            sb.append("<hp:inMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
+            sb.append("<hp:imgDim dimwidth=\"").append(s.imgWidth).append("\" dimheight=\"").append(s.imgHeight).append("\"/>");
+            sb.append("<hp:effects/>");
+        } else {
+            sb.append("<hp:lineShape color=\"").append(Xml.color(s.lineColor)).append("\" width=\"").append(s.lineWidth)
+              .append("\" style=\"").append(s.lineStyle)
+              .append("\" endCap=\"FLAT\" headStyle=\"NORMAL\" tailStyle=\"NORMAL\" headfill=\"1\" tailfill=\"1\" headSz=\"SMALL_SMALL\" tailSz=\"SMALL_SMALL\" outlineStyle=\"NORMAL\" alpha=\"0\"/>");
+            if (s.fillColor != null) {
+                sb.append("<hc:fillBrush><hc:winBrush faceColor=\"").append(Xml.color(s.fillColor))
+                  .append("\" hatchColor=\"#000000\" alpha=\"0\"/></hc:fillBrush>");
+            }
+            sb.append("<hp:shadow type=\"NONE\" color=\"#B2B2B2\" offsetX=\"0\" offsetY=\"0\" alpha=\"0\"/>");
+            sb.append("<hp:drawText lastWidth=\"").append(s.width).append("\" name=\"\" editable=\"0\">");
+            sb.append("<hp:subList id=\"\" textDirection=\"HORIZONTAL\" lineWrap=\"BREAK\" vertAlign=\"").append(s.textVertAlign)
+              .append("\" linkListIDRef=\"0\" linkListNextIDRef=\"0\" textWidth=\"0\" textHeight=\"0\" hasTextRef=\"0\" hasNumRef=\"0\">");
+            if (s.paragraphs.isEmpty()) {
+                s.paragraphs.add(new WParagraph());
+            }
+            for (WParagraph p : s.paragraphs) {
+                paragraph(sb, sec, p, false);
+            }
+            sb.append("</hp:subList>");
+            sb.append("<hp:textMargin left=\"").append(s.textMargin[0]).append("\" right=\"").append(s.textMargin[1])
+              .append("\" top=\"").append(s.textMargin[2]).append("\" bottom=\"").append(s.textMargin[3]).append("\"/>");
+            sb.append("</hp:drawText>");
+            points(sb, s.width, s.height);
+        }
+        sb.append("<hp:sz width=\"").append(s.width).append("\" widthRelTo=\"ABSOLUTE\" height=\"").append(s.height)
+          .append("\" heightRelTo=\"ABSOLUTE\" protect=\"0\"/>");
+        sb.append("<hp:pos treatAsChar=\"").append(s.treatAsChar ? 1 : 0)
+          // 개체가 쪽(셀) 영역 안에 머물도록 (한글 기본값. 0 이면 셀 안의 개체가 셀 밖 기준으로 놓인다)
+          .append("\" affectLSpacing=\"0\" flowWithText=\"1")
+          .append("\" allowOverlap=\"").append(s.treatAsChar ? 0 : 1)
+          .append("\" holdAnchorAndSO=\"0\" vertRelTo=\"").append(s.vertRelTo).append("\" horzRelTo=\"").append(s.horzRelTo)
+          .append("\" vertAlign=\"").append(s.vertAlign).append("\" horzAlign=\"").append(s.horzAlign)
+          // 거리는 부호 없는 32비트로 쓴다 (한글: -1 → 4294967295. 가져오기도 parseUnsignedInt)
+          .append("\" vertOffset=\"").append(s.vertOffset & 0xFFFFFFFFL).append("\" horzOffset=\"").append(s.horzOffset & 0xFFFFFFFFL).append("\"/>");
+        sb.append("<hp:outMargin left=\"0\" right=\"0\" top=\"0\" bottom=\"0\"/>");
+        sb.append("<hp:shapeComment>").append(s.kind == WShape.Kind.PICTURE ? "그림입니다." : "사각형입니다.").append("</hp:shapeComment>");
+        sb.append("</").append(tag).append('>');
+    }
+
+    private static void points(StringBuilder sb, int w, int h) {
+        sb.append("<hc:pt0 x=\"0\" y=\"0\"/><hc:pt1 x=\"").append(w).append("\" y=\"0\"/><hc:pt2 x=\"").append(w)
+          .append("\" y=\"").append(h).append("\"/><hc:pt3 x=\"0\" y=\"").append(h).append("\"/>");
     }
 
     private static void secPr(StringBuilder sb, WSection s) {
