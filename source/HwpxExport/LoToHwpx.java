@@ -208,6 +208,7 @@ public class LoToHwpx {
         p.lineSpacingType = src.lineSpacingType;
         p.lineSpacing = src.lineSpacing;
         p.tabPrId = src.tabPrId;
+        p.borderFillId = src.borderFillId;
         return doc.addParaPr(p);
     }
 
@@ -263,6 +264,9 @@ public class LoToHwpx {
             if (paraStyles.hasByName(loName)) {
                 XPropertySet sp = UnoRuntime.queryInterface(XPropertySet.class, paraStyles.getByName(loName));
                 st.charPrId = doc.addCharPr(charPr(sp));
+                // 스타일의 문단 모양 (배경색 포함). 가져오기는 스타일 문단 모양을 스타일에 적용하고, 문단에 직접 지정하지
+                // 않은 배경은 스타일에서 이어받는다 (엑셀에서 붙인 셀 스타일 등)
+                st.paraPrId = doc.addParaPr(paraPr(sp, importAlpha(st.charPrId), false));
             }
         } catch (com.sun.star.uno.Exception e) {
             log.log(Level.WARNING, e.toString(), e);
@@ -582,6 +586,14 @@ public class LoToHwpx {
 
     /** 셀 테두리/배경. 가져오기(Transform.toBorderLine)는 선 굵기와 색만 쓰므로 선은 실선으로 되돌린다 */
     private static HwpxWriter.WBorderFill cellBorderFill(XPropertySet cp) throws com.sun.star.uno.Exception {
+        return borderFill(cp, "BackColor", "BackTransparent");
+    }
+
+    /**
+     * 테두리 4변과 배경색. 셀은 BackColor, 문단은 ParaBackColor (가져오기 ConvPara: 문단 모양의 테두리/배경에서
+     * 선 굵기/색과 채우기 색만 쓴다)
+     */
+    private static HwpxWriter.WBorderFill borderFill(XPropertySet cp, String backProp, String transProp) throws com.sun.star.uno.Exception {
         HwpxWriter.WBorderFill bf = new HwpxWriter.WBorderFill();
         String[] names = { "LeftBorder", "RightBorder", "TopBorder", "BottomBorder" };
         for (int s = 0; s < 4; s++) {
@@ -603,8 +615,8 @@ public class LoToHwpx {
                 bf.color[s] = color & 0xFFFFFF;
             }
         }
-        boolean transparent = AnyConverter.toBoolean(cp.getPropertyValue("BackTransparent"));
-        int back = AnyConverter.toInt(cp.getPropertyValue("BackColor"));
+        boolean transparent = AnyConverter.toBoolean(cp.getPropertyValue(transProp));
+        int back = AnyConverter.toInt(cp.getPropertyValue(backProp));
         if (!transparent && back != -1) {
             bf.fillColor = back & 0xFFFFFF;
         }
@@ -1256,6 +1268,19 @@ public class LoToHwpx {
         p.next = Math.max(0, 2 * hwp(bottom));
 
         p.tabPrId = doc.addTabPr(tabPr(pp));
+        // 문단 테두리/배경. 없으면 한글 기본(2)
+        HwpxWriter.WBorderFill pbf = borderFill(pp, "ParaBackColor", "ParaBackTransparent");
+        // 스타일에서 이어받은 배경은 문단에 쓰지 않는다 (스타일 문단 모양에 있다). 한글은 문단 자신의 문단 모양만
+        // 그리므로, 원본에서 스타일에만 있던 배경이 문단에 생기지 않게 한다
+        com.sun.star.beans.XPropertyState pst = UnoRuntime.queryInterface(com.sun.star.beans.XPropertyState.class, pp);
+        if (pst != null && pst.getPropertyState("ParaBackColor") != com.sun.star.beans.PropertyState.DIRECT_VALUE) {
+            pbf.fillColor = null;
+        }
+        boolean anyLine = false;
+        for (String t : pbf.type) if (!"NONE".equals(t)) anyLine = true;
+        if (anyLine || pbf.fillColor != null) {
+            p.borderFillId = doc.addBorderFill(pbf);
+        }
 
         LineSpacing ls = (LineSpacing) AnyConverter.toObject(LineSpacing.class, pp.getPropertyValue("ParaLineSpacing"));
         switch (ls.Mode) {

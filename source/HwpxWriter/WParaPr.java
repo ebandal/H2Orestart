@@ -26,6 +26,8 @@ public class WParaPr {
     public int lineSpacing = 160;
     /** 탭 정의 ID */
     public int tabPrId = 0;
+    /** 문단 테두리/배경 ID (1 부터). 2 = 테두리/배경 없음 (한글 기본) */
+    public int borderFillId = 2;
 
     @Override
     public boolean equals(Object o) {
@@ -33,11 +35,11 @@ public class WParaPr {
         WParaPr p = (WParaPr) o;
         return align.equals(p.align) && indent == p.indent && left == p.left && right == p.right && prev == p.prev
                 && next == p.next && lineSpacingType.equals(p.lineSpacingType) && lineSpacing == p.lineSpacing
-                && tabPrId == p.tabPrId;
+                && tabPrId == p.tabPrId && borderFillId == p.borderFillId;
     }
 
     @Override
     public int hashCode() {
-        return align.hashCode() + indent * 7 + left * 11 + right * 13 + prev * 17 + next * 19 + lineSpacing + tabPrId * 23;
+        return align.hashCode() + indent * 7 + left * 11 + right * 13 + prev * 17 + next * 19 + lineSpacing + tabPrId * 23 + borderFillId * 29;
     }
 }

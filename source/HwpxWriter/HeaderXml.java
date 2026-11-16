@@ -168,7 +168,7 @@ final class HeaderXml {
             sb.append("</hp:case><hp:default>");
             margin(sb, p);
             sb.append("</hp:default></hp:switch>");
-            sb.append("<hh:border borderFillIDRef=\"2\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/>");
+            sb.append("<hh:border borderFillIDRef=\"").append(p.borderFillId).append("\" offsetLeft=\"0\" offsetRight=\"0\" offsetTop=\"0\" offsetBottom=\"0\" connect=\"0\" ignoreMargin=\"0\"/>");
             sb.append("</hh:paraPr>");
         }
         sb.append("</hh:paraProperties>");

@@ -43,6 +43,7 @@ public class RoundTripCompare {
         int depth;         // 0: 본문, 1 이상: 표 셀 깊이
         HwpRecord_ParaShape ps;
         String tabs = "";   // 탭 정의 (자동 탭, 위치/종류)
+        String back = "";   // 문단 배경색 (문단 테두리/배경의 채우기 색)
         List<HwpRecord_CharShape> chars = new ArrayList<HwpRecord_CharShape>();   // 글자별
     }
 
@@ -128,6 +129,15 @@ public class RoundTripCompare {
                 for (HwpDoc.HwpElement.HwpRecord_TabDef.Tab t : td.tabs) ts.append(t.pos).append(t.type).append(' ');
             }
             para.tabs = ts.toString().trim();
+        }
+        if (para.ps != null) {
+            HwpDoc.HwpElement.HwpRecord_BorderFill bf = null;
+            int id = para.ps.borderFill;
+            // 테두리/배경 ID 는 1 부터
+            if (id >= 1 && id <= info.borderFillList.size()) bf = (HwpDoc.HwpElement.HwpRecord_BorderFill) info.borderFillList.get(id - 1);
+            if (bf != null && bf.fill != null && bf.fill.isColorFill() && bf.fill.faceColor != -1) {
+                para.back = String.format("%06X", bf.fill.faceColor & 0xFFFFFF);
+            }
         }
         StringBuilder sb = new StringBuilder();
         List<Ctrl_Table> tables = new ArrayList<Ctrl_Table>();
@@ -288,6 +298,7 @@ public class RoundTripCompare {
             d += cmpInt(doc, "ParaShape.marginNext", a.ps.marginNext, b.ps.marginNext, out, w);
             d += cmp(doc, "ParaShape.lineSpacingType", String.valueOf(a.ps.lineSpacingType), String.valueOf(b.ps.lineSpacingType), out, w);
             d += cmp(doc, "ParaShape.tabs", a.tabs, b.tabs, out, w);
+            d += cmp(doc, "ParaShape.backColor", a.back, b.back, out, w);
             if (a.ps.lineSpacingType == b.ps.lineSpacingType) {
                 d += cmpInt(doc, "ParaShape.lineSpacing", a.ps.lineSpacing, b.ps.lineSpacing, out, w);
             }
