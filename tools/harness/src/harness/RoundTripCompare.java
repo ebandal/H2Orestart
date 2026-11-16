@@ -299,6 +299,7 @@ public class RoundTripCompare {
             d += cmp(doc, "ParaShape.lineSpacingType", String.valueOf(a.ps.lineSpacingType), String.valueOf(b.ps.lineSpacingType), out, w);
             d += cmp(doc, "ParaShape.tabs", a.tabs, b.tabs, out, w);
             d += cmp(doc, "ParaShape.backColor", a.back, b.back, out, w);
+            d += cmp(doc, "ParaShape.heading", a.ps.headingType + "/" + a.ps.headingLevel, b.ps.headingType + "/" + b.ps.headingLevel, out, w);
             if (a.ps.lineSpacingType == b.ps.lineSpacingType) {
                 d += cmpInt(doc, "ParaShape.lineSpacing", a.ps.lineSpacing, b.ps.lineSpacing, out, w);
             }

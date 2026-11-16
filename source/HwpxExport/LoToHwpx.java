@@ -42,6 +42,7 @@ import com.sun.star.uno.UnoRuntime;
 import HwpxWriter.WCharPr;
 import HwpxWriter.WDocument;
 import HwpxWriter.WParaPr;
+import HwpxWriter.WNumbering;
 import HwpxWriter.WParagraph;
 import HwpxWriter.WSection;
 import HwpxWriter.WShape;
@@ -194,6 +195,161 @@ public class LoToHwpx {
         return t;
     }
 
+    /** LibreOffice 목록 스타일(또는 목록 ID) → 번호/글머리표 정의 ID */
+    private final java.util.Map<String, Integer> numberingIds = new java.util.HashMap<String, Integer>();
+    private final java.util.Map<String, Integer> bulletIds = new java.util.HashMap<String, Integer>();
+
+    /**
+     * 문단 번호/글머리표: 가져오기(ConvPara.setNumberingProperties, ConvNumbering)의 역.
+     * 번호가 보이는(ListLabelString) 문단만. 수준의 번호 종류가 특수 문자면 글머리표, 아니면 문단 번호.
+     * 정의는 LibreOffice 목록 스타일마다 하나 (가져오기는 정의마다 목록 스타일을 만든다).
+     */
+    private void heading(XPropertySet pp, WParaPr p) throws com.sun.star.uno.Exception {
+        com.sun.star.beans.XPropertySetInfo info = pp.getPropertySetInfo();
+        if (!info.hasPropertyByName("NumberingRules") || !info.hasPropertyByName("ListLabelString")) return;
+        Object lab = pp.getPropertyValue("ListLabelString");
+        boolean labeled = lab instanceof String && !((String) lab).isEmpty();
+        if (info.hasPropertyByName("NumberingIsNumber")) {
+            Object isNum = pp.getPropertyValue("NumberingIsNumber");
+            if (!(isNum instanceof Boolean) || !((Boolean) isNum)) return;     // 목록 항목이 아님
+        } else if (!labeled) {
+            return;
+        }
+        com.sun.star.container.XIndexAccess rules = UnoRuntime.queryInterface(com.sun.star.container.XIndexAccess.class,
+                pp.getPropertyValue("NumberingRules"));
+        if (rules == null) return;
+        int level = AnyConverter.toShort(pp.getPropertyValue("NumberingLevel"));
+        if (level < 0 || level >= rules.getCount()) return;
+        String style = info.hasPropertyByName("NumberingStyleName") ? AnyConverter.toString(pp.getPropertyValue("NumberingStyleName")) : "";
+        String key = style;
+        if (key.isEmpty() && info.hasPropertyByName("ListId")) key = "list:" + AnyConverter.toString(pp.getPropertyValue("ListId"));
+        com.sun.star.beans.PropertyValue[] lv = (com.sun.star.beans.PropertyValue[]) AnyConverter.toArray(rules.getByIndex(level));
+        short type = AnyConverter.toShort(prop(lv, "NumberingType", (short) com.sun.star.style.NumberingType.ARABIC));
+        if (type == com.sun.star.style.NumberingType.NUMBER_NONE) return;
+        // 번호는 보이는 번호가 있을 때만 (글머리표는 LibreOffice 가 표시 문자열을 비워 둔다)
+        if (type != com.sun.star.style.NumberingType.CHAR_SPECIAL && type != com.sun.star.style.NumberingType.BITMAP && !labeled) return;
+        if (type == com.sun.star.style.NumberingType.CHAR_SPECIAL || type == com.sun.star.style.NumberingType.BITMAP) {
+            Integer id = bulletIds.get(key);
+            if (id == null) {
+                WNumbering b = new WNumbering();
+                b.bullet = true;
+                if (type == com.sun.star.style.NumberingType.BITMAP) {
+                    // 그림 글머리표: 그림을 바이너리 항목으로 (가져오기는 그림을 GraphicURL 로 넣는다)
+                    Object gv = prop(lv, "Graphic", null);
+                    if (gv instanceof com.sun.star.uno.Any) gv = ((com.sun.star.uno.Any) gv).getObject();
+                    com.sun.star.graphic.XGraphic g = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphic.class, gv);
+                    if (g == null) {
+                        // 가져오기의 그림 글머리표는 GraphicBitmap(XBitmap) 으로 남는다. 그래픽으로 바꾼다
+                        Object bm = prop(lv, "GraphicBitmap", null);
+                        if (bm instanceof com.sun.star.uno.Any) bm = ((com.sun.star.uno.Any) bm).getObject();
+                        g = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphic.class, bm);
+                        if (g == null && bm != null && ctx != null) {
+                            Object gp = ctx.getServiceManager().createInstanceWithContext("com.sun.star.graphic.GraphicProvider", ctx);
+                            com.sun.star.graphic.XGraphicProvider prov = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphicProvider.class, gp);
+                            com.sun.star.beans.PropertyValue[] q = new com.sun.star.beans.PropertyValue[1];
+                            q[0] = new com.sun.star.beans.PropertyValue();
+                            q[0].Name = "Bitmap";
+                            q[0].Value = bm;
+                            g = prov.queryGraphic(q);
+                        }
+                    }
+                    byte[] data = graphicPng(g);
+                    if (data == null || data.length == 0) {
+                        log.info("그림 글머리표의 그림을 얻지 못함: " + key);
+                        return;
+                    }
+                    b.imageId = doc.addBinItem("png", data);
+                }
+                Object ch = prop(lv, "BulletChar", "●");
+                b.bulletChar = ch instanceof String && !((String) ch).isEmpty() ? (String) ch : "●";
+                b.align[0] = align(lv);
+                b.textOffset[0] = hwp(toInt(prop(lv, "IndentAt", 0)));
+                doc.bullets.add(b);
+                id = doc.bullets.size();
+                bulletIds.put(key, id);
+            }
+            p.headingType = "BULLET";
+            p.headingId = id;
+            p.headingLevel = 0;
+            return;
+        }
+        Integer id = numberingIds.get(key);
+        if (id == null) {
+            WNumbering n = new WNumbering();
+            for (int l = 0; l < WNumbering.LEVELS && l < rules.getCount(); l++) {
+                com.sun.star.beans.PropertyValue[] v = (com.sun.star.beans.PropertyValue[]) AnyConverter.toArray(rules.getByIndex(l));
+                short t = AnyConverter.toShort(prop(v, "NumberingType", (short) com.sun.star.style.NumberingType.NUMBER_NONE));
+                n.numFormat[l] = numberShape(t);
+                n.start[l] = Math.max(0, toInt(prop(v, "StartWith", 1)));
+                n.align[l] = align(v);
+                n.textOffset[l] = Math.min(Short.MAX_VALUE, hwp(toInt(prop(v, "IndentAt", 0))));
+                n.format[l] = t == com.sun.star.style.NumberingType.NUMBER_NONE ? "" : hwpFormat(v, l);
+            }
+            doc.numberings.add(n);
+            id = doc.numberings.size();
+            numberingIds.put(key, id);
+        }
+        p.headingType = "NUMBER";
+        p.headingId = id;
+        p.headingLevel = level;
+    }
+
+    private static Object prop(com.sun.star.beans.PropertyValue[] v, String name, Object def) {
+        for (com.sun.star.beans.PropertyValue x : v) {
+            if (name.equals(x.Name)) return x.Value == null ? def : x.Value;
+        }
+        return def;
+    }
+
+    private static int toInt(Object o) {
+        try {
+            return AnyConverter.toInt(o);
+        } catch (com.sun.star.lang.IllegalArgumentException e) {
+            return o instanceof Number ? ((Number) o).intValue() : 0;
+        }
+    }
+
+    private static String align(com.sun.star.beans.PropertyValue[] v) {
+        int a = toInt(prop(v, "Adjust", (short) com.sun.star.text.HoriOrientation.LEFT));
+        return a == com.sun.star.text.HoriOrientation.CENTER ? "CENTER" : a == com.sun.star.text.HoriOrientation.RIGHT ? "RIGHT" : "LEFT";
+    }
+
+    /** 수준 형식: ListFormat("%1%.%2%)") 을 HWP 형식("^1.^2)") 으로. 없으면 접두/접미와 상위 수준 수로 만든다 */
+    private static String hwpFormat(com.sun.star.beans.PropertyValue[] v, int level) {
+        Object lf = prop(v, "ListFormat", "");
+        if (lf instanceof String && !((String) lf).isEmpty()) {
+            return ((String) lf).replaceAll("%(\\d+)%", "^$1");
+        }
+        String prefix = String.valueOf(prop(v, "Prefix", ""));
+        String suffix = String.valueOf(prop(v, "Suffix", ""));
+        int parents = Math.max(1, toInt(prop(v, "ParentNumbering", (short) 1)));
+        StringBuilder sb = new StringBuilder(prefix);
+        for (int k = level + 2 - parents; k <= level + 1; k++) {
+            if (k < 1) continue;
+            sb.append('^').append(k);
+            if (k < level + 1) sb.append('.');
+        }
+        return sb.append(suffix).toString();
+    }
+
+    /** LibreOffice 번호 종류 → HWPX 번호 모양 (ConvNumbering.toNumberingType 의 역) */
+    private static String numberShape(short t) {
+        switch (t) {
+        case com.sun.star.style.NumberingType.CIRCLE_NUMBER:              return "CIRCLED_DIGIT";
+        case com.sun.star.style.NumberingType.ROMAN_UPPER:                return "ROMAN_CAPITAL";
+        case com.sun.star.style.NumberingType.ROMAN_LOWER:                return "ROMAN_SMALL";
+        case com.sun.star.style.NumberingType.CHARS_UPPER_LETTER:         return "LATIN_CAPITAL";
+        case com.sun.star.style.NumberingType.CHARS_LOWER_LETTER:         return "LATIN_SMALL";
+        case com.sun.star.style.NumberingType.HANGUL_SYLLABLE_KO:         return "HANGUL_SYLLABLE";
+        case com.sun.star.style.NumberingType.HANGUL_CIRCLED_SYLLABLE_KO: return "CIRCLED_HANGUL_SYLLABLE";
+        case com.sun.star.style.NumberingType.HANGUL_JAMO_KO:             return "HANGUL_JAMO";
+        case com.sun.star.style.NumberingType.HANGUL_CIRCLED_JAMO_KO:     return "CIRCLED_HANGUL_JAMO";
+        case com.sun.star.style.NumberingType.NUMBER_HANGUL_KO:           return "HANGUL_PHONETIC";
+        case com.sun.star.style.NumberingType.NUMBER_LOWER_ZH:            return "IDEOGRAPH";
+        default:                                                          return "DIGIT";
+        }
+    }
+
     /** 문단 모양 id 의 정렬만 바꾼 문단 모양 id */
     private int withAlign(int paraPrId, String align) {
         WParaPr src = doc.paraPrList.get(paraPrId);
@@ -209,6 +365,9 @@ public class LoToHwpx {
         p.lineSpacing = src.lineSpacing;
         p.tabPrId = src.tabPrId;
         p.borderFillId = src.borderFillId;
+        p.headingType = src.headingType;
+        p.headingId = src.headingId;
+        p.headingLevel = src.headingLevel;
         return doc.addParaPr(p);
     }
 
@@ -900,6 +1059,27 @@ public class LoToHwpx {
         Object g = op.getPropertyValue("Graphic");
         com.sun.star.graphic.XGraphic graphic = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphic.class, g);
         if (graphic == null || ctx == null) return false;
+        byte[] data = graphicPng(graphic);
+        if (data == null || data.length == 0) return false;
+        s.binItemId = doc.addBinItem("png", data);
+        // 원본 그림 크기: 픽셀을 96 dpi 로 HWPUNIT 으로 (1 픽셀 = 75)
+        XPropertySet gps = UnoRuntime.queryInterface(XPropertySet.class, graphic);
+        int pw = 0, ph = 0;
+        if (gps != null && gps.getPropertySetInfo().hasPropertyByName("SizePixel")) {
+            Object sz = gps.getPropertyValue("SizePixel");
+            if (sz instanceof com.sun.star.awt.Size) {
+                pw = ((com.sun.star.awt.Size) sz).Width;
+                ph = ((com.sun.star.awt.Size) sz).Height;
+            }
+        }
+        s.imgWidth = pw > 0 ? pw * 75 : 7500;
+        s.imgHeight = ph > 0 ? ph * 75 : 7500;
+        return true;
+    }
+
+    /** 그래픽을 PNG 바이트로 (실패하면 null) */
+    private byte[] graphicPng(com.sun.star.graphic.XGraphic graphic) throws com.sun.star.uno.Exception {
+        if (graphic == null || ctx == null) return null;
         Object gp = ctx.getServiceManager().createInstanceWithContext("com.sun.star.graphic.GraphicProvider", ctx);
         com.sun.star.graphic.XGraphicProvider prov = UnoRuntime.queryInterface(com.sun.star.graphic.XGraphicProvider.class, gp);
         // 임시 파일로 저장해 읽는다 (가져오기 ConvGraphics 와 같은 방법. 출력 스트림 어댑터로는 0 바이트가 나왔다)
@@ -918,25 +1098,11 @@ public class LoToHwpx {
             data = java.nio.file.Files.readAllBytes(tmp.toPath());
         } catch (java.io.IOException e) {
             log.log(Level.WARNING, e.toString(), e);
-            return false;
+            return null;
         } finally {
             if (tmp != null && !tmp.delete()) tmp.deleteOnExit();
         }
-        if (data == null || data.length == 0) return false;
-        s.binItemId = doc.addBinItem("png", data);
-        // 원본 그림 크기: 픽셀을 96 dpi 로 HWPUNIT 으로 (1 픽셀 = 75)
-        XPropertySet gps = UnoRuntime.queryInterface(XPropertySet.class, graphic);
-        int pw = 0, ph = 0;
-        if (gps != null && gps.getPropertySetInfo().hasPropertyByName("SizePixel")) {
-            Object sz = gps.getPropertyValue("SizePixel");
-            if (sz instanceof com.sun.star.awt.Size) {
-                pw = ((com.sun.star.awt.Size) sz).Width;
-                ph = ((com.sun.star.awt.Size) sz).Height;
-            }
-        }
-        s.imgWidth = pw > 0 ? pw * 75 : 7500;
-        s.imgHeight = ph > 0 ? ph * 75 : 7500;
-        return true;
+        return data;
     }
 
     /** 글상자: 테두리, 채우기, 글 여백, 세로 정렬, 내용 (가져오기 ConvGraphics.insertTextFrame 의 역) */
@@ -1268,6 +1434,7 @@ public class LoToHwpx {
         p.next = Math.max(0, 2 * hwp(bottom));
 
         p.tabPrId = doc.addTabPr(tabPr(pp));
+        heading(pp, p);
         // 문단 테두리/배경. 없으면 한글 기본(2)
         HwpxWriter.WBorderFill pbf = borderFill(pp, "ParaBackColor", "ParaBackTransparent");
         // 스타일에서 이어받은 배경은 문단에 쓰지 않는다 (스타일 문단 모양에 있다). 한글은 문단 자신의 문단 모양만

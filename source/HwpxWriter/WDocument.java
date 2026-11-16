@@ -32,6 +32,10 @@ public class WDocument {
     public final List<String>[] fonts = new List[LANGS.length];
     public final List<WCharPr> charPrList = new ArrayList<WCharPr>();
     public final List<WParaPr> paraPrList = new ArrayList<WParaPr>();
+    /** 문단 번호 정의 (ID 는 위치+1) */
+    public final List<WNumbering> numberings = new ArrayList<WNumbering>();
+    /** 글머리표 정의 (ID 는 위치+1) */
+    public final List<WNumbering> bullets = new ArrayList<WNumbering>();
     /** 탭 정의. 0 번은 탭 없음 */
     public final List<WTabPr> tabPrList = new ArrayList<WTabPr>();
     public final List<WStyle> styleList = new ArrayList<WStyle>();

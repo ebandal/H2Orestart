@@ -31,6 +31,7 @@ final class HeaderXml {
         borderFills(sb, doc);
         charProperties(sb, doc);
         tabProperties(sb, doc);
+        numberings(sb, doc);
         paraProperties(sb, doc);
         styles(sb, doc);
         sb.append("</hh:refList>");
@@ -153,13 +154,54 @@ final class HeaderXml {
         sb.append("</hh:tabProperties>");
     }
 
+    /** 문단 번호와 글머리표 정의 (한글 2022 와 같은 요소 구성) */
+    private static void numberings(StringBuilder sb, WDocument doc) {
+        if (!doc.numberings.isEmpty()) {
+            sb.append("<hh:numberings itemCnt=\"").append(doc.numberings.size()).append("\">");
+            for (int i = 0; i < doc.numberings.size(); i++) {
+                WNumbering n = doc.numberings.get(i);
+                sb.append("<hh:numbering id=\"").append(i + 1).append("\" start=\"0\">");
+                for (int l = 0; l < WNumbering.LEVELS; l++) {
+                    sb.append("<hh:paraHead start=\"").append(n.start[l]).append("\" level=\"").append(l + 1)
+                      .append("\" align=\"").append(n.align[l]).append("\" useInstWidth=\"0\" autoIndent=\"1\" widthAdjust=\"0\"")
+                      .append(" textOffsetType=\"HWPUNIT\" textOffset=\"").append(n.textOffset[l])
+                      .append("\" numFormat=\"").append(n.numFormat[l]).append("\" charPrIDRef=\"4294967295\" checkable=\"0\"");
+                    if (n.format[l].isEmpty()) {
+                        sb.append("/>");
+                    } else {
+                        sb.append('>').append(Xml.esc(n.format[l])).append("</hh:paraHead>");
+                    }
+                }
+                sb.append("</hh:numbering>");
+            }
+            sb.append("</hh:numberings>");
+        }
+        if (!doc.bullets.isEmpty()) {
+            sb.append("<hh:bullets itemCnt=\"").append(doc.bullets.size()).append("\">");
+            for (int i = 0; i < doc.bullets.size(); i++) {
+                WNumbering b = doc.bullets.get(i);
+                sb.append("<hh:bullet id=\"").append(i + 1).append("\" char=\"").append(Xml.esc(b.bulletChar))
+                  .append("\" useImage=\"").append(b.imageId != null ? 1 : 0).append("\">");
+                if (b.imageId != null) {
+                    sb.append("<hc:img binaryItemIDRef=\"").append(b.imageId).append("\" bright=\"0\" contrast=\"0\" effect=\"REAL_PIC\" alpha=\"0\"/>");
+                }
+                sb.append("<hh:paraHead level=\"0\" align=\"").append(b.align[0])
+                  .append("\" useInstWidth=\"0\" autoIndent=\"1\" widthAdjust=\"0\" textOffsetType=\"HWPUNIT\" textOffset=\"")
+                  .append(b.textOffset[0]).append("\" numFormat=\"DIGIT\" charPrIDRef=\"4294967295\" checkable=\"0\"/>");
+                sb.append("</hh:bullet>");
+            }
+            sb.append("</hh:bullets>");
+        }
+    }
+
     private static void paraProperties(StringBuilder sb, WDocument doc) {
         sb.append("<hh:paraProperties itemCnt=\"").append(doc.paraPrList.size()).append("\">");
         for (int i = 0; i < doc.paraPrList.size(); i++) {
             WParaPr p = doc.paraPrList.get(i);
             sb.append("<hh:paraPr id=\"").append(i).append("\" tabPrIDRef=\"").append(p.tabPrId).append("\" condense=\"0\" fontLineHeight=\"0\" snapToGrid=\"1\" suppressLineNumbers=\"0\" checked=\"0\">");
             sb.append("<hh:align horizontal=\"").append(p.align).append("\" vertical=\"BASELINE\"/>");
-            sb.append("<hh:heading type=\"NONE\" idRef=\"0\" level=\"0\"/>");
+            sb.append("<hh:heading type=\"").append(p.headingType).append("\" idRef=\"").append(p.headingId)
+              .append("\" level=\"").append(p.headingLevel).append("\"/>");
             sb.append("<hh:breakSetting breakLatinWord=\"KEEP_WORD\" breakNonLatinWord=\"KEEP_WORD\" widowOrphan=\"0\" keepWithNext=\"0\" keepLines=\"0\" pageBreakBefore=\"0\" lineWrap=\"BREAK\"/>");
             sb.append("<hh:autoSpacing eAsianEng=\"0\" eAsianNum=\"0\"/>");
             // 한글 2022 는 여백/줄 간격을 HwpUnitChar 분기와 기본값에 같은 내용으로 두 번 쓴다

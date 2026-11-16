@@ -28,6 +28,12 @@ public class WParaPr {
     public int tabPrId = 0;
     /** 문단 테두리/배경 ID (1 부터). 2 = 테두리/배경 없음 (한글 기본) */
     public int borderFillId = 2;
+    /** 문단 머리: NONE, NUMBER, BULLET */
+    public String headingType = "NONE";
+    /** 번호/글머리표 정의 ID (1 부터) */
+    public int headingId = 0;
+    /** 수준 (0 부터) */
+    public int headingLevel = 0;
 
     @Override
     public boolean equals(Object o) {
@@ -35,11 +41,12 @@ public class WParaPr {
         WParaPr p = (WParaPr) o;
         return align.equals(p.align) && indent == p.indent && left == p.left && right == p.right && prev == p.prev
                 && next == p.next && lineSpacingType.equals(p.lineSpacingType) && lineSpacing == p.lineSpacing
-                && tabPrId == p.tabPrId && borderFillId == p.borderFillId;
+                && tabPrId == p.tabPrId && borderFillId == p.borderFillId
+                && headingType.equals(p.headingType) && headingId == p.headingId && headingLevel == p.headingLevel;
     }
 
     @Override
     public int hashCode() {
-        return align.hashCode() + indent * 7 + left * 11 + right * 13 + prev * 17 + next * 19 + lineSpacing + tabPrId * 23 + borderFillId * 29;
+        return align.hashCode() + indent * 7 + left * 11 + right * 13 + prev * 17 + next * 19 + lineSpacing + tabPrId * 23 + borderFillId * 29 + headingId * 31 + headingLevel * 37;
     }
 }
