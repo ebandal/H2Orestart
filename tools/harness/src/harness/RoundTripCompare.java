@@ -159,9 +159,8 @@ public class RoundTripCompare {
                     others.add(c);
                 } else if (c instanceof Ctrl_Table) {
                     tables.add((Ctrl_Table) c);
-                } else if (c instanceof HwpDoc.paragraph.Ctrl_ShapePic
-                        || (c instanceof HwpDoc.paragraph.Ctrl_GeneralShape && "cer$".equals(c.ctrlId)
-                            && ((HwpDoc.paragraph.Ctrl_Common) c).paras != null && !((HwpDoc.paragraph.Ctrl_Common) c).paras.isEmpty())) {
+                } else if (c instanceof HwpDoc.paragraph.Ctrl_ShapePic || c instanceof HwpDoc.paragraph.Ctrl_ShapeLine
+                        || (c instanceof HwpDoc.paragraph.Ctrl_GeneralShape && "cer$".equals(c.ctrlId))) {
                     shapes.add((HwpDoc.paragraph.Ctrl_Common) c);
                 }
             }
@@ -198,7 +197,9 @@ public class RoundTripCompare {
         for (HwpDoc.paragraph.Ctrl_Common sh : shapes) {
             Para sig = new Para();
             boolean pic = sh instanceof HwpDoc.paragraph.Ctrl_ShapePic;
-            StringBuilder ss = new StringBuilder(pic ? "§PIC " : "§BOX ");
+            boolean line = sh instanceof HwpDoc.paragraph.Ctrl_ShapeLine;
+            boolean box = !pic && !line && sh.paras != null && !sh.paras.isEmpty();
+            StringBuilder ss = new StringBuilder(pic ? "§PIC " : line ? "§LINE " : box ? "§BOX " : "§RECT ");
             ss.append(sh.width).append('x').append(sh.height);
             if (sh.treatAsChar) {
                 ss.append(" char");
@@ -210,7 +211,7 @@ public class RoundTripCompare {
             sig.text = ss.toString();
             sig.depth = depth;
             out.add(sig);
-            if (!pic) {
+            if (box) {
                 for (HwpParagraph cp : sh.paras) {
                     addPara(info, cp, out, depth + 1);
                 }

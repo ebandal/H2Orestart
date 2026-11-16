@@ -671,7 +671,7 @@ public class LoToHwpx {
                 p.runs.add(new WParagraph.WRun(cp, s));
             }
         }
-        floatingShapes(paraObj, p);
+        floatingShapes(paraObj, p, target == section.paragraphs);
         // 문단 끝 글자 모양 = 문단의 글자 속성. 가져오기는 문단 끝(beforeParaBreak)에서 이 모양으로 문단 속성을
         // 마지막으로 설정한다 (줄 간격 보정값 포함). HWPX 파서는 마지막 run 의 모양을 문단 끝 모양으로 쓰므로,
         // 마지막 run 과 다르면 빈 run 을 덧붙인다
@@ -700,7 +700,7 @@ public class LoToHwpx {
      * 덧붙인다 (ConvGraphics, LibreOffice 7.2 이상). 개체를 문단 맨 앞에 쓰므로 다시 읽으면 빈칸이 문단 앞에 생긴다.
      * 개체마다 문단 앞의 빈칸 하나를 뺀다.
      */
-    private void floatingShapes(Object paraObj, WParagraph p) throws com.sun.star.uno.Exception {
+    private void floatingShapes(Object paraObj, WParagraph p, boolean body) throws com.sun.star.uno.Exception {
         com.sun.star.container.XContentEnumerationAccess cea =
                 UnoRuntime.queryInterface(com.sun.star.container.XContentEnumerationAccess.class, paraObj);
         if (cea == null) return;
@@ -714,6 +714,8 @@ public class LoToHwpx {
         int cp = p.runs.isEmpty() ? doc.addCharPr(charPr(UnoRuntime.queryInterface(XPropertySet.class, paraObj)))
                                   : p.runs.get(0).charPrId;
         for (int k = 0; k < shapes.size(); k++) {
+            // 본문의 선은 가져오기가 빈칸을 넣지 않는다 (ConvGraphics.insertLINE: step 2 에서만)
+            if (shapes.get(k).kind == WShape.Kind.LINE && body) continue;
             // 문단 앞의 빈칸 하나 빼기
             for (WParagraph.WRun r : p.runs) {
                 if (r.shape != null || r.text == null || r.text.isEmpty()) continue;
@@ -742,12 +744,31 @@ public class LoToHwpx {
             if (!picture(op, s)) return null;
         } else if (si.supportsService("com.sun.star.text.TextFrame")) {
             s = new WShape(WShape.Kind.TEXTBOX);
+        } else if (si.supportsService("com.sun.star.drawing.LineShape")) {
+            s = new WShape(WShape.Kind.LINE);
+            drawLine(op, s);
+        } else if (si.supportsService("com.sun.star.drawing.RectangleShape")) {
+            com.sun.star.text.XText st = UnoRuntime.queryInterface(com.sun.star.text.XText.class, obj);
+            if (st != null && !st.getString().isEmpty()) return null;     // 글이 든 도형은 아직 쓰지 않는다
+            s = new WShape(WShape.Kind.RECT);
+            drawLine(op, s);
+            Object fs = op.getPropertyValue("FillStyle");
+            if (fs == com.sun.star.drawing.FillStyle.SOLID) {
+                s.fillColor = AnyConverter.toInt(op.getPropertyValue("FillColor")) & 0xFFFFFF;
+            }
         } else {
             return null;
         }
         s.zOrder = shapeSeq++;
-        int w = AnyConverter.toInt(op.getPropertyValue("Width"));
-        int h = AnyConverter.toInt(op.getPropertyValue("Height"));
+        int w, h;
+        com.sun.star.drawing.XShape xs = UnoRuntime.queryInterface(com.sun.star.drawing.XShape.class, obj);
+        if (s.kind == WShape.Kind.LINE || s.kind == WShape.Kind.RECT) {
+            w = xs.getSize().Width;
+            h = xs.getSize().Height;
+        } else {
+            w = AnyConverter.toInt(op.getPropertyValue("Width"));
+            h = AnyConverter.toInt(op.getPropertyValue("Height"));
+        }
         s.width = hwp(w);
         s.height = hwp(h);
         Object at = op.getPropertyValue("AnchorType");
@@ -815,8 +836,8 @@ public class LoToHwpx {
             s.textFlow = "RIGHT_ONLY";
             break;
         case com.sun.star.text.WrapTextMode.DYNAMIC_value:
-            // 가져오기는 글상자의 "글 앞으로" 와 그림의 "어울림-큰 쪽" 을 DYNAMIC 으로 둔다
-            if (s.kind == WShape.Kind.TEXTBOX) {
+            // 가져오기는 글상자/사각형의 "글 앞으로" 와 그림의 "어울림-큰 쪽" 을 DYNAMIC 으로 둔다
+            if (s.kind == WShape.Kind.TEXTBOX || s.kind == WShape.Kind.RECT) {
                 s.textWrap = "IN_FRONT_OF_TEXT";
             } else {
                 s.textWrap = "SQUARE";
@@ -826,6 +847,28 @@ public class LoToHwpx {
         default:
             s.textWrap = "TOP_AND_BOTTOM";
             break;
+        }
+    }
+
+    /** 그리기 개체의 선: 가져오기(ConvGraphics.setLineStyle)의 역 (선 종류, 색, 굵기) */
+    private static void drawLine(XPropertySet op, WShape s) throws com.sun.star.uno.Exception {
+        Object ls = op.getPropertyValue("LineStyle");
+        if (ls == com.sun.star.drawing.LineStyle.NONE) {
+            s.lineStyle = "NONE";
+            return;
+        }
+        s.lineColor = AnyConverter.toInt(op.getPropertyValue("LineColor")) & 0xFFFFFF;
+        s.lineWidth = hwp(AnyConverter.toInt(op.getPropertyValue("LineWidth")));
+        if (ls == com.sun.star.drawing.LineStyle.DASH) {
+            String dn = op.getPropertySetInfo().hasPropertyByName("LineDashName")
+                    ? AnyConverter.toString(op.getPropertyValue("LineDashName")) : "";
+            // HWPX 선 이름은 그려지는 모양과 반대 (DOT = 긴 점선, DASH = 점선). LineStyle2.fromXml 의 역
+            if ("Dot".equals(dn)) s.lineStyle = "DASH";
+            else if ("Dash Dot".equals(dn)) s.lineStyle = "DASH_DOT";
+            else if ("Dash Dot Dot".equals(dn)) s.lineStyle = "DASH_DOT_DOT";
+            else s.lineStyle = "DOT";
+        } else {
+            s.lineStyle = "SOLID";
         }
     }
 

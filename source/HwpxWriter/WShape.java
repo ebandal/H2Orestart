@@ -23,7 +23,8 @@ import java.util.List;
  * 크기/위치 단위는 HWPUNIT.
  */
 public class WShape {
-    public enum Kind { PICTURE, TEXTBOX }
+    /** 그림, 글상자, 선, 사각형(글 없음) */
+    public enum Kind { PICTURE, TEXTBOX, LINE, RECT }
 
     public final Kind kind;
     public int width;
