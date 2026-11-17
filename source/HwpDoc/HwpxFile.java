@@ -69,6 +69,7 @@ public class HwpxFile {
     // Let's have member that are needed for showing in LibreOffice
     public	List<DirectoryEntry> directoryBinData;
     public	List<HwpParagraph>  paraList;
+    public DocumentBuilderFactory factory = null;
     
     
     public HwpxFile(String filename) throws FileNotFoundException {
@@ -87,6 +88,19 @@ public class HwpxFile {
         docInfo = new HwpDocInfo(this);
         manifest = new HwpxManifest();
         sections = new ArrayList<HwpSection>();
+    }
+
+    private void initDocumentBuilderFactory() throws ParserConfigurationException {
+    	factory = DocumentBuilderFactory.newInstance();
+	    // DOCTYPE 자체를 차단
+	    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+	    // 혹시 모를 파서 구현체 차이에 대비한 이중 잠금
+	    factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+	    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+	    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+	    // XInclude 및 엔티티 참조 확장 차단
+	    factory.setXIncludeAware(false);
+	    factory.setExpandEntityReferences(false);
     }
 
     public OwpmlFile getOwpmlFile() {
@@ -311,7 +325,9 @@ public class HwpxFile {
 
         InputStream is = owplmFile.getInputStream(entryName);
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        if (factory == null) {
+        	initDocumentBuilderFactory();
+        }
         DocumentBuilder builder = factory.newDocumentBuilder();
         if (fileHeader.bDistributable == true && manifest.entryMap !=null && manifest.entryMap.get(entryName)!=null) {
             Map<String, String> entryManifestMap = manifest.entryMap.get(entryName);
