@@ -28,7 +28,6 @@ import java.lang.reflect.Modifier;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +52,7 @@ import com.sun.star.uno.Exception;
 import com.sun.star.uno.XInterface;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.SafeBase64;
 import HwpDoc.paragraph.CharShape;
 
 
@@ -253,7 +253,7 @@ public class ConvUtil {
                             Object ob = any.getObject();
                             if (type.getTypeName().equals("com.sun.star.awt.XBitmap")) {
                                 XBitmap xBitmap = (XBitmap)UnoRuntime.queryInterface(XBitmap.class, ob);
-                                value = Base64.getEncoder().encodeToString(xBitmap.getDIB());
+                                value = SafeBase64.encodeToString(xBitmap.getDIB());
                             } else {
                                 value = ob==null?"":ob.toString();
                             }
@@ -278,7 +278,7 @@ public class ConvUtil {
                     {
                         Object ob = xPropertySet.getPropertyValue(property.Name);
                         com.sun.star.awt.XBitmap xBitmap = (XBitmap) UnoRuntime.queryInterface(com.sun.star.awt.XBitmap.class, ob);
-                        value = Base64.getEncoder().encodeToString(xBitmap.getDIB());
+                        value = SafeBase64.encodeToString(xBitmap.getDIB());
                     }
                     break;
                 case "com.sun.star.awt.Rectangle":

@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -267,9 +266,9 @@ public class HwpxFile {
 
     public InputStream decryptEntryStream(InputStream is, Map<String, String> entryManifestMap) throws HwpParseException, IOException {
 
-        byte[] salt = Base64.getDecoder().decode(entryManifestMap.get("salt"));
-        byte[] iv = Base64.getDecoder().decode(entryManifestMap.get("iv"));
-        byte[] expectedChecksum = Base64.getDecoder().decode(entryManifestMap.get("checksum"));
+        byte[] salt = SafeBase64.decode(entryManifestMap.get("salt"));
+        byte[] iv = SafeBase64.decode(entryManifestMap.get("iv"));
+        byte[] expectedChecksum = SafeBase64.decode(entryManifestMap.get("checksum"));
         int iterations = Integer.parseInt(entryManifestMap.get("iterCount"));
         int keySize = Integer.parseInt(entryManifestMap.get("keySize"));
         int originalSize = Integer.parseInt(entryManifestMap.get("fileSize"));
@@ -296,9 +295,9 @@ public class HwpxFile {
 
     public byte[] decryptEntryBinary(byte[] cipherText, Map<String, String> entryManifestMap) throws HwpParseException, IOException {
 
-        byte[] salt = Base64.getDecoder().decode(entryManifestMap.get("salt"));
-        byte[] iv = Base64.getDecoder().decode(entryManifestMap.get("iv"));
-        byte[] expectedChecksum = Base64.getDecoder().decode(entryManifestMap.get("checksum"));
+        byte[] salt = SafeBase64.decode(entryManifestMap.get("salt"));
+        byte[] iv = SafeBase64.decode(entryManifestMap.get("iv"));
+        byte[] expectedChecksum = SafeBase64.decode(entryManifestMap.get("checksum"));
         int iterations = Integer.parseInt(entryManifestMap.get("iterCount"));
         int keySize = Integer.parseInt(entryManifestMap.get("keySize"));
         int originalSize = Integer.parseInt(entryManifestMap.get("fileSize"));
