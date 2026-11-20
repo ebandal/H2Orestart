@@ -74,7 +74,9 @@ public enum HwpTag {
 	HWPTAG_TRACK_CHANGE				(_HwpTag.HWPTAG_BEGIN+80),
 	HWPTAG_TRACK_CHANGE_AUTHOR		(_HwpTag.HWPTAG_BEGIN+81),
 	HWPTAG_VIDEO_DATA				(_HwpTag.HWPTAG_BEGIN+82),
-	HWPTAG_SHAPE_COMPONENT_UNKNOWN	(_HwpTag.HWPTAG_BEGIN+99);
+	HWPTAG_SHAPE_COMPONENT_UNKNOWN	(_HwpTag.HWPTAG_BEGIN+99),
+	
+	HWPTAG_UNKNOWN					(_HwpTag.HWPTAG_BEGIN+100);
 
 	private int tagNum;
 	
@@ -91,6 +93,6 @@ public enum HwpTag {
     		if (tag.tagNum == tagNum)
     			return tag;
     	}
-    	return null;
+    	return HWPTAG_UNKNOWN;
     }
 }
