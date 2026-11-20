@@ -1036,6 +1036,7 @@ public class HwpSection {
             len = size;
             break;
         case "  nf":
+        case "  ne":
             len = size;
             break;
         }
