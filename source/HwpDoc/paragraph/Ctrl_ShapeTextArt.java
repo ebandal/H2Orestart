@@ -77,41 +77,81 @@ public class Ctrl_ShapeTextArt extends Ctrl_GeneralShape {
             Node child = nodeList.item(i);
             NamedNodeMap childAttrs = child.getAttributes();
             switch(child.getNodeName()) {
+            case "hc:pt0": // issue#87 에서 확인
             case "hp:pt0":
-                numStr = childAttrs.getNamedItem("x").getNodeValue();
-                pt0.x = Integer.parseInt(numStr);
-                numStr = childAttrs.getNamedItem("y").getNodeValue();
-                pt0.y = Integer.parseInt(numStr);
+                pt0 = new Point();
+                if (childAttrs.getNamedItem("x")!=null) {
+                    numStr = childAttrs.getNamedItem("x").getNodeValue();
+                    pt0.x = Integer.parseInt(numStr);
+                }
+                if (childAttrs.getNamedItem("y")!=null) {
+                    numStr = childAttrs.getNamedItem("y").getNodeValue();
+                    pt0.y = Integer.parseInt(numStr);
+                }
                 break;
+            case "hc:pt1": // issue#87 에서 확인
             case "hp:pt1":
-                numStr = childAttrs.getNamedItem("x").getNodeValue();
-                pt1.x = Integer.parseInt(numStr);
-                numStr = childAttrs.getNamedItem("y").getNodeValue();
-                pt1.y = Integer.parseInt(numStr);
+                pt1 = new Point();
+                if (childAttrs.getNamedItem("x")!=null) {
+                    numStr = childAttrs.getNamedItem("x").getNodeValue();
+                    pt1.x = Integer.parseInt(numStr);
+                }
+                if (childAttrs.getNamedItem("y")!=null) {
+                    numStr = childAttrs.getNamedItem("y").getNodeValue();
+                    pt1.y = Integer.parseInt(numStr);
+                }
                 break;
+            case "hc:pt2": // issue#87 에서 확인
             case "hp:pt2":
-                numStr = childAttrs.getNamedItem("x").getNodeValue();
-                pt2.x = Integer.parseInt(numStr);
-                numStr = childAttrs.getNamedItem("y").getNodeValue();
-                pt2.y = Integer.parseInt(numStr);
+                pt2 = new Point();
+                if (childAttrs.getNamedItem("x")!=null) {
+                    numStr = childAttrs.getNamedItem("x").getNodeValue();
+                    pt2.x = Integer.parseInt(numStr);
+                }
+                if (childAttrs.getNamedItem("y")!=null) {
+                    numStr = childAttrs.getNamedItem("y").getNodeValue();
+                    pt2.y = Integer.parseInt(numStr);
+                }
                 break;
+            case "hc:pt3": // issue#87 에서 확인
             case "hp:pt3":
-                numStr = childAttrs.getNamedItem("x").getNodeValue();
-                pt3.x = Integer.parseInt(numStr);
-                numStr = childAttrs.getNamedItem("y").getNodeValue();
-                pt3.y = Integer.parseInt(numStr);
+                pt3 = new Point();
+                if (childAttrs.getNamedItem("x")!=null) {
+                    numStr = childAttrs.getNamedItem("x").getNodeValue();
+                    pt3.x = Integer.parseInt(numStr);
+                }
+                if (childAttrs.getNamedItem("y")!=null) {
+                    numStr = childAttrs.getNamedItem("y").getNodeValue();
+                    pt3.y = Integer.parseInt(numStr);
+                }
                 break;
             case "hp:textartPr":   // 글맵시 모양 정보
-                fontName = childAttrs.getNamedItem("fontName").getNodeValue();
-                fontStyle = childAttrs.getNamedItem("fontStyle").getNodeValue();
-                fontType = childAttrs.getNamedItem("fontType").getNodeValue();
-                textShape = childAttrs.getNamedItem("textShape").getNodeValue();
-                fontStyle = childAttrs.getNamedItem("fontStyle").getNodeValue();
-                numStr = childAttrs.getNamedItem("lineSpacing").getNodeValue();
-                lineSpacing = (short) Integer.parseInt(numStr);
-                numStr = childAttrs.getNamedItem("spacing").getNodeValue();
-                spacing = (short) Integer.parseInt(numStr);
-                align = childAttrs.getNamedItem("align").getNodeValue();
+                if (childAttrs.getNamedItem("fontName")!=null) {
+                    fontName = childAttrs.getNamedItem("fontName").getNodeValue();
+                }
+                if (childAttrs.getNamedItem("fontStyle")!=null) {
+                    fontStyle = childAttrs.getNamedItem("fontStyle").getNodeValue();
+                }
+                if (childAttrs.getNamedItem("fontType")!=null) {
+                    fontType = childAttrs.getNamedItem("fontType").getNodeValue();
+                }
+                if (childAttrs.getNamedItem("textShape")!=null) {
+                    textShape = childAttrs.getNamedItem("textShape").getNodeValue();
+                }
+                if (childAttrs.getNamedItem("fontStyle")!=null) {
+                    fontStyle = childAttrs.getNamedItem("fontStyle").getNodeValue();
+                }
+                if (childAttrs.getNamedItem("lineSpacing")!=null) {
+                    numStr = childAttrs.getNamedItem("lineSpacing").getNodeValue();
+                    lineSpacing = (short) Integer.parseInt(numStr);
+                }
+                if (childAttrs.getNamedItem("charSpacing")!=null) {
+                    numStr = childAttrs.getNamedItem("charSpacing").getNodeValue();
+                    spacing = (short) Integer.parseInt(numStr);
+                }
+                if (childAttrs.getNamedItem("align")!=null) {
+                    align = childAttrs.getNamedItem("align").getNodeValue();
+                }
                 /*
                  * [TODO] shadow 처리 미구현
                  */

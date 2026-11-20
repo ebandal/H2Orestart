@@ -162,8 +162,8 @@ public class ConvGraphics {
         case "noc$": // 묶음 개체
             insertMulti(wContext, (Ctrl_Container) obj, step);
             break;
+        case "tat$": // 글맵시 -> 폰트워크
         case "elo$": // OLE
-        case "tat$": // 글맵시
             insertDummyTextFrame(wContext, (Ctrl_GeneralShape) obj, step);
             break;
         default:
