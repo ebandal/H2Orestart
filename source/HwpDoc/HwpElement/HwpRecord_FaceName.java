@@ -188,8 +188,9 @@ public class HwpRecord_FaceName extends HwpRecord {
                     Node substAttr = grandChildAttrs.item(k);
                     switch (substAttr.getNodeName()) {
                     case "familyType":
-                        basicFaceExists = true;
-                        basicFaceName   = substAttr.getNodeValue();
+                        // 글꼴 계열. HWP 의 familyType 값과 같은 순서 (HWP/HWPX 쌍 문서로 확인: GOTHIC=2, MYUNGJO=1)
+                        // HWPX 에는 기본 글꼴 이름(basicFaceName)과 serifStyle 이 저장되지 않는다.
+                        familyType      = familyTypeFromXml(substAttr.getNodeValue());
                         break;
                     case "serifStyle":
                         serifStyle      = Byte.parseByte(substAttr.getNodeValue());
@@ -224,6 +225,20 @@ public class HwpRecord_FaceName extends HwpRecord {
                     }
                 }
             }
+        }
+    }
+
+    /** OWPML familyType (FCAT_UNKNOWN, FCAT_MYUNGJO, FCAT_GOTHIC, ...) -> HWP 글꼴 계열 값 */
+    static byte familyTypeFromXml(String name) {
+        switch (name) {
+        case "FCAT_MYUNGJO":     return 1;
+        case "FCAT_GOTHIC":      return 2;
+        case "FCAT_SSERIF":      return 3;
+        case "FCAT_BRUSHSCRIPT": return 4;
+        case "FCAT_DECORATIVE":  return 5;
+        case "FCAT_NONRECTMJ":   return 6;
+        case "FCAT_NONRECTGT":   return 7;
+        default:                 return 0;   // FCAT_UNKNOWN
         }
     }
 

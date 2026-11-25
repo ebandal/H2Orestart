@@ -33,6 +33,7 @@ public abstract class Ctrl {
 
     public String ctrlId;
     public boolean fullfilled;     // 파싱이 완료되었는지를 나타냄
+    public int runCharShapeId = -1; // HWPX: 개체가 든 run 의 글자 모양 (charPrIDRef). 모르면 -1
 
     public Ctrl() {
     }

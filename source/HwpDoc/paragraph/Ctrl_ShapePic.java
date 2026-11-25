@@ -150,20 +150,6 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                     cropTop = Integer.parseInt(numStr);
                     numStr =  childAttrs.getNamedItem("bottom").getNodeValue();// 아래쪽에서 이미지를 자른 크기
                     cropBottom = Integer.parseInt(numStr);
-                    
-                    // 한컴 5.0.3.4 오류 체크 및 값 강제설정
-                    int minX = Math.min(Math.min(borderPoints[0].x, borderPoints[1].x), Math.min(borderPoints[2].x, borderPoints[3].x));
-                    int maxX = Math.max(Math.max(borderPoints[0].x, borderPoints[1].x), Math.max(borderPoints[2].x, borderPoints[3].x));
-                    int minY = Math.min(Math.min(borderPoints[0].y, borderPoints[1].y), Math.min(borderPoints[2].y, borderPoints[3].y));
-                    int maxY = Math.max(Math.max(borderPoints[0].y, borderPoints[1].y), Math.max(borderPoints[2].y, borderPoints[3].y));
-                    
-                    if ((cropLeft < minX || cropLeft > maxX) || (cropRight < minX || cropRight > maxX) || 
-                        (cropTop < minY || cropTop > maxY) || (cropBottom < minY || cropBottom > maxY)) {
-                        cropLeft = minX;
-                        cropRight = maxX;
-                        cropTop = minY;
-                        cropBottom = maxY;
-                    }
                 }
                 break;
             case "hp:effects":      // 이미지 효과 정보
@@ -304,6 +290,41 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
                 }
                 break;
             }
+        }
+
+        fixClip();
+    }
+
+    /*
+     * 한컴 5.0.3.4 오류 체크 및 값 강제설정 ([27]_cyhbank_이미지 위치 오류)
+     * 자르기 값(imgClip)은 원본 이미지 크기(imgDim) 기준 좌표이다 (HWP 바이너리와 같음).
+     * imgDim 범위 안이면 정상값이므로 그대로 두고, 범위를 벗어난 경우에만 이미지 좌표(imgRect)로 강제한다.
+     * 기존: imgRect(표시 크기) 범위로 검사하여 정상 파일에서도 보정이 발동, 실제로 자른 그림의 자르기가 사라졌음.
+     * imgClip 이 imgDim 뒤에 올 수도 있으므로 모든 자식을 읽은 뒤 검사한다.
+     */
+    private void fixClip() {
+        if (cropLeft==0 && cropRight==0 && cropTop==0 && cropBottom==0) {
+            return;
+        }
+        if (iniPicWidth>0 && iniPicHeight>0 &&
+            0<=cropLeft && cropLeft<=cropRight && cropRight<=iniPicWidth &&
+            0<=cropTop && cropTop<=cropBottom && cropBottom<=iniPicHeight) {
+            return;
+        }
+        if (borderPoints==null || borderPoints[0]==null || borderPoints[1]==null || borderPoints[2]==null || borderPoints[3]==null) {
+            return;
+        }
+        int minX = Math.min(Math.min(borderPoints[0].x, borderPoints[1].x), Math.min(borderPoints[2].x, borderPoints[3].x));
+        int maxX = Math.max(Math.max(borderPoints[0].x, borderPoints[1].x), Math.max(borderPoints[2].x, borderPoints[3].x));
+        int minY = Math.min(Math.min(borderPoints[0].y, borderPoints[1].y), Math.min(borderPoints[2].y, borderPoints[3].y));
+        int maxY = Math.max(Math.max(borderPoints[0].y, borderPoints[1].y), Math.max(borderPoints[2].y, borderPoints[3].y));
+
+        if ((cropLeft < minX || cropLeft > maxX) || (cropRight < minX || cropRight > maxX) ||
+            (cropTop < minY || cropTop > maxY) || (cropBottom < minY || cropBottom > maxY)) {
+            cropLeft = minX;
+            cropRight = maxX;
+            cropTop = minY;
+            cropBottom = maxY;
         }
     }
 
@@ -474,15 +495,18 @@ public class Ctrl_ShapePic extends Ctrl_GeneralShape {
             int offset = off;
             style           = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
             offset += 4;
-            transparency    = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            // 투명도/흐림/방향/거리는 float (기존: 정수로 대입해 600.0 이 1142292480 이 됐음)
+            transparency    = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
             offset += 4;
-            blur            = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            blur            = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
             offset += 4;
-            direction       = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            direction       = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
             offset += 4;
-            distance        = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+            distance        = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
             offset += 4;
-            angleX          = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
+            // 정렬 방식 (HWPX alignStyle, 예: 4=CENTER). 기존: 빠져 있어 이후 필드가 한 칸씩 밀렸음 (1R34a 원본 바이트와 HWPX 대조)
+            offset += 4;
+            angleX         = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
             offset += 4;
             angleY          = ByteBuffer.wrap(buf, offset, 4).order(ByteOrder.LITTLE_ENDIAN).getFloat();
             offset += 4;

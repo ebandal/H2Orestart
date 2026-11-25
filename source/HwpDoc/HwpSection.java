@@ -128,7 +128,12 @@ public class HwpSection {
                 }
                 
                 HwpTag tag = HwpTag.from(tagNum);
-                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" ("+size+")");
+                if (tag == HwpTag.HWPTAG_UNKNOWN) {      // 알 수 없는 태그: 레코드를 건너뛴다
+                    log.fine("unknown tag " + tagNum + " (" + size + ")");
+                    off += size;
+                    continue;
+                }
+                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+String.valueOf(tag)+" ("+size+")");
                 
                 if (level==0 && tag==HwpTag.HWPTAG_PARA_HEADER) {
                     HwpParagraph currPara = HwpParagraph.parse(tagNum, level, size, buf, off, version);
@@ -163,8 +168,13 @@ public class HwpSection {
             }
             
             HwpTag tag = HwpTag.from(tagNum);
+            if (tag == HwpTag.HWPTAG_UNKNOWN) {          // 알 수 없는 태그: 레코드를 건너뛴다
+                log.fine("unknown tag " + tagNum + " (" + size + ")");
+                offset += headerOffset + size;
+                continue;
+            }
             if (level > runLevel) {
-                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" > runLevel");
+                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+String.valueOf(tag)+" > runLevel");
                 
                 switch(tag) {
                 case HWPTAG_PARA_HEADER:
@@ -225,7 +235,7 @@ public class HwpSection {
                 }
             } else if (level==runLevel) {
                 offset += headerOffset;
-                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+tag.toString()+" ("+size+") = runLevel");
+                log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())+"[TAG]="+String.valueOf(tag)+" ("+size+") = runLevel");
                 
                 switch(tag) {
                 case HWPTAG_PARA_HEADER:
@@ -259,7 +269,8 @@ public class HwpSection {
                     }
                     break;
                 case HWPTAG_PARA_LINE_SEG:
-                    currPara.lineSegs = new LineSeg(tagNum, level, size, buf, offset, version);
+                    currPara.lineSegList = LineSeg.parseAll(tagNum, level, size, buf, offset, version);
+                    currPara.lineSegs = currPara.lineSegList.isEmpty() ? null : currPara.lineSegList.get(0);
                     offset += size;
                     break;
                 case HWPTAG_PARA_RANGE_TAG:
@@ -348,7 +359,7 @@ public class HwpSection {
             int headerOffset = 0;
             
             if (size == 0xFFF) {
-                size = buf[off + 7] << 24 & 0xFF000000 | buf[off + 6] << 16 & 0xFF0000 | buf[off + 5] << 8 & 0xFF00 | buf[off + 4] & 0xFF;
+                size = buf[offset + 7] << 24 & 0xFF000000 | buf[offset + 6] << 16 & 0xFF0000 | buf[offset + 5] << 8 & 0xFF00 | buf[offset + 4] & 0xFF;
                 headerOffset = 8;
             } else {
                 headerOffset = 4;
@@ -359,9 +370,14 @@ public class HwpSection {
             }
             
             HwpTag tag = HwpTag.from(tagNum);
+            if (tag == HwpTag.HWPTAG_UNKNOWN) {          // 알 수 없는 태그: 레코드를 건너뛴다
+                log.fine("unknown tag " + tagNum + " (" + size + ")");
+                offset += headerOffset + size;
+                continue;
+            }
             if (level > runLevel) {
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") > runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") > runLevel");
                 
                 switch (tag) {
                 case HWPTAG_PARA_HEADER:
@@ -472,7 +488,7 @@ public class HwpSection {
             } else if (level == runLevel) {
                 offset += headerOffset;
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") = runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") = runLevel");
                 
                 switch (tag) {
                 case HWPTAG_PARA_HEADER:
@@ -587,6 +603,12 @@ public class HwpSection {
                         // LIST_HEADER에 붙어서 오는 41byte 먼저 읽고,
                         TblCell cell = new TblCell(size - 6, buf, offset, version);
                         cell.verAlign = verAlign; // 세로 정렬
+                        if (cell.height < 0) {
+                            // 음수 셀 높이: 한글은 셀 위/아래 여백의 합으로 바꿔 저장한다 (HWP->HWPX 변환 쌍에서 확인)
+                            Ctrl_Table tbl = (Ctrl_Table) ctrl;
+                            cell.height = cell.hasMargin && cell.margin != null ? cell.margin[2] + cell.margin[3]
+                                                                               : tbl.inUSpace + tbl.inDSpace;
+                        }
                         offset += cell.getSize();
                         ((Ctrl_Table) ctrl).cells.add(cell);
                         /*
@@ -717,7 +739,7 @@ public class HwpSection {
             int headerOffset = 0;
 
             if (size == 0xFFF) {
-                size = buf[off + 7] << 24 & 0xFF000000 | buf[off + 6] << 16 & 0xFF0000 | buf[off + 5] << 8 & 0xFF00 | buf[off + 4] & 0xFF;
+                size = buf[offset + 7] << 24 & 0xFF000000 | buf[offset + 6] << 16 & 0xFF0000 | buf[offset + 5] << 8 & 0xFF00 | buf[offset + 4] & 0xFF;
                 headerOffset = 8;
             } else {
                 headerOffset = 4;
@@ -728,10 +750,15 @@ public class HwpSection {
             }
 
             HwpTag tag = HwpTag.from(tagNum);
+            if (tag == HwpTag.HWPTAG_UNKNOWN) {          // 알 수 없는 태그: 레코드를 건너뛴다
+                log.fine("unknown tag " + tagNum + " (" + size + ")");
+                offset += headerOffset + size;
+                continue;
+            }
             if (level > runLevel) {
                 offset += headerOffset;
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") > runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") > runLevel");
 
                 switch (tag) {
                 case HWPTAG_SHAPE_COMPONENT_PICTURE: {
@@ -917,7 +944,9 @@ public class HwpSection {
                         if (newCtrl instanceof Ctrl_Container) {
                             if (((Ctrl_Container) newCtrl).list == null)
                                 ((Ctrl_Container) newCtrl).list = new ArrayList<Ctrl_GeneralShape>();
-                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level, buf, offset, version);
+                            // runLevel 은 자식 개체의 레벨이다. 하위 묶음의 자식은 한 단계 아래(level+1).
+                            // 기존: level 을 넘겨 하위 묶음 뒤의 형제 개체들까지 하위 묶음의 자식으로 들어갔다
+                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level + 1, buf, offset, version);
                         }
                     }
                     break;
@@ -942,7 +971,7 @@ public class HwpSection {
             } else if (level == runLevel) {
                 offset += headerOffset;
                 log.fine(IntStream.rangeClosed(0, level).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining())
-                        + "[TAG]=" + tag.toString() + " (" + size + ") = runLevel");
+                        + "[TAG]=" + String.valueOf(tag) + " (" + size + ") = runLevel");
 
                 switch (tag) {
                 case HWPTAG_PARA_HEADER:
@@ -967,7 +996,9 @@ public class HwpSection {
                         if (newCtrl instanceof Ctrl_Container) {
                             if (((Ctrl_Container) newCtrl).list == null)
                                 ((Ctrl_Container) newCtrl).list = new ArrayList<Ctrl_GeneralShape>();
-                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level, buf, offset, version);
+                            // runLevel 은 자식 개체의 레벨이다. 하위 묶음의 자식은 한 단계 아래(level+1).
+                            // 기존: level 을 넘겨 하위 묶음 뒤의 형제 개체들까지 하위 묶음의 자식으로 들어갔다
+                            offset += parseContainerRecurse((Ctrl_Container) newCtrl, level + 1, buf, offset, version);
                         }
                     }
                     break;

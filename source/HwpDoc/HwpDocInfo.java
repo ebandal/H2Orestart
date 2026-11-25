@@ -54,11 +54,17 @@ public class HwpDocInfo {
     private static final Logger log = Logger.getLogger(HwpDocInfo.class.getName());
     public HanType         hanType;
     private HwpxFile       parentHwpx;
+    /** 문서 정보 (HWPX content.hpf 의 opf:metadata). 키: title, creator, subject, description, lastsaveby,
+     *  CreatedDate, ModifiedDate, keyword. 값이 없으면 넣지 않는다 */
+    public final java.util.Map<String, String> metadata = new LinkedHashMap<String, String>();
     private HwpFile        parentHwp;
     public List<HwpRecord> recordList;
 
     public LinkedHashMap<String, HwpRecord> binDataList;
     public List<HwpRecord> faceNameList;
+    /** 언어별(한글, 영문, 한자, 일어, 기타, 기호, 사용자) 글꼴이 faceNameList 에서 시작하는 위치.
+     *  글자 모양의 글꼴 ID 는 언어별 목록 안에서의 번호이다. */
+    public int[]           faceNameOffset = new int[7];
     public List<HwpRecord> borderFillList;
     public List<HwpRecord> charShapeList;
     public List<HwpRecord> numberingList;
@@ -119,6 +125,14 @@ public class HwpDocInfo {
             case HWPTAG_ID_MAPPINGS:
                 record = new HwpRecord_IdMapping(this, tagNum, level, size, buf, off, version);
                 recordList.add(record);
+                {   // FACENAME_HANGUL(1) ~ FACENAME_USER(7) 개수로 언어별 시작 위치 계산
+                    List<Integer> nums = ((HwpRecord_IdMapping)record).idMappingNum;
+                    int sum = 0;
+                    for (int lang=0; lang<7 && lang+1<nums.size(); lang++) {
+                        faceNameOffset[lang] = sum;
+                        sum += nums.get(lang+1);
+                    }
+                }
                 break;
             case HWPTAG_BIN_DATA:
                 HwpRecord_BinData binRecord = new HwpRecord_BinData(this, tagNum, level, size, buf, off, version);
@@ -192,6 +206,19 @@ public class HwpDocInfo {
             HwpRecord_BinData record = null;
             switch(node.getNodeName()) {
             case "opf:metadata":
+                {
+                    NodeList children = node.getChildNodes();
+                    for (int j=0; j<children.getLength(); j++) {
+                        Node m = children.item(j);
+                        String value = m.getTextContent();
+                        if (value == null || value.trim().isEmpty()) continue;
+                        if ("opf:title".equals(m.getNodeName())) {
+                            metadata.put("title", value.trim());
+                        } else if ("opf:meta".equals(m.getNodeName()) && m.getAttributes().getNamedItem("name") != null) {
+                            metadata.put(m.getAttributes().getNamedItem("name").getNodeValue(), value.trim());
+                        }
+                    }
+                }
                 break;
             case "opf:manifest":
                 {
@@ -200,8 +227,12 @@ public class HwpDocInfo {
                         Node childNode = children.item(j);
                         switch(childNode.getNodeName()) {
                         case "opf:item":
-                            record = new HwpRecord_BinData(childNode, version);
-                            binDataList.put(record.itemId, record);
+                            // manifest 에는 header.xml, section0.xml, settings.xml, Scripts/*.js 도 들어 있다.
+                            // BinData 는 isEmbeded 속성이 있거나 BinData/ 아래에 있는 항목만.
+                            if (isBinDataItem(childNode)) {
+                                record = new HwpRecord_BinData(childNode, version);
+                                binDataList.put(record.itemId, record);
+                            }
                             break;
                         // case "#text":
                         default:
@@ -214,6 +245,13 @@ public class HwpDocInfo {
         }
         
         return true;
+    }
+
+    private static boolean isBinDataItem(Node item) {
+        NamedNodeMap attrs = item.getAttributes();
+        if (attrs.getNamedItem("isEmbeded") != null) return true;
+        Node href = attrs.getNamedItem("href");
+        return href != null && href.getNodeValue().startsWith("BinData/");
     }
 
     boolean read(Document document, int version) throws HwpParseException, NotImplementedException {
@@ -236,6 +274,8 @@ public class HwpDocInfo {
                 readRefList(node, version);
                 break;
             case "hh:compatibleDocument":
+                // 호환 문서(targetProgram)는 화면 계산에 쓰지 않고 HWP 로 둔다. MS_WORD 로 읽으면 줄 간격이 1.21 배가 되어
+                // 한글보다 넓어진다 (sample-hwpx.hwpx: 한글 3쪽, HWP 로 3쪽, MS_WORD 로 4쪽). HWPX 저장도 HWP201X 로 쓴다
                 break;
             case "hh:docOption":
                 break;
@@ -266,6 +306,10 @@ public class HwpDocInfo {
                         case "hh:fontface":
                             NamedNodeMap attributes = childNode.getAttributes();
                             String lang = attributes.getNamedItem("lang").getNodeValue();   // [fontCnt="6", lang="HANGUL"]
+                            int langIndex = langIndex(lang);
+                            if (langIndex >= 0) {
+                                faceNameOffset[langIndex] = faceNameList.size();
+                            }
                             
                             NodeList childNodeList = childNode.getChildNodes();
                             for (int k=0; k<childNodeList.getLength(); k++) {
@@ -400,6 +444,29 @@ public class HwpDocInfo {
 
     public HwpFile getParentHwp() {
         return parentHwp;
+    }
+
+    private static int langIndex(String lang) {
+        switch (lang) {
+        case "HANGUL":   return 0;
+        case "LATIN":    return 1;
+        case "HANJA":    return 2;
+        case "JAPANESE": return 3;
+        case "OTHER":    return 4;
+        case "SYMBOL":   return 5;
+        case "USER":     return 6;
+        default:         return -1;
+        }
+    }
+
+    /** 언어별 글꼴 ID 로 글꼴 이름을 찾는다. 범위를 벗어나면 기존 방식(전체 목록의 번호)으로 찾는다. */
+    public String getFaceName(int lang, int fontID) {
+        int index = (lang >= 0 && lang < faceNameOffset.length ? faceNameOffset[lang] : 0) + fontID;
+        if (index < 0 || index >= faceNameList.size()) {
+            index = fontID;
+        }
+        if (index < 0 || index >= faceNameList.size()) return null;
+        return ((HwpRecord_FaceName) faceNameList.get(index)).faceName;
     }
 
     public static enum CompatDoc {

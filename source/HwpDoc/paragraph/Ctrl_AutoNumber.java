@@ -63,7 +63,7 @@ public class Ctrl_AutoNumber extends Ctrl {
         super(ctrlId);
         
         NamedNodeMap attributes = node.getAttributes();
-        numType = NumType.valueOf(attributes.getNamedItem("numType").getNodeValue());
+        numType = NumType.fromXml(attributes.getNamedItem("numType").getNodeValue());
 
         NodeList nodeList = node.getChildNodes();
         for (int i=0; i<nodeList.getLength(); i++) {
@@ -176,6 +176,15 @@ public class Ctrl_AutoNumber extends Ctrl {
 	    private NumType(int num) { 
 	    	this.num = num;
 	    }
+	    /** HWPX(OWPML) 의 numType 값 (PAGE, FOOTNOTE, ENDNOTE, PICTURE, TABLE, EQUATION, TOTAL_PAGE) 을 변환한다 */
+	    public static NumType fromXml(String name) {
+	        if ("PICTURE".equals(name)) return FIGURE;
+	        for (NumType type: values()) {
+	            if (type.name().equals(name)) return type;
+	        }
+	        return PAGE;
+	    }
+
 	    public static NumType from(int num) {
 	    	for (NumType type: values()) {
 	    		if (type.num == num)

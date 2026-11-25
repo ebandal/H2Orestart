@@ -53,6 +53,16 @@ public class HwpRecordTypes {
             }
             return SOLID;
         }
+        /*
+         * HWPX(OWPML) 선 종류 이름. 한글은 이름과 반대로 그린다:
+         *   "DOT" = 긴 점선(HWP 값 1), "DASH" = 점선(HWP 값 2)
+         * 한글 2018 에서 HWPX 를 PDF 로 내보내 확인. HWP 명세 표 25 와 HWP->HWPX 변환 쌍도 같은 대응.
+         */
+        public static LineStyle1 fromXml(String name) {
+            if ("DOT".equals(name))  return DASH;
+            if ("DASH".equals(name)) return DOT;
+            return valueOf(name);
+        }
     }
 
     // 테두리선, 취소선, 단 구분선
@@ -80,6 +90,16 @@ public class HwpRecordTypes {
                     return shape;
             }
             return NONE;
+        }
+        /*
+         * HWPX(OWPML) 선 종류 이름. 한글은 이름과 반대로 그린다:
+         *   "DOT" = 긴 점선(HWP 값 2), "DASH" = 점선(HWP 값 3)
+         * 한글 2018 에서 HWPX 를 PDF 로 내보내 확인. HWP 명세 표 25 와 HWP->HWPX 변환 쌍도 같은 대응.
+         */
+        public static LineStyle2 fromXml(String name) {
+            if ("DOT".equals(name))  return DASH;
+            if ("DASH".equals(name)) return DOT;
+            return valueOf(name);
         }
     }
 
@@ -143,6 +163,22 @@ public class HwpRecordTypes {
                     return shape;
             }
             return DIGIT;
+        }
+
+        /** HWPX(OWPML) 의 numFormat/formatType 값을 변환한다. 알 수 없는 값은 DIGIT */
+        public static NumberShape2 fromXml(String name) {
+            if (name==null) return DIGIT;
+            switch (name) {
+            case "CIRCLED_DIGIT":           return CIRCLE_DIGIT;
+            case "HANGUL_SYLLABLE":         return HANGLE_SYLLABLE;
+            case "DECAGON_CIRCLE_HANJA":    return DECAGON_CRICLE_HANGJA;
+            default:
+                for (NumberShape2 shape: values()) {
+                    if (shape.name().equals(name))
+                        return shape;
+                }
+                return DIGIT;
+            }
         }
     }
 

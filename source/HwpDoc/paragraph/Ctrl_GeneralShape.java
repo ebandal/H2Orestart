@@ -125,7 +125,7 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
                     }
                     numStr = childAttrs.getNamedItem("width").getNodeValue();                       // 선 굵기
                     lineThick = Integer.parseUnsignedInt(numStr);
-                    lineStyle = LineStyle2.valueOf(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
+                    lineStyle = LineStyle2.fromXml(childAttrs.getNamedItem("style").getNodeValue()); // 선 종류
                     
                     /*
                     childAttrs.getNamedItem("endCap").getNodeValue();                      // 선 끝 모양
@@ -438,8 +438,12 @@ public class Ctrl_GeneralShape extends Ctrl_ObjElement {
             offset += Ctrl_ShapeRect.parseCtrl((Ctrl_ShapeRect)shape, size-(offset-off), buf, offset, version);
             shape.ctrlId = ctrlId;
             break;
-        case "nil$":    // 선
         case "loc$":    // 개체연결선
+            shape = new Ctrl_ShapeConnectLine(obj);
+            offset += Ctrl_ShapeLine.parseCtrl((Ctrl_ShapeLine)shape, size-(offset-off), buf, offset, version);
+            shape.ctrlId = ctrlId;
+            break;
+        case "nil$":    // 선
             shape = new Ctrl_ShapeLine(obj);
             offset += Ctrl_ShapeLine.parseCtrl((Ctrl_ShapeLine)shape, size-(offset-off), buf, offset, version);
             shape.ctrlId = ctrlId;

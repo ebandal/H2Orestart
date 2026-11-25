@@ -58,9 +58,15 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
         
         NamedNodeMap attributes = node.getAttributes();
         
-        switch(attributes.getNamedItem("type").getNodeValue()) {
+        // 한글이 실제로 저장하는 속성은 videotype="Local|Web" 이다. (명세의 type="VT_LOCAL|VT_WEB" 도 허용)
+        Node typeNode = attributes.getNamedItem("videotype");
+        if (typeNode == null) typeNode = attributes.getNamedItem("type");
+        String type = typeNode == null ? "" : typeNode.getNodeValue();
+        switch(type) {
+        case "Local":
         case "VT_LOCAL":
             videoType = 0;   break;
+        case "Web":
         case "VT_WEB":
             videoType = 1;   break;
         default:
@@ -69,15 +75,22 @@ public class Ctrl_ShapeVideo extends Ctrl_GeneralShape {
             }
             break;
         }
-        
-        String numStr = attributes.getNamedItem("fileIDRef").getNodeValue();
-        vidoeBinID = (short) Integer.parseInt(numStr);
-        
-        numStr = attributes.getNamedItem("imageIDRef").getNodeValue();
-        thumnailBinID = numStr;
-        
+
+        // fileIDRef 는 "video2" 같은 BinData 아이디. 숫자 부분만 취한다.
+        Node fileNode = attributes.getNamedItem("fileIDRef");
+        if (fileNode != null) {
+            String digits = fileNode.getNodeValue().replaceAll("\\D", "");
+            if (!digits.isEmpty()) {
+                vidoeBinID = (short) Integer.parseInt(digits);
+            }
+        }
+
+        Node imageNode = attributes.getNamedItem("imageIDRef");
+        thumnailBinID = imageNode == null ? null : imageNode.getNodeValue();
+
         if (videoType==1) {
-            webURL = attributes.getNamedItem("tag").getNodeValue();
+            Node tagNode = attributes.getNamedItem("tag");
+            webURL = tagNode == null ? null : tagNode.getNodeValue();
         }
     }
 

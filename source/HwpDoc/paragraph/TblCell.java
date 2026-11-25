@@ -42,6 +42,8 @@ public class TblCell {
 	
 	public short	colAddr;			// 셀 주소(Column, 맨 왼쪽 셀이 0부터 시작하여 1씩 증가)
 	public short	rowAddr;			// 셀 주소(Row, 맨 위쪽 셀이 0부터 시작하여 1씩 증가)
+	public boolean	header;				// 제목 셀 여부
+	public boolean	hasMargin;			// 셀 여백 지정 여부 (false 면 표의 안쪽 여백을 따름)
 	public short	colSpan;			// 열의 병합 갯수
 	public short	rowSpan;			// 행의 병합 갯수
 	public int		width;				// 셀의 폭
@@ -56,7 +58,11 @@ public class TblCell {
 	public TblCell(int size, byte[] buf, int off, int version) {
 		int offset = off;
 		
-		// 앞 2byte는 무시한다.  해석불가.
+		// 문단 리스트 헤더 뒤 2 bytes (명세에 없음). HWP->HWPX 변환 쌍 셀 11만여 개에서 확인:
+		//   bit 0 = hasMargin (셀 여백 지정), bit 2 = header (제목 셀). bit 8, 10 은 HWPX 에 대응 값 없음
+		int extAttr = buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF;
+		hasMargin = (extAttr & 0x01) != 0;
+		header    = (extAttr & 0x04) != 0;
 		offset += 2;
 		
 		colAddr	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
@@ -74,7 +80,8 @@ public class TblCell {
 		
 		margin = new int[4];
 		for (int i=0;i<4;i++) {
-			margin[i]	= (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
+			// HWPUNIT16. 한글은 65535 를 HWPX 에 -1(4294967295) 로 저장하므로 부호 있는 값으로 읽는다
+			margin[i]	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
 			offset += 2;
 		}
 		borderFill	= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
@@ -90,8 +97,10 @@ public class TblCell {
         NamedNodeMap attrs = node.getAttributes();
         
         // attrs.getNamedItem("name").getNodeValue();
-        // attrs.getNamedItem("header").getNodeValue();
-        // attrs.getNamedItem("hasMargin").getNodeValue();
+        Node headerAttr = attrs.getNamedItem("header");
+        header = headerAttr!=null && "1".equals(headerAttr.getNodeValue());
+        Node hasMarginAttr = attrs.getNamedItem("hasMargin");
+        hasMargin = hasMarginAttr!=null && "1".equals(hasMarginAttr.getNodeValue());
         // attrs.getNamedItem("protect").getNodeValue();
         // attrs.getNamedItem("editable").getNodeValue();
         // attrs.getNamedItem("dirty").getNodeValue();

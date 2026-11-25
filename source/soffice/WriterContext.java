@@ -87,6 +87,10 @@ public class WriterContext implements IContext {
     public XText mText = null;
     public XTextCursor mTextCursor = null;
     public Path userHomeDir = null;
+    /** 개체로 시작하는 문단에서 개체를 넣기 전에 지정한 문단 스타일 (HwpRecurs). 첫 글자를 넣을 때 다시 지정하지 않는다 */
+    public String styleSetBeforeShape = null;
+    /** 본문의 마지막 문단 (H2OrestartImpl). 문서가 표로 끝날 때 끝 문단 스타일을 정하는 데 쓴다 (HwpRecurs) */
+    public HwpDoc.paragraph.HwpParagraph lastBodyPara = null;
 
     public WriterContext() {
     }

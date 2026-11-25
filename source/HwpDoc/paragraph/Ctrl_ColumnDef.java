@@ -105,10 +105,13 @@ public class Ctrl_ColumnDef extends Ctrl {
         NamedNodeMap attributes = node.getAttributes();
         
         switch(attributes.getNamedItem("type").getNodeValue()) {
+        // attr 은 HWP 단 정의 속성(명세 표 139)과 같은 비트로 채운다
         case "NEWSPAPER":
+            attr |= 0;  break;          // bit0-1 단 종류: 일반 다단
         case "BALANCED_NEWSPAPER":
+            attr |= 1;  break;          // 배분 다단
         case "PARALLEL":
-            break;
+            attr |= 2;  break;          // 평행 다단
         default:
         	if (log.isLoggable(Level.FINE)) {
         		throw new NotImplementedException("Ctrl_ColumnDef");
@@ -117,9 +120,11 @@ public class Ctrl_ColumnDef extends Ctrl {
         
         switch(attributes.getNamedItem("layout").getNodeValue()) {
         case "LEFT":
+            break;                      // bit10-11 단 방향: 왼쪽부터
         case "RIGHT":
+            attr |= 1<<10;  break;      // 오른쪽부터
         case "MIRROR":
-            break;
+            attr |= 2<<10;  break;      // 맞쪽
         default:
         	if (log.isLoggable(Level.FINE)) {
         		throw new NotImplementedException("Ctrl_ColumnDef");
@@ -135,8 +140,12 @@ public class Ctrl_ColumnDef extends Ctrl {
         case "1":
             sameSz = true;     break;
         }
+        attr |= (colCount & 0xFF)<<2 | (sameSz ? 1<<12 : 0);     // bit2-9 단 개수, bit12 단 너비 동일
 
-        // attributes.getNamedItem("sameGap").getNodeValue()
+        Node sameGapNode = attributes.getNamedItem("sameGap");     // 단 사이 간격
+        if (sameGapNode != null) {
+            sameGap = (short) Integer.parseInt(sameGapNode.getNodeValue());
+        }
         if (!sameSz) {
             colSzWidths = new short[colCount];
             colSzGaps = new short[colCount];
@@ -151,7 +160,7 @@ public class Ctrl_ColumnDef extends Ctrl {
             case "hp:colLine":
                 {
                     NamedNodeMap childAttrs = child.getAttributes();
-                    colLineStyle = LineStyle2.valueOf(childAttrs.getNamedItem("type").getNodeValue());
+                    colLineStyle = LineStyle2.fromXml(childAttrs.getNamedItem("type").getNodeValue());
 
                     switch(childAttrs.getNamedItem("width").getNodeValue()) {
                     case "0.1":

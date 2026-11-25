@@ -166,7 +166,7 @@ public class HwpRecord_TabDef extends HwpRecord {
                 String numStr = childAttrs.getNamedItem("pos").getNodeValue();
                 tabItem.pos = Integer.parseInt(numStr);
                 tabItem.type = Tab.Type.valueOf(childAttrs.getNamedItem("type").getNodeValue());
-                tabItem.leader = LineStyle2.valueOf(childAttrs.getNamedItem("leader").getNodeValue());
+                tabItem.leader = LineStyle2.fromXml(childAttrs.getNamedItem("leader").getNodeValue());
                 break;
             }
         }

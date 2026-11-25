@@ -198,7 +198,35 @@ public class ConvPara {
         
     }
 
+    /** 문단의 줄 나눔 기준/최소 공백 (문단 사용자 정의 속성). LibreOffice 에는 없는 속성이라 HWPX 저장(LoToHwpx)이 쓴다 */
+    public static final String PARA_BREAK_ATTR = "h2o-break";
+
+    /**
+     * 줄 나눔 기준(영문, 한글)과 최소 공백, 원래 줄 간격을 문단 사용자 정의 속성으로 남긴다.
+     * 값: 영문|한글|최소공백|줄간격종류|줄간격 (HWP 값). 줄 간격은 셀 문단처럼 가져오기가 바꿔 원래 값이 남지 않는 곳에 쓴다.
+     * 기존: 저장할 때 늘 한글 글자 단위/최소 공백 0 으로 써서, 어절 단위 문단이 한글에서 더 많은 줄로 나뉘었다
+     */
+    static void setParaBreakAttr(XPropertySet props, HwpRecord_ParaShape paraShape) {
+        try {
+            if (!props.getPropertySetInfo().hasPropertyByName("ParaUserDefinedAttributes")) return;
+            com.sun.star.container.XNameContainer attrs = UnoRuntime.queryInterface(com.sun.star.container.XNameContainer.class,
+                    props.getPropertyValue("ParaUserDefinedAttributes"));
+            if (attrs == null) return;
+            com.sun.star.xml.AttributeData d = new com.sun.star.xml.AttributeData();
+            d.Type = "CDATA";
+            d.Value = paraShape.breakLatinWord + "|" + paraShape.breakNonLatinWord + "|" + paraShape.condense
+                    + "|" + (paraShape.origLineSpacingType >= 0 ? paraShape.origLineSpacingType : paraShape.lineSpacingType)
+                    + "|" + (paraShape.origLineSpacingType >= 0 ? paraShape.origLineSpacing : paraShape.lineSpacing);
+            if (attrs.hasByName(PARA_BREAK_ATTR)) attrs.replaceByName(PARA_BREAK_ATTR, d);
+            else attrs.insertByName(PARA_BREAK_ATTR, d);
+            props.setPropertyValue("ParaUserDefinedAttributes", attrs);
+        } catch (Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+    }
+
     static void setParagraphProperties(XPropertySet xStyleProps, HwpRecord_ParaShape paraShape, CompatDoc compat, double preferSpace) {
+        setParaBreakAttr(xStyleProps, paraShape);
         try {
             ParagraphAdjust align = ParagraphAdjust.BLOCK;
             switch(paraShape.align) {
@@ -228,6 +256,9 @@ public class ConvPara {
             // widowOrphan                          // 외톨이줄 보호 여부
             // keepWithNext                         // 다음 문단과 함께 여부
             xStyleProps.setPropertyValue("ParaKeepTogether", paraShape.keepWithNext);
+            // keepLines                            // 문단 보호 여부 (문단이 쪽 경계에서 나뉘지 않음)
+            // 늘 설정한다 (기존: 문단 보호일 때만 false 로 설정해, 문단 나눔으로 이어지는 다음 문단들도 나뉘지 않았음)
+            xStyleProps.setPropertyValue("ParaSplit", !paraShape.keepLines);
             // pageBreakBefore                      // 문단 앞에서 항상 쪽 나눔 여부
             // verAlign                             // 세로정렬 (0:글꼴기준, 1:위쪽, 2:가운데, 3:아래)
             short vertAlign = ParagraphVertAlign.CENTER;
@@ -612,8 +643,58 @@ public class ConvPara {
         return (short) Math.round(spacing * 35.278);
     }
 
+    /** 대체 글꼴로 바꾼 글자에 남기는 원래 글꼴/자간/장평 (글자 사용자 정의 속성). HWPX 저장(LoToHwpx)이 원래 값으로 쓴다 */
+    public static final String ORIG_FONT_ATTR = "h2o-origfont";
+
+    /**
+     * 원래 글꼴 정보를 글자 사용자 정의 속성(TextUserDefinedAttributes)으로 남긴다. 값: 자간|장평|언어별 글꼴 이름(7개)|대체 글꼴.
+     * 대체되지 않은 글자 모양이면 지운다 (커서에 남으면 뒤에 넣는 글자에도 붙는다).
+     * 기존: 대체 글꼴(나눔고딕)과 폭 보정 자간이 HWPX 에 그대로 저장되어 한글에서 글자가 넓어지고 쪽 수가 늘었다
+     */
+    static void setOrigFontAttr(XPropertySet props, HwpRecord_CharShape charShape) {
+        setOrigFontAttr(props, charShape, "TextUserDefinedAttributes");
+    }
+
+    /**
+     * 문단 끝 글자 모양의 원래 글꼴 정보를 문단 사용자 정의 속성으로 남긴다. 문단 끝(빈 위치)에 지정한 글자 속성에는
+     * 글자 사용자 정의 속성이 남지 않는다
+     */
+    public static void setParaOrigFontAttr(XPropertySet props, HwpRecord_CharShape charShape) {
+        setOrigFontAttr(props, charShape, "ParaUserDefinedAttributes");
+    }
+
+    private static void setOrigFontAttr(XPropertySet props, HwpRecord_CharShape charShape, String propName) {
+        try {
+            if (!props.getPropertySetInfo().hasPropertyByName(propName)) return;
+            com.sun.star.container.XNameContainer attrs = UnoRuntime.queryInterface(com.sun.star.container.XNameContainer.class,
+                    props.getPropertyValue(propName));
+            if (attrs == null) return;
+            boolean has = attrs.hasByName(ORIG_FONT_ATTR);
+            if (charShape.origFontName == null) {
+                if (!has) return;
+                attrs.removeByName(ORIG_FONT_ATTR);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append(charShape.spacing[0]).append('|').append(charShape.ratio[0]);
+                for (String f : charShape.origFontName) sb.append('|').append(f == null ? "" : f.replace('|', ' '));
+                // 대체한 글꼴 이름: 저장할 때 실제 글꼴이 이것일 때만 원래 값으로 쓴다 (문단 속성은 마지막에 지정한 값이 남아
+                // 실제 문단 글자 속성과 다를 수 있다)
+                sb.append('|').append(charShape.fontName[0] == null ? "" : charShape.fontName[0].replace('|', ' '));
+                com.sun.star.xml.AttributeData d = new com.sun.star.xml.AttributeData();
+                d.Type = "CDATA";
+                d.Value = sb.toString();
+                if (has) attrs.replaceByName(ORIG_FONT_ATTR, d);
+                else attrs.insertByName(ORIG_FONT_ATTR, d);
+            }
+            props.setPropertyValue(propName, attrs);
+        } catch (Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+    }
+
     static void setCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, 
                                         HwpRecord_BorderFill borderFill, int step) {
+        setOrigFontAttr(xStyleProps, charShape);
         try {
             if (charShape.fontName[1]!=null) {
                 xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
@@ -820,6 +901,7 @@ public class ConvPara {
     }
     
     static void setDrawingCharacterProperties(XPropertySet xStyleProps, HwpRecord_CharShape charShape, int step) {
+        setOrigFontAttr(xStyleProps, charShape);    // 대체 글꼴의 원래 글꼴 (HWPX 저장)
         try {
             xStyleProps.setPropertyValue("CharFontName", charShape.fontName[1]);
             // paraProps.setPropertyValue("CharFontStyleName", faceName.faceName);

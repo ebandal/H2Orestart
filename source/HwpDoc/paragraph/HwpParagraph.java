@@ -20,6 +20,7 @@
  */
 package HwpDoc.paragraph;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -41,7 +42,8 @@ public class HwpParagraph {
     public short            paraStyleID;    // HWPTAG_PARA_HEADER
     public byte             breakType;      // HWPTAG_PARA_HEADER
     // public List<CharShape>   charShapes;   // HWPTAG_PARA_CHAR_SHAPE
-    public LineSeg          lineSegs;       // HWPTAG_PARA_LINE_SEG
+    public LineSeg          lineSegs;       // HWPTAG_PARA_LINE_SEG (첫 번째 줄)
+    public List<LineSeg>    lineSegList;    // HWPTAG_PARA_LINE_SEG (모든 줄)
     public List<RangeTag>   rangeTags;      // HWPTAG_PARA_RANGE_TAG
     
     public LinkedList<Ctrl> p;              // HWPTAG_PARA_TEXT + List<Ctrl>  V2
@@ -118,7 +120,14 @@ public class HwpParagraph {
                         Node grandChild = childNodeList.item(j);
                         switch(grandChild.getNodeName()) {
                         case "hp:lineseg":	
-                            lineSegs = new LineSeg(grandChild, version);
+                            {
+                                LineSeg seg = new LineSeg(grandChild, version);
+                                if (lineSegList == null) {
+                                    lineSegList = new ArrayList<LineSeg>();
+                                    lineSegs = seg;     // HWP 와 같이 첫 번째 줄
+                                }
+                                lineSegList.add(seg);
+                            }
                             break;
                         }
                     }
@@ -140,7 +149,9 @@ public class HwpParagraph {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK, charShapeID));
         }
         // 마지막에 PARA_BREAK로 끝나지 않았다면 PARA_BREAK를 삽입
-        if (p.size()==0 || !(p.getLast() instanceof Ctrl_Character)) {
+        // (문단 끝의 묶음 빈칸/고정폭 빈칸/하이픈/줄바꿈도 Ctrl_Character 이므로 종류까지 본다. 아니면 다음 문단과 합쳐진다)
+        if (p.size()==0 || !(p.getLast() instanceof Ctrl_Character)
+                || ((Ctrl_Character)p.getLast()).ctrlChar!=CtrlCharType.PARAGRAPH_BREAK) {
             p.add(new Ctrl_Character("   _", CtrlCharType.PARAGRAPH_BREAK, charShapeID));
         }
     }
@@ -188,18 +199,19 @@ public class HwpParagraph {
                     case "#text":
                         p.add(new ParaText("____", child.getNodeValue(), 0, charShapeId));
                         break;
+                    // 탭/줄바꿈/특수 공백도 그 run 의 글자 모양을 갖는다 (기존: 0번 글자 모양이 적용됨)
                     case "hp:lineBreak":
-                        p.add(new Ctrl_Character("   _", CtrlCharType.LINE_BREAK));
+                        p.add(new Ctrl_Character("   _", CtrlCharType.LINE_BREAK, charShapeId));
                         break;
                     case "hp:hyphen":
-                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN));
+                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_HYPHEN, charShapeId));
                         break;
                     case "hp:nbSpace":
                     case "hp:fwSpace":
-                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE));
+                        p.add(new Ctrl_Character("   _", CtrlCharType.HARD_SPACE, charShapeId));
                         break;
                     case "hp:tab":
-                        p.add(new ParaText("____", "\t", 0));
+                        p.add(new ParaText("____", "\t", 0, charShapeId));
                         break;
                     case "hp:markpenBegin":    // 134 page
                     case "hp:markpenEnd":
@@ -224,14 +236,17 @@ public class HwpParagraph {
         case "hp:pic":
             ctrl = new Ctrl_ShapePic("cip$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:container":
             ctrl = new Ctrl_Container("noc$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:ole":
             ctrl = new Ctrl_ShapeOle("elo$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:equation":
             ctrl = new Ctrl_EqEdit("deqe", node, version, context);
@@ -240,38 +255,47 @@ public class HwpParagraph {
         case "hp:line":
             ctrl = new Ctrl_ShapeLine("nil$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:rect":
             ctrl = new Ctrl_ShapeRect("cer$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:ellipse":
             ctrl = new Ctrl_ShapeEllipse("lle$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:arc":
             ctrl = new Ctrl_ShapeArc("cra$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:polygon":
             ctrl = new Ctrl_ShapePolygon("lop$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:curve":
             ctrl = new Ctrl_ShapeCurve("ruc$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:connectLine":
             ctrl = new Ctrl_ShapeConnectLine("loc$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:textart":
             ctrl = new Ctrl_ShapeTextArt("tat$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:video":
             ctrl = new Ctrl_ShapeVideo("div$", node, version, context);
             p.add(ctrl);
+            ctrl.runCharShapeId = charShapeId;
             break;
         case "hp:compose":
         case "hp:dutmal":

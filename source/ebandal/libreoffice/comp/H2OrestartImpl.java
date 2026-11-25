@@ -341,7 +341,13 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
                 ConvPara.makeCustomParagraphStyle(writerContext, i, (HwpRecord_Style)writerContext.getDocInfo().styleList.get(i));
             }
 
+            setDocumentProperties(writerContext);
+
             int secIndex = 0;
+            if (!sections.isEmpty() && !sections.get(sections.size()-1).paraList.isEmpty()) {
+                java.util.List<HwpParagraph> lastList = sections.get(sections.size()-1).paraList;
+                writerContext.lastBodyPara = lastList.get(lastList.size()-1);
+            }
             for (int i=0; i<sections.size(); i++) {
                 // context.mMyDocument.lockControllers();
                 HwpSection section = sections.get(i);
@@ -375,6 +381,52 @@ public final class H2OrestartImpl extends WeakBase implements ebandal.libreoffic
         xCloseable.addCloseListener(this);
 
         return true;
+    }
+
+    /**
+     * HWPX 문서 정보(제목, 작성자, 주제, 설명, 키워드, 마지막 저장자, 작성일/수정일)를 LibreOffice 문서 속성으로 옮긴다.
+     * HWPX 로 저장할 때 다시 쓴다 (기존: 옮기지 않아 저장하면 작성자 등이 비고 작성일이 저장 시각이 되었다)
+     */
+    private static void setDocumentProperties(WriterContext writerContext) {
+        try {
+            java.util.Map<String, String> md = writerContext.getDocInfo().metadata;
+            if (md.isEmpty()) return;
+            com.sun.star.document.XDocumentPropertiesSupplier dps = UnoRuntime.queryInterface(
+                    com.sun.star.document.XDocumentPropertiesSupplier.class, writerContext.mMyDocument);
+            if (dps == null) return;
+            com.sun.star.document.XDocumentProperties dp = dps.getDocumentProperties();
+            if (md.containsKey("title")) dp.setTitle(md.get("title"));
+            if (md.containsKey("creator")) dp.setAuthor(md.get("creator"));
+            if (md.containsKey("subject")) dp.setSubject(md.get("subject"));
+            if (md.containsKey("description")) dp.setDescription(md.get("description"));
+            if (md.containsKey("lastsaveby")) dp.setModifiedBy(md.get("lastsaveby"));
+            if (md.containsKey("keyword")) {
+                String[] kw = md.get("keyword").split("\\s*,\\s*");
+                dp.setKeywords(kw);
+            }
+            com.sun.star.util.DateTime created = parseUtc(md.get("CreatedDate"));
+            if (created != null) dp.setCreationDate(created);
+            com.sun.star.util.DateTime modified = parseUtc(md.get("ModifiedDate"));
+            if (modified != null) dp.setModificationDate(modified);
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, e.toString(), e);
+        }
+    }
+
+    /** 한글 날짜(yyyy-MM-dd'T'HH:mm:ss'Z', UTC)를 LibreOffice 날짜로. 형식이 다르면 null */
+    private static com.sun.star.util.DateTime parseUtc(String s) {
+        if (s == null) return null;
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})Z?").matcher(s.trim());
+        if (!m.matches()) return null;
+        com.sun.star.util.DateTime d = new com.sun.star.util.DateTime();
+        d.Year = Short.parseShort(m.group(1));
+        d.Month = Short.parseShort(m.group(2));
+        d.Day = Short.parseShort(m.group(3));
+        d.Hours = Short.parseShort(m.group(4));
+        d.Minutes = Short.parseShort(m.group(5));
+        d.Seconds = Short.parseShort(m.group(6));
+        d.IsUTC = true;
+        return d;
     }
 
     /**

@@ -101,7 +101,7 @@ public class Ctrl_SectionDef extends Ctrl {
 		showFirstBorder	= (attr&0x100)==0x100?true:false;
 		showFirstFill	= (attr&0x200)==0x200?true:false;
 		textDirection	= (byte) (attr>>16&0x07);
-		hideEmptyLine	= (attr&0x20000)==0x20000?true:false;
+		hideEmptyLine	= (attr&0x80000)==0x80000?true:false;	// bit 19 (기존 0x20000 은 텍스트 방향 비트)
 		pageStartOn		= (byte) (attr>>20&0x03);
 		
 		// 동일한 페이지에서 서로 다른 단 사이의 간격.  기본값:1134. 기본설정 11.3pt=4mm=0.158inch
@@ -259,10 +259,11 @@ public class Ctrl_SectionDef extends Ctrl {
                     }
                     
                     switch(childAttrs.getNamedItem("border").getNodeValue()) {
+                    // 명세 표 130: bit3 테두리 감추기, bit8 첫 쪽에만 테두리 표시
                     case "HIDE_FIRST":
                         hideBorder = true;  showFirstBorder = false;    break;
                     case "SHOW_FIRST":
-                        hideBorder = true;  showFirstBorder = false;    break;
+                        hideBorder = false; showFirstBorder = true;     break;
                     case "SHOW_ALL":
                         hideBorder = false; showFirstBorder = false;    break;
                     default:
@@ -273,12 +274,13 @@ public class Ctrl_SectionDef extends Ctrl {
                     }
                     
                     switch(childAttrs.getNamedItem("fill").getNodeValue()) {
+                    // 명세 표 130: bit4 배경 감추기, bit9 첫 쪽에만 배경 표시
                     case "HIDE_FIRST":
                         hideFill = true;  showFirstFill = false;  break;
                     case "SHOW_FIRST":
-                        hideFill = true;  showFirstFill = true;  break;
+                        hideFill = false; showFirstFill = true;   break;
                     case "SHOW_ALL":
-                        hideFill = false;  showFirstFill = true;  break;
+                        hideFill = false; showFirstFill = false;  break;
                     default:
                     	if (log.isLoggable(Level.FINE)) {
                     		throw new NotImplementedException("Ctrl_SectionDef");

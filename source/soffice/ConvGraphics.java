@@ -60,6 +60,7 @@ import com.sun.star.drawing.TextHorizontalAdjust;
 import com.sun.star.drawing.TextVerticalAdjust;
 import com.sun.star.drawing.XShape;
 import com.sun.star.graphic.XGraphic;
+import com.sun.star.text.GraphicCrop;
 import com.sun.star.graphic.XGraphicProvider;
 import com.sun.star.lang.IllegalArgumentException;
 import com.sun.star.lang.WrappedTargetException;
@@ -105,6 +106,7 @@ import HwpDoc.paragraph.Ctrl_ShapeArc;
 import HwpDoc.paragraph.Ctrl_ShapeCurve;
 import HwpDoc.paragraph.Ctrl_ShapeEllipse;
 import HwpDoc.paragraph.Ctrl_ShapeLine;
+import HwpDoc.paragraph.Ctrl_ShapeConnectLine;
 import HwpDoc.paragraph.Ctrl_ShapePic;
 import HwpDoc.paragraph.Ctrl_ShapePolygon;
 import HwpDoc.paragraph.Ctrl_ShapeRect;
@@ -116,6 +118,52 @@ import HwpDoc.section.Page;
 import soffice.HwpCallback.TableFrame;
 
 public class ConvGraphics {
+
+    /**
+     * 다각형 점을 넣은 값에 맞춘다. LibreOffice 는 점을 개체 크기에 맞춰 다시 계산하면서 점이 1/100 mm 씩 어긋난다
+     * (예: 높이 264 에서 126 이 127 이 된다). 넣은 점을 개체 크기로 늘인 위치(왼쪽 위 기준)와 읽은 점이 2 이내로 다르면
+     * 그 차이만큼 고쳐 다시 넣는다. 기존: HWPX 로 저장/다시 읽을 때마다 점이 조금씩 움직였다
+     */
+    private static void fixPolygonPoints(XPropertySet xPropSet, Point[] in, Size size) {
+        try {
+            if (in.length == 0) return;
+            int bw = 0, bh = 0;
+            for (Point p : in) {
+                bw = Math.max(bw, p.X);
+                bh = Math.max(bh, p.Y);
+            }
+            int[] wantX = new int[in.length], wantY = new int[in.length];
+            for (int i = 0; i < in.length; i++) {
+                wantX[i] = bw > 0 ? (int) Math.round(in[i].X * (double) size.Width / bw) : in[i].X;
+                wantY[i] = bh > 0 ? (int) Math.round(in[i].Y * (double) size.Height / bh) : in[i].Y;
+            }
+            for (int pass = 0; pass < 3; pass++) {
+                Object pv = xPropSet.getPropertyValue("PolyPolygon");
+                if (!(pv instanceof Point[][])) return;
+                Point[][] pp = (Point[][]) pv;
+                if (pp.length != 1 || pp[0].length != in.length) return;
+                int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE;
+                for (Point p : pp[0]) {
+                    minX = Math.min(minX, p.X);
+                    minY = Math.min(minY, p.Y);
+                }
+                boolean same = true;
+                Point[] fixed = new Point[in.length];
+                for (int i = 0; i < in.length; i++) {
+                    int dx = wantX[i] - (pp[0][i].X - minX);
+                    int dy = wantY[i] - (pp[0][i].Y - minY);
+                    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) return;   // 크게 다르면 건드리지 않는다
+                    if (dx != 0 || dy != 0) same = false;
+                    fixed[i] = new Point(pp[0][i].X + dx, pp[0][i].Y + dy);
+                }
+                if (same) return;
+                xPropSet.setPropertyValue("PolyPolygon", new Point[][] { fixed });
+            }
+        } catch (java.lang.Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+    }
+
     private static final Logger log = Logger.getLogger(ConvGraphics.class.getName());
     private static int autoNum = 0;
 
@@ -143,8 +191,14 @@ public class ConvGraphics {
                 insertTextFrame(wContext, (Ctrl_ShapeRect) obj, step, -1, -1);
             }
             break;
-        case "nil$": // 선
         case "loc$":
+            // 꺾은선/곡선 연결선은 제어점을 따라 그린다
+            if (obj instanceof Ctrl_ShapeConnectLine && insertConnectorPath(wContext, (Ctrl_ShapeConnectLine) obj, step)) {
+                break;
+            }
+            insertLINE(wContext, (Ctrl_ShapeLine) obj, step, -1, -1);
+            break;
+        case "nil$": // 선
             insertLINE(wContext, (Ctrl_ShapeLine) obj, step, -1, -1);
             break;
         case "lle$": // 타원
@@ -256,6 +310,82 @@ public class ConvGraphics {
         return new int[] { width, height };
     }
 
+    /**
+     * 그림의 크기(1/100 mm): LibreOffice 가 자르기(GraphicCrop) 기준으로 쓰는 원래 크기. 픽셀 단위 그림은 96 dpi 로 본다
+     */
+    public static Size graphicSize100thMM(XGraphic graphic) {
+        try {
+            XPropertySet gps = UnoRuntime.queryInterface(XPropertySet.class, graphic);
+            if (gps == null) return null;
+            Object o = gps.getPropertyValue("Size100thMM");
+            if (o instanceof Size && ((Size) o).Width > 0 && ((Size) o).Height > 0) return (Size) o;
+            o = gps.getPropertyValue("SizePixel");
+            if (o instanceof Size && ((Size) o).Width > 0 && ((Size) o).Height > 0) {
+                return new Size((int) Math.round(((Size) o).Width * 2540.0 / 96), (int) Math.round(((Size) o).Height * 2540.0 / 96));
+            }
+        } catch (java.lang.Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+        return null;
+    }
+
+    /**
+     * 한글 그림 자르기(imgClip: 원본 그림 크기 imgDim 기준의 보이는 사각형)를 LibreOffice 자르기(그림 크기 기준으로 네 변에서
+     * 잘라낸 길이)로 바꾼다. 자르지 않았으면 null. 비율은 가로/세로 따로 정한다 (원본 높이를 모르면 가로 비율)
+     */
+    private static GraphicCrop cropOf(XGraphic graphic, Ctrl_ShapePic pic) {
+        if (pic.cropLeft == 0 && pic.cropRight == 0 && pic.cropTop == 0 && pic.cropBottom == 0) return null;
+        int orgWidth = pic.iniPicWidth == 0 ? pic.iniWidth : pic.iniPicWidth;
+        int orgHeight = pic.iniPicHeight == 0 ? pic.iniHeight : pic.iniPicHeight;
+        if (pic.iniWidth == pic.cropRight && pic.iniHeight == pic.cropBottom) {
+            orgWidth = pic.iniWidth;
+            orgHeight = pic.iniHeight;
+        }
+        if (orgWidth <= 0) return null;
+        if (pic.cropLeft <= 0 && pic.cropTop <= 0 && pic.cropRight >= orgWidth && (orgHeight <= 0 || pic.cropBottom >= orgHeight)) {
+            return null;    // 전체
+        }
+        Size g = graphicSize100thMM(graphic);
+        if (g == null) return null;
+        double rx = (double) g.Width / orgWidth;                            // 1/100 mm per 한글 단위
+        double ry = orgHeight > 0 ? (double) g.Height / orgHeight : rx;
+        GraphicCrop c = new GraphicCrop();
+        c.Left = (int) Math.round(Math.max(0, pic.cropLeft) * rx);
+        c.Top = (int) Math.round(Math.max(0, pic.cropTop) * ry);
+        c.Right = (int) Math.round(Math.max(0, g.Width - pic.cropRight * rx));
+        c.Bottom = (int) Math.round(Math.max(0, g.Height - pic.cropBottom * ry));
+        if (c.Left + c.Right >= g.Width || c.Top + c.Bottom >= g.Height) return null;
+        if (c.Left == 0 && c.Top == 0 && c.Right == 0 && c.Bottom == 0) return null;
+        return c;
+    }
+
+    /** 그래픽을 PNG 로 바꾼 그래픽 (실패하면 null) */
+    private static XGraphic toPng(XGraphicProvider provider, XGraphic graphic) {
+        java.io.File tmp = null;
+        try {
+            tmp = java.io.File.createTempFile("H2O_GIF_", ".png");
+            PropertyValue[] pv = new PropertyValue[2];
+            pv[0] = new PropertyValue();
+            pv[0].Name = "URL";
+            pv[0].Value = tmp.toURI().toURL().toExternalForm();
+            pv[1] = new PropertyValue();
+            pv[1].Name = "MimeType";
+            pv[1].Value = "image/png";
+            provider.storeGraphic(graphic, pv);
+            byte[] data = Files.readAllBytes(tmp.toPath());
+            if (data.length == 0) return null;
+            pv[0] = new PropertyValue();
+            pv[0].Name = "InputStream";
+            pv[0].Value = new ByteArrayToXInputStreamAdapter(data);
+            return provider.queryGraphic(pv);
+        } catch (java.lang.Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+            return null;
+        } finally {
+            if (tmp != null && !tmp.delete()) tmp.deleteOnExit();
+        }
+    }
+
     private static void insertPICTURE(WriterContext wContext, Ctrl_ShapePic pic, int step, int shapeWidth, int shapeHeight) throws HwpParseException {
         boolean hasCaption = pic.caption == null ? false : pic.caption.size() == 0 ? false : true;
 
@@ -337,69 +467,20 @@ public class ConvGraphics {
             if (graphic == null) {
                 log.severe("Error loading the image");
             } else {
-                if (pic.cropLeft>0 || pic.cropRight>0 || pic.cropTop>0 || pic.cropBottom>0) {
-                    /* 이미지 원본이 페이지보다 크면  원본이미지가 아닌 페이지크기에서 crop하므로 원하는 그림을 가져오지 못한다.
-                    GraphicCrop crop = new GraphicCrop();
-                    crop.Left   = Transform.translateHwp2Office(pic.cropLeft);
-                    crop.Right  = Transform.translateHwp2Office(pic.iniPicWidth-pic.cropRight);
-                    crop.Top    = Transform.translateHwp2Office(pic.cropTop);
-                    crop.Bottom = Transform.translateHwp2Office(pic.iniPicHeight-pic.cropBottom);
-                    xPropSet.setPropertyValue("GraphicCrop", crop);
-                    */
-                    try {
-                        PropertyValue[] pv = new PropertyValue[2];
-                        Path homeDir = wContext.userHomeDir;
-                        Path path = Files.createTempFile(homeDir, "H2O_IMG_", "_" + pic.binDataID + ".png");
-                        URL url = path.toFile().toURI().toURL();
-                        String urlString = url.toExternalForm();
-                        pv[0] = new PropertyValue();
-                        pv[0].Name = "URL";
-                        pv[0].Value = urlString;
-                        pv[1] = new PropertyValue();
-                        pv[1].Name = "MimeType";
-                        pv[1].Value = "image/png";
-                        xGraphicProvider.storeGraphic(graphic, pv);
-                        
-                        BufferedImage originalImage = ImageIO.read(path.toFile());
-                        Files.delete(path);
-                        
-                        int orgWidth = pic.iniPicWidth==0 ? pic.iniWidth : pic.iniPicWidth;
-                        if (pic.iniWidth == pic.cropRight && pic.iniHeight == pic.cropBottom) {
-                            orgWidth = pic.iniWidth;
-                        }
-                        int imgWidth = originalImage.getWidth();
-                        int imgHeight = originalImage.getHeight();
-                        float hwp2pixelRatio = (float)imgWidth / orgWidth;
-                        int cropLeftPixel = (int)(pic.cropLeft*hwp2pixelRatio);
-                        int cropTopPixel = (int)(pic.cropTop*hwp2pixelRatio);
-                        int cropWidthPixel = (int)((pic.cropRight-pic.cropLeft)*hwp2pixelRatio);
-                        int cropHeightPixel = (int)((pic.cropBottom-pic.cropTop)*hwp2pixelRatio);
-                        int subLeft = cropLeftPixel>imgWidth ? 0 : cropLeftPixel;
-                        int subTop = cropTopPixel>imgHeight ? 0 : cropTopPixel;
-                        int subWidth = Math.min(cropWidthPixel, imgWidth-subLeft);
-                        int subHeight = Math.min(cropHeightPixel, imgHeight-subTop);
-                        BufferedImage subImgage = originalImage.getSubimage(subLeft,
-                                                                            subTop,
-                                                                            subWidth,
-                                                                            subHeight);
-                        
-                        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                            ImageIO.write(subImgage, "png", baos);
-                            imageAsByteArray = baos.toByteArray();
-                            imageType = "png";
-                            pv[0] = new PropertyValue();
-                            pv[0].Name = "InputStream";
-                            pv[0].Value = new ByteArrayToXInputStreamAdapter(imageAsByteArray);
-                            pv[1] = new PropertyValue();
-                            pv[1].Name = "MimeType";
-                            pv[1].Value = "image/png";
-                            graphic = xGraphicProvider.queryGraphic(pv);
-                        }
-                    } catch (IOException e) {
-                        log.log(Level.SEVERE, e.toString(), e);
-                    }
+                if ("gif".equalsIgnoreCase(imageType)) {
+                    // 투명색이 있는 GIF 는 그대로 넣으면 LibreOffice 에서 보이지 않는 경우가 있다 (예: 글머리 아이콘). 기존처럼
+                    // PNG 로 바꿔 넣는다 (손실 없음)
+                    XGraphic png = toPng(xGraphicProvider, graphic);
+                    if (png != null) graphic = png;
                 }
                 xPropSet.setPropertyValue("Graphic", graphic);
+                // 자른 그림: 원본 그림은 그대로 두고 자르기(GraphicCrop)로 보이는 부분만 정한다. HWPX 로 저장할 때 원본과
+                // 자르기를 그대로 쓸 수 있다 (기존: 픽셀을 잘라낸 PNG 로 바꿔 넣어 잘린 부분이 사라지고 JPEG 도 PNG 가 되었다.
+                // 자르지 않은 그림도 자르기 영역(전체)이 0 이 아니어서 모두 PNG 로 바뀌었다)
+                GraphicCrop graphicCrop = cropOf(graphic, pic);
+                if (graphicCrop != null) {
+                    xPropSet.setPropertyValue("GraphicCrop", graphicCrop);
+                }
             }
 
             if (hasCaption) {
@@ -654,6 +735,7 @@ public class ConvGraphics {
                     }
                     break;
                 case "Ctrl_ShapeLine":
+                case "Ctrl_ShapeConnectLine":   // 개체연결선은 선으로 그린다
                     sizeWidth = (((Ctrl_ShapeLine) shape).endX - ((Ctrl_ShapeLine) shape).startX);
                     sizeHeight = (((Ctrl_ShapeLine) shape).endY - ((Ctrl_ShapeLine) shape).startY);
                     sizeWidth = (int) (shape.iniWidth * xScale /* /container.matrixSeq[0] */);
@@ -1292,8 +1374,10 @@ public class ConvGraphics {
                 }
             }
 
-            setArrowStyle(xPropsSet, shape.lineHead, shape.lineHeadSz, true);
-            setArrowStyle(xPropsSet, shape.lineTail, shape.lineTailSz, false);
+            // isReverseHV(attr bit0): 수평/수직선의 실제 방향이 저장된 좌표와 반대. 시작/끝 화살표를 맞바꾼다
+            boolean reverse = (shape.attr & 0x01) != 0;
+            setArrowStyle(xPropsSet, reverse ? shape.lineTail : shape.lineHead, reverse ? shape.lineTailSz : shape.lineHeadSz, true);
+            setArrowStyle(xPropsSet, reverse ? shape.lineHead : shape.lineTail, reverse ? shape.lineHeadSz : shape.lineTailSz, false);
             if (shape.nGrp == 0) {
                 ++autoNum;
             }
@@ -1307,6 +1391,76 @@ public class ConvGraphics {
             log.log(Level.SEVERE, e.toString(), e);
         } catch (SkipDrawingException e) {
             log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /**
+     * 꺾은선(STROKE_*)·곡선(ARC_*) 개체연결선을 제어점을 따라 꺾은선으로 그린다.
+     * 제어점(개체 좌표)에 scale/rotation 행렬(matrixSeq), translation 행렬(matrix) 순으로 적용하면
+     * 개체 위치 기준 좌표가 된다 (건강보험.hwp 의 꺾은선으로 한글 출력과 대조).
+     * 묶음 안의 연결선, 제어점이 2개 이하인 직선은 처리하지 않고 false 를 돌려준다.
+     */
+    private static boolean insertConnectorPath(WriterContext wContext, Ctrl_ShapeConnectLine shape, int step) {
+        if (shape.nGrp != 0 || shape.controlPoints == null || shape.controlPoints.size() <= 2 || shape.type == null
+                || shape.type.name().startsWith("STRAIGHT") || shape.matrix == null || shape.matrix.length < 6) {
+            return false;
+        }
+        boolean hasCaption = shape.caption != null && shape.caption.size() > 0;
+        if (hasCaption) {
+            return false;
+        }
+        try {
+            int n = shape.controlPoints.size();
+            double[] xs = new double[n], ys = new double[n];
+            for (int i = 0; i < n; i++) {
+                double x = shape.controlPoints.get(i).x, y = shape.controlPoints.get(i).y;
+                for (int m = 0; m < shape.matCnt && shape.matrixSeq != null && m * 12 + 11 < shape.matrixSeq.length; m++) {
+                    double[] s = shape.matrixSeq;
+                    int b = m * 12;
+                    double sx = s[b] * x + s[b + 1] * y + s[b + 2];        // scale
+                    double sy = s[b + 3] * x + s[b + 4] * y + s[b + 5];
+                    x = s[b + 6] * sx + s[b + 7] * sy + s[b + 8];          // rotation
+                    y = s[b + 9] * sx + s[b + 10] * sy + s[b + 11];
+                }
+                double[] t = shape.matrix;
+                xs[i] = t[0] * x + t[1] * y + t[2];
+                ys[i] = t[3] * x + t[4] * y + t[5];
+            }
+            double minX = xs[0], minY = ys[0], maxX = xs[0], maxY = ys[0];
+            for (int i = 1; i < n; i++) {
+                minX = Math.min(minX, xs[i]);  maxX = Math.max(maxX, xs[i]);
+                minY = Math.min(minY, ys[i]);  maxY = Math.max(maxY, ys[i]);
+            }
+
+            Object xObj = wContext.mMSF.createInstance("com.sun.star.drawing.PolyLineShape");
+            XTextContent xTextContentShape = (XTextContent) UnoRuntime.queryInterface(XTextContent.class, xObj);
+            XShape xShape = (XShape) UnoRuntime.queryInterface(XShape.class, xObj);
+            xShape.setPosition(new Point(0, 0));
+            xShape.setSize(new Size(Transform.translateHwp2Office((int) (maxX - minX)), Transform.translateHwp2Office((int) (maxY - minY))));
+            XPropertySet xPropSet = (XPropertySet) UnoRuntime.queryInterface(XPropertySet.class, xShape);
+            xPropSet.setPropertyValue("AnchorType", TextContentAnchorType.AT_PARAGRAPH);
+            setPosition(xPropSet, shape, (int) minX, (int) minY);
+            setWrapStyle(xPropSet, shape);
+            setLineStyle(xPropSet, shape);
+
+            Point[][] poly = new Point[1][n];
+            for (int i = 0; i < n; i++) {
+                poly[0][i] = new Point(Transform.translateHwp2Office((int) (xs[i] - minX)), Transform.translateHwp2Office((int) (ys[i] - minY)));
+            }
+            xPropSet.setPropertyValue("PolyPolygon", poly);
+
+            wContext.mText.insertTextContent(wContext.mTextCursor, xTextContentShape, true);
+            if (step == 2 && wContext.version >= 72) {
+                wContext.mText.insertString(wContext.mTextCursor, " ", false);
+            }
+            boolean reverse = (shape.attr & 0x01) != 0;
+            setArrowStyle(xPropSet, reverse ? shape.lineTail : shape.lineHead, reverse ? shape.lineTailSz : shape.lineHeadSz, true);
+            setArrowStyle(xPropSet, reverse ? shape.lineHead : shape.lineTail, reverse ? shape.lineHeadSz : shape.lineTailSz, false);
+            ++autoNum;
+            return true;
+        } catch (com.sun.star.uno.Exception | SkipDrawingException e) {
+            log.log(Level.SEVERE, e.toString(), e);
+            return true;    // 이미 일부를 만들었을 수 있으므로 다시 그리지 않는다
         }
     }
 
@@ -1524,6 +1678,7 @@ public class ConvGraphics {
                 wContext.mText.insertTextContent(wContext.mTextCursor, xTextContentShape, false);
                 // 좌표를 넣으면 크기가 좌표 범위로 바뀌므로 크기를 다시 지정한다.
                 xShape.setSize(aSize);
+                fixPolygonPoints(xPropSet, pPolyPoints, aSize);
             }
 
             if (wContext.version >= 72) {
@@ -2017,6 +2172,7 @@ public class ConvGraphics {
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
 
         List<String> capStr = new ArrayList<String>();
+        List<Short> capCharShape = new ArrayList<Short>();     // 조각별 글자 모양 (-1: 앞 조각의 모양을 따른다)
         short[] charShapeID = new short[1];
         Optional<Ctrl> ctrlOp = shape.caption.stream().filter(c -> c.p != null).flatMap(c -> c.p.stream()).findFirst();
         if (ctrlOp.isPresent()) {
@@ -2029,18 +2185,21 @@ public class ConvGraphics {
         HwpCallback callback = new HwpCallback() {
             @Override
             public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {
+                capCharShape.add((short) -1);
                 capStr.add(Integer.toString(autoNum));
             };
 
             @Override
             public boolean onTab(String info) {
                 capStr.add("\t");
+                capCharShape.add((short) -1);
                 return true;
             };
 
             @Override
             public boolean onText(String content, int charShapeId, int charPos, boolean append) {
                 capStr.add(content);
+                capCharShape.add((short) charShapeId);
                 charShapeID[0] = (short) charShapeId;
                 return true;
             }
@@ -2048,12 +2207,17 @@ public class ConvGraphics {
             @Override
             public boolean onParaBreak() {
                 capStr.add("\r");
+                capCharShape.add((short) -1);
                 return true;
             }
         };
-        HwpRecurs.printParaRecurs(wContext, wContext, shape.caption.get(0), callback, 2);
+        // 캡션 문단을 모두 넣는다 (기존: 첫 문단만 넣어 첫 문단이 빈 캡션은 글이 사라졌음)
+        for (HwpParagraph capPara : shape.caption) {
+            HwpRecurs.printParaRecurs(wContext, wContext, capPara, callback, 2);
+        }
         if (capStr.size() > 0 && capStr.get(capStr.size() - 1).equals("\r")) { // 마지막이 PARA_BREAK라면 출력하지 않음.
             capStr.remove(capStr.size() - 1);
+            capCharShape.remove(capCharShape.size() - 1);
         }
 
         HwpRecord_ParaShape captionParaShape = wContext.getParaShape(shape.caption.get(0).paraShapeID);
@@ -2068,11 +2232,30 @@ public class ConvGraphics {
             HwpRecord_BorderFill borderFill = wContext.getBorderFill(captionCharShape.borderFillIDRef);
             ConvPara.setCharacterProperties(paraProps, captionCharShape, borderFill, step);
             paraProps.setPropertyValue("ParaTopMargin", Transform.translateHwp2Office(shape.captionSpacing));
-            for (String cap : capStr) {
-                xFrameText.insertString(xFrameCursor, cap, false);
-            }
+            ConvGraphics.insertCaptionText(wContext, xFrameText, xFrameCursor, paraProps, capStr, capCharShape, step);
         } catch (Exception e) {
             log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /**
+     * 캡션 글을 조각마다 그 글자 모양으로 넣는다 (본문 글처럼 커서에 글자 속성을 설정한 뒤 넣는다).
+     * 기존: 마지막 조각의 글자 모양 하나로 캡션 전체를 넣어 캡션 안의 굵은 글씨 등이 사라졌음
+     */
+    static void insertCaptionText(WriterContext wContext, XText xText, XTextCursor xCursor, XPropertySet paraProps,
+            List<String> texts, List<Short> charShapes, int step) throws Exception {
+        short applied = -1;
+        for (int i = 0; i < texts.size(); i++) {
+            short cs = charShapes.get(i);
+            if (cs >= 0 && cs != applied) {
+                HwpRecord_CharShape charShape = wContext.getCharShape(cs);
+                if (charShape != null) {
+                    HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+                    ConvPara.setCharacterProperties(paraProps, charShape, borderFill, step);
+                    applied = cs;
+                }
+            }
+            xText.insertString(xCursor, texts.get(i), false);
         }
     }
 
@@ -2275,8 +2458,9 @@ public class ConvGraphics {
                                                                                             // top)
                             } else {
                                 xProps.setPropertyValue("VertOrient", VertOrientation.NONE); // 0:NONE=From top
-                                // para상단으로부터 frame상단까지의 offset
-                                posY = Math.max(0, Transform.translateHwp2Office(shape.vertOffset));
+                                // para상단으로부터 frame상단까지의 offset. 음수(문단 위)도 그대로 둔다
+                                // (기존: 0 으로 잘라 HWPX 로 저장/다시 읽을 때 개체가 아래로 밀렸다)
+                                posY = Transform.translateHwp2Office(shape.vertOffset);
                                 if (/* posY+Transform.translateHwp2Office(page.marginTop)<0 || */
                                 posY + Transform.translateHwp2Office(shape.height) > Transform
                                         .translateHwp2Office(page.height)) {

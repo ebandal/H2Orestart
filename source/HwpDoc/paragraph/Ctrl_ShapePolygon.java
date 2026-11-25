@@ -103,7 +103,7 @@ public class Ctrl_ShapePolygon extends Ctrl_GeneralShape {
                 offset += 4;
                 pt.y = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
                 offset += 4;
-                obj.points.push(pt);
+                obj.points.add(pt);     // 파일 순서대로 (기존 push 는 순서를 뒤집어 HWPX 와 달랐음)
             }
         }
 

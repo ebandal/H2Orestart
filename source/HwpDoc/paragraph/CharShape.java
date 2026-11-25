@@ -109,7 +109,11 @@ public class CharShape {
                                 	  		}
                                 	  	}
                                 	  	if (p instanceof Ctrl_Character) {
-                                	  		((Ctrl_Character)p).charShapeId = shape.charShapeID;
+                                	  	    // 위치를 아는 문자는 그 위치를 덮는 구간의 모양 (구간은 시작 위치 순서로 온다)
+                                	  	    int pos = ((Ctrl_Character)p).startIdx;
+                                	  	    if (pos < 0 || pos >= shape.start) {
+                                	  	        ((Ctrl_Character)p).charShapeId = shape.charShapeID;
+                                	  	    }
                                 	  	}
                                   	});
                 }

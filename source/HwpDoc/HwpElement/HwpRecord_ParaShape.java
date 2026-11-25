@@ -42,6 +42,8 @@ public class HwpRecord_ParaShape extends HwpRecord {
 	public boolean		snapToGrid;								// 편집 용지의 줄 격자 사용 여부
 	public byte			condense;								// 공백 최소값 (0%~75%)
 	public boolean 		widowOrphan;							// 외톨이줄 보호 여부
+	public int			attrBits;								// (HWP) 속성1 원본 비트
+	public boolean 		keepLines;								// 문단 보호 여부
 	public boolean 		keepWithNext;							// 다음 문단과 함께 여부
 	public boolean 		pageBreakBefore;						// 문단 앞에서 항상 쪽 나눔 여부
 	public VerticalAlign   vertAlign;							// 세로정렬 (0:글꼴기준, 1:위쪽, 2:가운데, 3:아래)
@@ -74,6 +76,8 @@ public class HwpRecord_ParaShape extends HwpRecord {
 	public boolean		autoSpaceEAsianNum;						// 		한글과 숫자 간격을 자동 조절
 																// 속성3 (5.0.2.5 버전 이상)
 	public int			lineSpacingType;						// 		줄간격 종류(0:Percent,1:Fixed,2:BetweenLines,4:AtLeast)
+	public int			origLineSpacingType = -1;			// 가져오기가 줄 간격을 바꾼 경우(셀 문단) 원래 값. 바꾸지 않았으면 -1
+	public int			origLineSpacing;
 	
 	public boolean      firstAfterTable;                        // 테이블 다음에 첫문단인지 여부 (리브레오피스와 한컴오피스의 테이블 차이를 극복하기 위한 속성 정의
 
@@ -88,21 +92,23 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		int offset = off;
 		int typeBits 		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 		offset += 4;
+		attrBits			= typeBits;
 		align				= HorizontalAlign.from(typeBits>>>2 & 0x07);
 		breakLatinWord	 	= (byte) (typeBits>>>5 & 0x03);
-		breakNonLatinWord 	= (byte) (typeBits>>>7 & 0x01);
-		snapToGrid			= (typeBits&0x80)==0x80?true:false;
+		breakNonLatinWord 	= (byte) (typeBits>>>7 & 0x01);		// bit7: 0=어절, 1=글자 (명세 표 44)
+		snapToGrid			= (typeBits&0x100)==0x100?true:false;		// bit8
 		condense			= (byte) (typeBits>>>9 & 0x7F);
 		widowOrphan		 	= (typeBits&0x10000)==0x10000?true:false;
 		keepWithNext		= (typeBits&0x20000)==0x20000?true:false;
-		pageBreakBefore		= (typeBits&0x40000)==0x40000?true:false;
+		keepLines			= (typeBits&0x40000)==0x40000?true:false;	// bit18 문단 보호
+		pageBreakBefore		= (typeBits&0x80000)==0x80000?true:false;	// bit19
 		vertAlign			= VerticalAlign.from(typeBits>>>20 & 0x03);
-		fontLineHeight		= (typeBits&0x100000)==0x100000?true:false;
+		fontLineHeight		= (typeBits&0x400000)==0x400000?true:false;	// bit22
 		headingType			= HeadingType.from((typeBits>>>23 & 0x03));
 		headingLevel		= (byte) (typeBits>>>25 & 0x07);
-		connect				= (typeBits&0x800000)==0x800000?true:false;
-		ignoreMargin		= (typeBits&0x1000000)==0x1000000?true:false;
-		paraTailShape		= (typeBits&0x2000000)==0x2000000?true:false;
+		connect				= (typeBits&0x10000000)==0x10000000?true:false;	// bit28
+		ignoreMargin		= (typeBits&0x20000000)==0x20000000?true:false;	// bit29
+		paraTailShape		= (typeBits&0x40000000)==0x40000000?true:false;	// bit30
 		
 		marginLeft 			= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 		offset += 4;
@@ -114,13 +120,10 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		offset += 4;
 		marginNext	 		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 		offset += 4;
-		if (version<5025) {
-		    lineSpacingType = (byte) (typeBits & 0x03);
-			lineSpacing 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
-			offset += 4;
-		} else {
-			offset += 4;
-		}
+		// 구버전(5.0.2.5 미만) 줄 간격. 새 필드(속성3, 줄 간격)가 레코드에 없으면 이 값을 쓴다
+		lineSpacingType = (byte) (typeBits & 0x03);
+		lineSpacing 	= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+		offset += 4;
 		tabDef				= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
 		offset += 2;
 		headingIdRef		= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
@@ -136,24 +139,28 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		offsetBottom		= (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
 		offset += 2;
 		
-		if (version>=5017) {
-			int attrBits		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+		// 속성2 (5.0.1.7 이상). 레코드가 짧으면(54 bytes) 이후 필드가 없으므로 레코드 크기를 넘어 읽지 않는다
+		if (offset-off+4 <= size) {
+			int attrBits2		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 			offset += 4;
-			lineWrap			= (byte) (attrBits & 0x03);
-			autoSpaceEAsianEng	=(typeBits&0x10)==0x10?true:false;
-			autoSpaceEAsianNum	=(typeBits&0x20)==0x20?true:false;
-		} else {
-			offset += 4;
+			if (version>=5017) {
+				lineWrap			= (byte) (attrBits2 & 0x03);
+				autoSpaceEAsianEng	= (attrBits2&0x10)==0x10?true:false;	// 기존: 속성1(typeBits) 에서 읽음
+				autoSpaceEAsianNum	= (attrBits2&0x20)==0x20?true:false;
+			}
 		}
-		
-		if (version>=5025) {
-			int attrBits		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+
+		// 속성3 + 줄 간격 (5.0.2.5 이상). 레코드에 없으면 구버전 줄 간격을 그대로 쓴다
+		// (기존: 레코드 밖의 다음 레코드 바이트를 읽어 줄 간격이 쓰레기 값이 됨)
+		if (offset-off+8 <= size) {
+			int attrBits3		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 			offset += 4;
-			lineSpacingType 	= (byte) (attrBits&0x0F);
-			lineSpacing			= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+			int newSpacing		= buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
 			offset += 4;
-		} else {
-			offset += 8;
+			if (version>=5025) {
+				lineSpacingType 	= (byte) (attrBits3&0x1F);	// 0:글자에 따라, 1:고정값, 2:여백만 지정, 3:최소
+				lineSpacing			= newSpacing;
+			}
 		}
 
 		log.fine("                                                  "
@@ -167,7 +174,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
 				+",테두리ID="+borderFill
 				);
 		
-		if (offset-off-size != 0 && offset-off!=54) {
+		if (offset-off-size != 0 && offset-off < 54) {
 			log.fine("[TAG]=" + tag.toString() + ", size=" + size + ", but currentSize=" + (offset-off));
 			dump(buf, off, size);
 			throw new HwpParseException(parseError(buf, off, size, offset));
@@ -264,9 +271,9 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "KEEP_WORD":
                     breakLatinWord = 0; break;     // 0:단어,1:하이픈,2:글자
                 case "BREAK_WORD":
-                	breakLatinWord = 1; break;
+                	breakLatinWord = 2; break;      // 글자
                 case "HYPHENATION":
-                    breakLatinWord = 1; break;
+                    breakLatinWord = 1; break;      // 하이픈
                 default:
                 	log.warning("Not Implemented:" + childAttrs.getNamedItem("breakLatinWord").getNodeValue());
                 	if (log.isLoggable(Level.FINE)) {
@@ -276,10 +283,12 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 }
     
                 switch(childAttrs.getNamedItem("breakNonLatinWord").getNodeValue()) {
+                // 이름과 달리 KEEP_WORD 가 '글자', BREAK_WORD 가 '어절' 이다.
+                // (같은 문서의 HWP/HWPX 쌍 10,039개 문단 모양에서 KEEP_WORD 는 항상 HWP bit7=1(글자, 명세 표 44))
                 case "KEEP_WORD":
-                    breakNonLatinWord = 0; break;     // 0:어절,1:글자
+                    breakNonLatinWord = 1; break;     // 0:어절,1:글자
                 case "BREAK_WORD":
-                    breakNonLatinWord = 1; break; 
+                    breakNonLatinWord = 0; break;
                 default:
                 	if (log.isLoggable(Level.FINE)) {
                 		throw new NotImplementedException("HwpRecord_ParaShape");
@@ -300,14 +309,12 @@ public class HwpRecord_ParaShape extends HwpRecord {
                 case "1":
                     keepWithNext = true;    break;
                 }
-                /*
                 switch(childAttrs.getNamedItem("keepLines").getNodeValue()) {
                 case "0":
                     keepLines = false;    break;
                 case "1":
                     keepLines = true;    break;
                 }
-				*/
                 switch(childAttrs.getNamedItem("pageBreakBefore").getNodeValue()) {
                 case "0":
                     pageBreakBefore = false;   break;
@@ -331,10 +338,11 @@ public class HwpRecord_ParaShape extends HwpRecord {
                     lineSpacingType = 0; break;
                 case "FIXED":
                     lineSpacingType = 1; break;
+                case "BETWEEN_LINES":   // 여백만 지정 (기존: "BETWEENLINES" 로 비교해 PERCENT 로 남았음)
                 case "BETWEENLINES":
                     lineSpacingType = 2; break;
                 case "AT_LEAST":
-                    lineSpacingType = 4; break;
+                    lineSpacingType = 3; break;     // HWP 와 같은 값 (기존 4 는 변환기에서 처리되지 않음)
                 default:
                 	if (log.isLoggable(Level.FINE)) {
                 		throw new NotImplementedException("HwpRecord_ParaShape");
@@ -456,6 +464,7 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		cloned.snapToGrid        = source.snapToGrid;
 		cloned.condense          = source.condense;
 		cloned.widowOrphan       = source.widowOrphan;
+		cloned.keepLines         = source.keepLines;
 		cloned.keepWithNext      = source.keepWithNext;
 		cloned.pageBreakBefore   = source.pageBreakBefore;
 		cloned.vertAlign 	     = source.vertAlign;
@@ -483,6 +492,8 @@ public class HwpRecord_ParaShape extends HwpRecord {
 		cloned.autoSpaceEAsianEng = source.autoSpaceEAsianEng;
 		cloned.autoSpaceEAsianNum = source.autoSpaceEAsianNum;
 		cloned.lineSpacingType   = source.lineSpacingType;
+		cloned.origLineSpacingType = source.origLineSpacingType;
+		cloned.origLineSpacing   = source.origLineSpacing;
 		
 		return cloned;
 	}

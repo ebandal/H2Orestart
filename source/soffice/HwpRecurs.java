@@ -87,8 +87,12 @@ public class HwpRecurs {
 
         if (para.p==null) {
             if (callback==null || callback.onParaBreak()==false) {
-                beforeParaBreak(wContext, para.paraShapeID, oldCharShapeID, false, step);
+                // 글자 없는 문단에는 표 다음 간격 보정을 하지 않는다 (v0.8.1 과 같은 간격. 한글과 비교해 확인)
+                beforeParaBreak(wContext, para.paraShapeID, oldCharShapeID, false, false, step);
                 wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+            }
+            if (callback!=null) {
+                callback.onFirstAfterTable(false);
             }
             return;
         }
@@ -152,7 +156,15 @@ public class HwpRecurs {
                     case PARAGRAPH_BREAK:
                          if (callback==null || oweParaBreak==false) {
                             if (callback==null || callback.onParaBreak()==false) {
-                                beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false, step);
+                                if (append == false && isEmptyPara(para)) {
+                                    // 내용 없는 문단: 스타일을 지정하는 곳(첫 글자)이 없어 앞 문단의 스타일이 이어졌다.
+                                    // 문단 끝 모양(beforeParaBreak)보다 먼저 이 문단의 스타일을 지정한다 (HWPX 저장/다시 읽기)
+                                    setParaStyle(wContext, para.paraStyleID);
+                                }
+                                // 표 다음 간격 보정은 글자가 있는 문단에만 (append: 이 문단에 글자를 넣었는지).
+                                // 표 바로 뒤 빈 문단에 더하면 한글보다 간격이 넓어져 쪽이 밀린다 (v0.8.1 과 같게)
+                                beforeParaBreak(wContext, para.paraShapeID, (short)((Ctrl_Character)ctrl).charShapeId, false,
+                                                callback==null?false:(callback.firstParaAfterTable && append), step);
                                 wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
                             }
                             if (callback!=null) {
@@ -160,16 +172,34 @@ public class HwpRecurs {
                             }
                         } else {
                             oweParaBreak = false;
+                            // 표 문단의 문단 끝은 넣지 않지만, 그 글자 모양을 표 뒤 문단(지금 커서 문단)에 둔다. 문서가 표로
+                            // 끝나면 표 뒤 문단은 이대로 남는다 (기존: 앞 내용의 글자 속성이 남아 HWPX 로 저장/다시 읽을 때
+                            // 끝 문단의 글자 크기가 바뀌었다). 뒤에 문단이 더 있으면 그 문단 끝에서 다시 설정된다
+                            applyCharShapeAtCursor(wContext, ((Ctrl_Character)ctrl).charShapeId, step);
                             if (callback!=null) {
                                 callback.onFirstAfterTable(true);
                             }
                         }
                         break;
+                    // 묶음 빈칸/하이픈은 글자처럼 넣는다 (LibreOffice 의 HARD_SPACE/HARD_HYPHEN 도 같은 문자 U+00A0/U+2011).
+                    // 제어 문자로 넣으면 그 위치의 글자 모양을 받지 못하고, 문단 첫 글자일 때는 뒤 글자에서 문단 스타일을
+                    // 설정하면서 글자 모양이 지워진다
                     case HARD_HYPHEN:
-                        wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_HYPHEN, false);
-                        break;
                     case HARD_SPACE:
-                        wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.HARD_SPACE, false);
+                        {
+                            String ch = ((Ctrl_Character)ctrl).ctrlChar==Ctrl_Character.CtrlCharType.HARD_SPACE ? " " : "‑";
+                            int charShapeId = ((Ctrl_Character)ctrl).charShapeId;
+                            if (callback==null || callback.onText(ch, charShapeId, ((Ctrl_Character)ctrl).startIdx, append)==false) {
+                                insertParaString(wContext, ch, para.lineSegs, para.paraStyleID, para.paraShapeID,
+                                                 (short)charShapeId, append,
+                                                 callback==null?false:callback.firstParaAfterTable, step);
+                                oldParaShapeID = para.paraShapeID;
+                                oldCharShapeID = (short) charShapeId;
+                            }
+                            append = true;
+                        }
+                        break;
+                    default:
                         break;
                     }
                 }
@@ -213,6 +243,7 @@ public class HwpRecurs {
                     if (callback!=null && callback.firstParaAfterTable==true && ((Ctrl_Table)ctrl).treatAsChar==true) {
                         beforeParaBreak(wContext, null, null, false, true, step);
                         wContext.mText.insertControlCharacter(wContext.mTextCursor, ControlCharacter.PARAGRAPH_BREAK, false);
+                        markInsertedPara(wContext);
                     }
                     // 이전에 table 이고, 이번에도 table이면 공백을 추가한다.
                     else if (ctrlIndex > 0) {
@@ -268,6 +299,12 @@ public class HwpRecurs {
                     	// table 다음 PARA_BREAK 1개를 생략한다.
                         oweParaBreak = true;
                     }
+                    if (oweParaBreak && step == 1 && para == wContext.lastBodyPara) {
+                        // 문서가 표로 끝난다: 표 뒤 문단(문서 끝 문단)이 그대로 남으므로 표 문단의 스타일을 둔다. 표가 문단
+                        // 모양을 적용하기 전에 지정해야 그 모양이 지워지지 않는다 (기존: 문단 시작에서 기본 스타일로
+                        // 돌린 채 남아 HWPX 로 저장/다시 읽을 때 끝 문단 스타일이 바뀌었다)
+                        setParaStyle(wContext, para.paraStyleID);
+                    }
                     ConvTable.insertTable(wContext, (Ctrl_Table) ctrl, para.paraShapeID, callback, step+1);
                     if (callback!=null) {
                         callback.tableFrame = oldFrame;	// 원래 TableFrame 속성으로 복원
@@ -295,13 +332,48 @@ public class HwpRecurs {
             case "cra$":    // 호
             case "elo$":    // OLE
             case "nil$":    // 선
+            case "loc$":    // 개체연결선 (기존: 빠져 있어 묶음 밖의 연결선이 그려지지 않았음)
             case "noc$":    // 묶음 개체
             case "lle$":    // 타원
             case "lop$":    // 다각형
             case "ruc$":    // 곡선
             case "div$":    // 비디오
             case "tat$":    // 글맵시
-                ConvGraphics.insertGraphic(wContext, (Ctrl_GeneralShape)ctrl, para.paraShapeID, step);
+                if (append == false) {
+                    if (ctrl.runCharShapeId >= 0 && wContext.styleSetBeforeShape == null) {
+                        // HWPX: 문단 스타일을 개체보다 먼저 지정한다. 첫 글자를 넣을 때 스타일을 지정하면 LibreOffice 가
+                        // 문단 안의 글자 속성을 지워(개체 뒤 빈칸의 글자 모양 등) HWPX 로 저장/다시 읽을 때 바뀌었다
+                        String styleName = ConvPara.getStyleName(para.paraStyleID);
+                        if (styleName != null && !styleName.isEmpty()) {
+                            try {
+                                XPropertySet pp = UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
+                                pp.setPropertyValue("ParaStyleName", styleName);
+                                wContext.styleSetBeforeShape = styleName;
+                            } catch (Exception e) {
+                                log.log(Level.SEVERE, e.toString(), e);
+                            }
+                        }
+                    }
+                    // 문단의 첫 내용이 개체이면 문단 끝 글자 모양을 먼저 적용한다. 개체를 넣은 뒤에는 문단이 비어 있지 않아
+                    // 문단 끝(beforeParaBreak)에서 설정한 글자 속성이 남지 않고 앞 문단의 글자 속성이 이어진다
+                    setEmptyParaCharShape(wContext, para, step);
+                }
+                {
+                    int before = textBeforeCursor(wContext).length();
+                    ConvGraphics.insertGraphic(wContext, (Ctrl_GeneralShape)ctrl, para.paraShapeID, step);
+                    // 개체 뒤에 넣은 빈칸(ConvGraphics, LibreOffice 7.2 이상)에 개체가 든 run 의 글자 모양을 준다 (HWPX).
+                    // 기존: 그때 커서의 글자 속성(스타일 값 등)을 받아, HWPX 로 저장/다시 읽을 때 개체 run 의 글자 모양이 바뀌었다
+                    if (ctrl.runCharShapeId >= 0) {
+                        String after = textBeforeCursor(wContext);
+                        if (after.length() == before + 1 && after.endsWith(" ")) {
+                            styleLastChar(wContext, ctrl.runCharShapeId, step);
+                        } else if (after.length() == before) {
+                            // 글자처럼 넣은 개체: 개체 자리 글자(문자열에는 안 나옴)에 개체 run 의 글자 모양을 준다.
+                            // 기존: 문단 끝 글자 모양을 받아 HWPX 로 저장/다시 읽을 때 개체 run 의 글자 모양이 바뀌었다
+                            styleAnchorChar(wContext, ctrl.runCharShapeId, step);
+                        }
+                    }
+                }
                 break;
             case "deqe":    // 한글97 수식
                 ConvEquation.addFormula(wContext, (Ctrl_EqEdit)ctrl, step);
@@ -360,10 +432,179 @@ public class HwpRecurs {
         }
     }
 
-    public static void beforeParaBreak(WriterContext wContext,  
-                                        short paraShapeID, short charShapeID, 
-                                        boolean append, int step) {
+    /**
+     * firstParaAfterTable: 표 바로 다음 문단인지. 문단 모양 레코드는 문단들이 함께 쓰므로 매번 설정한다
+     * (안 하면 앞 문단에서 남은 값으로 같은 모양의 빈 문단에도 표 다음 간격이 더해진다)
+     */
+    /** 글자도 개체도 없는 문단인가 (문단 끝/구역/단/머리말 등 정의만 있다) */
+    private static boolean isEmptyPara(HwpParagraph para) {
+        if (para.p == null) return true;
+        for (Ctrl c : para.p) {
+            if (c instanceof Ctrl_Character || c instanceof Ctrl_SectionDef || c instanceof Ctrl_ColumnDef
+                    || c instanceof Ctrl_HeadFoot || c instanceof Ctrl_PageNumPos || c instanceof Ctrl_NewNumber) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /** 커서 문단에 HWP 스타일을 지정한다 (LibreOffice 는 문단 안의 글자 속성을 지운다) */
+    private static void setParaStyle(WriterContext wContext, int styleID) {
+        String styleName = ConvPara.getStyleName(styleID);
+        if (styleName == null || styleName.isEmpty()) {
+            return;
+        }
+        try {
+            XPropertySet pp = UnoRuntime.queryInterface(XPropertySet.class, wContext.mTextCursor);
+            pp.setPropertyValue("ParaStyleName", styleName);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /** 커서가 있는 문단의 처음부터 커서까지의 글 */
+    private static String textBeforeCursor(WriterContext wContext) {
+        try {
+            XParagraphCursor pc = UnoRuntime.queryInterface(XParagraphCursor.class,
+                    wContext.mText.createTextCursorByRange(wContext.mTextCursor.getEnd()));
+            if (pc == null) return "";
+            pc.gotoStartOfParagraph(true);
+            return pc.getString();
+        } catch (com.sun.star.uno.RuntimeException e) {
+            return "";
+        }
+    }
+
+    /** 커서 바로 앞 글자에 글자 모양을 적용한다 */
+    private static void styleLastChar(WriterContext wContext, int charShapeId, int step) {
+        HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
+        if (charShape == null) {
+            return;
+        }
+        try {
+            XTextCursor c = wContext.mText.createTextCursorByRange(wContext.mTextCursor.getEnd());
+            c.goLeft((short) 1, true);
+            XPropertySet props = UnoRuntime.queryInterface(XPropertySet.class, c);
+            HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+            ConvPara.setCharacterProperties(props, charShape, borderFill, step);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /** 표 사이에 넣은 빈 문단에 붙이는 표시 (문단 사용자 정의 속성). HWPX 저장(LoToHwpx)은 이 문단을 쓰지 않는다 */
+    public static final String INSERTED_PARA_ATTR = "h2o-inserted";
+
+    /**
+     * 방금 끝낸 문단(커서 앞 문단)이 가져오기가 넣은 문단임을 표시한다. 원본에 없는 문단이라 HWPX 로 저장할 때 빼고,
+     * 다시 읽으면 가져오기가 다시 넣는다 (기존: 저장할 때마다 표 사이에 빈 줄이 남아 한글에서 큰 표가 다음 쪽으로 밀렸다)
+     */
+    private static void markInsertedPara(WriterContext wContext) {
+        try {
+            XParagraphCursor c = UnoRuntime.queryInterface(XParagraphCursor.class,
+                    wContext.mText.createTextCursorByRange(wContext.mTextCursor.getStart()));
+            if (c == null || !c.gotoPreviousParagraph(false)) return;
+            XPropertySet ps = UnoRuntime.queryInterface(XPropertySet.class, c);
+            com.sun.star.container.XNameContainer attrs = UnoRuntime.queryInterface(com.sun.star.container.XNameContainer.class,
+                    ps.getPropertyValue("ParaUserDefinedAttributes"));
+            if (attrs == null) return;
+            com.sun.star.xml.AttributeData d = new com.sun.star.xml.AttributeData();
+            d.Type = "CDATA";
+            d.Value = "1";
+            if (attrs.hasByName(INSERTED_PARA_ATTR)) attrs.replaceByName(INSERTED_PARA_ATTR, d);
+            else attrs.insertByName(INSERTED_PARA_ATTR, d);
+            ps.setPropertyValue("ParaUserDefinedAttributes", attrs);
+        } catch (Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+    }
+
+    /**
+     * 문단이 비어 있으면 원래 글꼴 정보를 문단 속성으로 남긴다. LibreOffice 는 빈 문단에 지정한 글자 속성만 문단의 글자 속성으로
+     * 남기므로 기록도 같은 때에만 바꾼다 (기존: 마지막에 지정한 글자 모양으로 바뀌어 실제 문단 글자 속성과 맞지 않았다)
+     */
+    private static void setParaOrigFontIfEmpty(WriterContext wContext, XPropertySet props, HwpRecord_CharShape charShape) {
+        if (textBeforeCursor(wContext).isEmpty()) {
+            ConvPara.setParaOrigFontAttr(props, charShape);
+        }
+    }
+
+    /** 커서 바로 앞이 글자처럼 놓인 개체의 자리 글자이면 그 글자에 글자 모양을 적용한다 */
+    private static void styleAnchorChar(WriterContext wContext, int charShapeId, int step) {
+        HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
+        if (charShape == null) {
+            return;
+        }
+        try {
+            XParagraphCursor c = UnoRuntime.queryInterface(XParagraphCursor.class,
+                    wContext.mText.createTextCursorByRange(wContext.mTextCursor.getEnd()));
+            if (c == null || c.isStartOfParagraph()) return;
+            c.goLeft((short) 1, true);
+            if (!c.getString().isEmpty()) return;      // 보통 글자: 개체 자리가 아니다
+            XPropertySet props = UnoRuntime.queryInterface(XPropertySet.class, c);
+            HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+            ConvPara.setCharacterProperties(props, charShape, borderFill, step);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /** 커서 문단 끝에 글자 모양을 적용한다 (빈 문단이면 문단의 글자 속성이 된다) */
+    private static void applyCharShapeAtCursor(WriterContext wContext, int charShapeId, int step) {
+        HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
+        XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
+        if (charShape == null || paraCursor == null) {
+            return;
+        }
+        paraCursor.gotoEnd(false);
+        XPropertySet props = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
+        try {
+            HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+            ConvPara.setCharacterProperties(props, charShape, borderFill, step);
+            setParaOrigFontIfEmpty(wContext, props, charShape);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    /** 빈 문단(커서 위치)에 문단 끝(PARAGRAPH_BREAK) 의 글자 모양을 적용한다 */
+    private static void setEmptyParaCharShape(WriterContext wContext, HwpParagraph para, int step) {
+        Ctrl_Character brk = null;
+        for (Ctrl c : para.p) {
+            if (c instanceof Ctrl_Character && ((Ctrl_Character)c).ctrlChar == Ctrl_Character.CtrlCharType.PARAGRAPH_BREAK) {
+                brk = (Ctrl_Character) c;
+            }
+        }
+        if (brk == null) {
+            return;
+        }
+        HwpRecord_CharShape charShape = wContext.getCharShape((short) brk.charShapeId);
+        if (charShape == null) {
+            return;
+        }
+        XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
+        if (paraCursor == null) {
+            return;
+        }
+        paraCursor.gotoEnd(false);
+        XPropertySet props = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
+        try {
+            HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
+            ConvPara.setCharacterProperties(props, charShape, borderFill, step);
+            setParaOrigFontIfEmpty(wContext, props, charShape);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
+    public static void beforeParaBreak(WriterContext wContext,
+                                        short paraShapeID, short charShapeID,
+                                        boolean append, boolean firstParaAfterTable, int step) {
         HwpRecord_ParaShape paraShape = wContext.getParaShape(paraShapeID);
+        if (paraShape != null) {
+            paraShape.firstAfterTable = firstParaAfterTable;
+        }
         HwpRecord_CharShape charShape = wContext.getCharShape(charShapeID);
 
         beforeParaBreak(wContext, paraShape, charShape, append, false, step);
@@ -372,6 +613,7 @@ public class HwpRecurs {
     public static void beforeParaBreak(WriterContext wContext,  
                                         HwpRecord_ParaShape paraShape, HwpRecord_CharShape charShape, 
                                         boolean append, boolean ignoreNumbering, int step) {
+        wContext.styleSetBeforeShape = null;    // 문단 끝: 다음 문단에 남기지 않는다
 
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         if (paraCursor!=null) {
@@ -395,6 +637,7 @@ public class HwpRecurs {
                 if (charShape!=null) {
                     HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
                     ConvPara.setCharacterProperties(paraProps, charShape, borderFill, step);
+                    setParaOrigFontIfEmpty(wContext, paraProps, charShape);    // 문단 끝 글자 모양의 원래 글꼴 (HWPX 저장)
                 }
 
             } catch (Exception e) {
@@ -431,7 +674,9 @@ public class HwpRecurs {
             XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
             try {
                 if (append==false) {	// Paragraph의 첫content이면, Property 설정한다. 
-                    if (paraStyleName!=null && !paraStyleName.isEmpty()) {
+                    String already = wContext.styleSetBeforeShape;
+                    wContext.styleSetBeforeShape = null;
+                    if (paraStyleName!=null && !paraStyleName.isEmpty() && !paraStyleName.equals(already)) {
                         paraProps.setPropertyValue("ParaStyleName", paraStyleName);
                     }
 
@@ -453,6 +698,9 @@ public class HwpRecurs {
                 if (charShape!=null) {
                     HwpRecord_BorderFill borderFill = wContext.getBorderFill(charShape.borderFillIDRef);
                     ConvPara.setCharacterProperties(paraProps, charShape, borderFill, step);
+                    // 문단의 글자 속성(문단 끝 글자 모양)은 마지막에 넣은 글자 모양을 따른다 (셀의 마지막 문단 등 문단 끝이
+                    // 없는 문단). 원래 글꼴 정보도 같이 둔다 (HWPX 저장)
+                    setParaOrigFontIfEmpty(wContext, paraProps, charShape);
                 }
                 
             } catch (Exception e) {

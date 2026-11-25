@@ -97,6 +97,10 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
                 break;
             case "#text":   // issue #79 대응
                 break;
+            case "hp:startPt":      // 개체연결선 (Ctrl_ShapeConnectLine 에서 처리)
+            case "hp:endPt":
+            case "hp:controlPoints":
+                break;
             default:
                 log.fine(child.getNodeName() + "=" + child.getNodeValue());
                 if (log.isLoggable(Level.FINE)) {
@@ -109,8 +113,9 @@ public class Ctrl_ShapeLine extends Ctrl_GeneralShape {
    public static int parseElement(Ctrl_ShapeLine obj, int size, byte[] buf, int off, int version) throws HwpParseException {
         int offset = off;
         
-        if (obj.ctrlId!=null && obj.ctrlId.equals("loc$")) {
-            offset += 4;
+        if (obj instanceof Ctrl_ShapeConnectLine) {
+            // 개체연결선은 구조가 다르다 (기존: 앞 4 bytes 를 건너뛰어 좌표가 한 칸씩 밀렸음)
+            return Ctrl_ShapeConnectLine.parseConnect((Ctrl_ShapeConnectLine) obj, size, buf, off);
         }
         
         obj.startX  = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;

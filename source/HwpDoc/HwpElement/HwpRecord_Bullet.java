@@ -60,8 +60,8 @@ public class HwpRecord_Bullet extends HwpRecord {
         int typeBits                = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
         offset += 4;
         headerInfo.align            = (byte) ((typeBits)&0x03);
-        headerInfo.useInstWidth     = (typeBits&0x40)==0x40?true:false;
-        headerInfo.autoIndent       = (typeBits&0x80)==0x80?true:false;
+        headerInfo.useInstWidth     = (typeBits&0x04)==0x04?true:false;
+        headerInfo.autoIndent       = (typeBits&0x08)==0x08?true:false;
         headerInfo.textOffsetType   = (byte) ((typeBits>>>4)&0x01);
         
         headerInfo.widthAdjust      = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);

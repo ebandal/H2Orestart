@@ -76,11 +76,14 @@ public class Ctrl_Table extends Ctrl_Common {
             nodeNames.add(attributes.item(i).getNodeName());
         }
         
+        // HWP 표 속성(attr)과 같은 비트로 맞춘다. bit0-1: 쪽 경계에서 나눔, bit2: 제목 줄 자동 반복
+        attr = (attr & ~0x03) | (pageBreak & 0x03);
         //repeatHeader="1"
         switch(attributes.getNamedItem("repeatHeader").getNodeValue()) {
         case "0":
+            attr &= ~0x04;  break;
         case "1":
-            break;
+            attr |= 0x04;   break;
         }
         nodeNames.remove("repeatHeader");
         
@@ -90,10 +93,12 @@ public class Ctrl_Table extends Ctrl_Common {
         nodeNames.remove("rowCnt");
         
         //noAdjust="1"
+        // HWP 표 속성 bit 3 과 같다 (명세 표 75 에는 없음. HWP->HWPX 변환 쌍 403개 표에서 일치)
         switch(attributes.getNamedItem("noAdjust").getNodeValue()) {
         case "0":
+            attr &= ~0x08;  break;
         case "1":
-            break;
+            attr |= 0x08;   break;
         }
         nodeNames.remove("noAdjust");
         
@@ -185,6 +190,20 @@ public class Ctrl_Table extends Ctrl_Common {
                 break;
             }
         }
+
+        validZoneSize = (short) (cellzoneList == null ? 0 : cellzoneList.size());
+
+        // Row Size: 행별 셀 개수 (HWP 와 같은 값. HWPX 에는 없으므로 셀 목록에서 계산)
+        if (nRows > 0) {
+            rowSize = new short[nRows];
+            if (cells != null) {
+                for (TblCell cell : cells) {
+                    if (cell.rowAddr >= 0 && cell.rowAddr < nRows) {
+                        rowSize[cell.rowAddr]++;
+                    }
+                }
+            }
+        }
         this.fullfilled = true;
     }
 
@@ -192,6 +211,7 @@ public class Ctrl_Table extends Ctrl_Common {
         int offset = off;
         
         table.attr          = buf[offset+3]<<24&0xFF000000 | buf[offset+2]<<16&0x00FF0000 | buf[offset+1]<<8&0x0000FF00 | buf[offset]&0x000000FF;
+        table.pageBreak     = (byte) (table.attr & 0x03);     // HWPX 와 같은 필드도 채운다
         offset += 4;
         table.nRows         = (short) (buf[offset+1]<<8&0xFF00 | buf[offset]&0x00FF);
         offset += 2;
@@ -283,10 +303,10 @@ public class Ctrl_Table extends Ctrl_Common {
     }
     
     public static class CellZone {
-        short startRowAddr;
-        short startColAddr;
-        short endRowAddr;
-        short endColAddr;
-        short borderFillIDRef;
+        public short startRowAddr;
+        public short startColAddr;
+        public short endRowAddr;
+        public short endColAddr;
+        public short borderFillIDRef;
     }
 }

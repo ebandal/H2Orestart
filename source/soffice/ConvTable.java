@@ -94,9 +94,108 @@ public class ConvTable {
         xText.insertControlCharacter(cursor, ctrlChar, false);
     }
 
+    /**
+     * 구분선 위치를 정한다. LibreOffice 는 위치를 내부 단위(twip)로 바꿔 저장해서 넣은 값과 읽은 값이 다르고, 좁은 표는
+     * 나타낼 수 없는 위치도 있다. 목표 위치 주변 값(-3..+3)을 넣어 읽어 보고, 읽은 위치를 1/100 mm 로 바꾼 값
+     * (HWPX 저장 LoToHwpx.table 의 round(위치 x 폭 / 합))이 열 경계(mm[i])와 가장 가까운 것을 고른다.
+     * 그러면 저장한 열 폭을 다시 읽어도 같은 위치가 된다.
+     * 기존: 목표 위치를 넣기만 해서 읽으면 1~2 작게 나와, 저장할 때마다 열 폭이 몇 HWPUNIT 씩 바뀌었다
+     */
+    private static void adjustSeparators(XPropertySet tableProps, TableColumnSeparator[] seps, double[] mm,
+                                         int width, int relSum) throws Exception {
+        int n = seps.length;
+        if (n == 0 || mm.length != n) return;
+        short[] target = new short[n];
+        for (int i = 0; i < n; i++) target[i] = seps[i].Position;
+        final int range = 3;
+        // LibreOffice 는 바뀐 구분선만 (이전 위치와의 차이만큼) 옮긴다. 넣은 값과 읽은 값이 다르므로 이미 정한 구분선을
+        // 넣은 값으로 다시 넣으면 그 구분선이 또 움직인다. 매번 지금 읽은 위치에서 i 번째만 바꿔 넣는다
+        // (기존: 정한 값 배열을 마지막에 다시 넣어 앞 구분선이 움직이고 열 폭이 저장할 때마다 바뀌었다)
+        TableColumnSeparator[] cur = (TableColumnSeparator[]) tableProps.getPropertyValue("TableColumnSeparators");
+        if (cur == null || cur.length == 0) return;
+        // 아주 좁은 열(몇 twip)이 있으면 LibreOffice 는 구분선을 합쳐 돌려준다. 그 개수로 다시 넣으면 열이 지워지므로
+        // 맞추지 않는다
+        if (cur.length != n) return;
+        // 내부 단위는 열 폭이라 앞 구분선에 따라 나타낼 수 있는 위치가 달라진다. 왼쪽부터 하나씩 정한다
+        for (int i = 0; i < n; i++) {
+            int bestGot = -1;                   // 가장 나은 경우의 읽은 위치
+            double bestErr = Double.MAX_VALUE;
+            for (int d = -range; d <= range; d++) {
+                int lo = i == 0 ? 1 : cur[i - 1].Position + 1;
+                int hi = i + 1 < n ? target[i + 1] - 1 : relSum - 1;
+                int v = target[i] + d;
+                if (v < lo || v > hi) continue;
+                TableColumnSeparator[] got = setSeparator(tableProps, cur, i, v);
+                if (got == null) return;
+                cur = got;
+                long back = Math.round(got[i].Position * (double) width / relSum);
+                // 같은 1/100 mm 로 돌아오는 것, 그중 목표에 가까운 것
+                double err = Math.abs(back - Math.round(mm[i])) * 1000.0 + Math.abs(got[i].Position - target[i]);
+                if (err < bestErr) {
+                    bestErr = err;
+                    bestGot = got[i].Position;
+                }
+                // 같은 1/100 mm 이면 그 상태로 둔다. 한 내부 단위(twip) 안의 이동은 무시되고, 넣는 값이 같아도 지금
+                // 위치에 따라 읽은 위치가 달라서 나중에 다시 맞추기 어렵다
+                if (err < 1000) break;
+            }
+            // 더 나은 위치가 지나간 경우: 읽은 위치가 그 값이 될 때까지 넣어 본다
+            for (int d = 0; bestGot >= 0 && cur[i].Position != bestGot && d <= range; d++) {
+                for (int sgn = 0; sgn < 2 && cur[i].Position != bestGot; sgn++) {
+                    int v = bestGot + (sgn == 0 ? d : -d);
+                    if (sgn == 1 && d == 0) continue;
+                    TableColumnSeparator[] got = setSeparator(tableProps, cur, i, v);
+                    if (got == null) return;
+                    cur = got;
+                }
+            }
+        }
+    }
+
+    private static TableColumnSeparator[] readSeparators(XPropertySet tableProps, int n) throws Exception {
+        TableColumnSeparator[] got = (TableColumnSeparator[]) tableProps.getPropertyValue("TableColumnSeparators");
+        return got == null || got.length != n ? null : got;
+    }
+
+    /** 지금 위치(cur)에서 i 번째 구분선만 v 로 바꿔 넣고, 읽은 위치를 돌려준다 */
+    private static TableColumnSeparator[] setSeparator(XPropertySet tableProps, TableColumnSeparator[] cur, int i, int v)
+            throws Exception {
+        TableColumnSeparator[] arr = new TableColumnSeparator[cur.length];
+        for (int k = 0; k < cur.length; k++) arr[k] = new TableColumnSeparator(cur[k].Position, cur[k].IsVisible);
+        arr[i].Position = (short) v;
+        tableProps.setPropertyValue("TableColumnSeparators", arr);
+        return readSeparators(tableProps, cur.length);
+    }
+
+    /** 표/셀의 원래 여백을 담는 InteropGrabBag 항목 이름 (LoToHwpx 가 읽는다) */
+    public static final String MARGIN_KEY = "h2o-margin";
+
+    /** InteropGrabBag(PropertyValue 목록)에 항목 하나를 넣는다 */
+    private static void setGrabBag(XPropertySet props, String propName, String key, String value) {
+        try {
+            if (!props.getPropertySetInfo().hasPropertyByName(propName)) return;
+            Object o = props.getPropertyValue(propName);
+            java.util.List<PropertyValue> list = new java.util.ArrayList<PropertyValue>();
+            if (o instanceof PropertyValue[]) {
+                for (PropertyValue pv : (PropertyValue[]) o) if (!key.equals(pv.Name)) list.add(pv);
+            }
+            PropertyValue pv = new PropertyValue();
+            pv.Name = key;
+            pv.Value = value;
+            list.add(pv);
+            props.setPropertyValue(propName, list.toArray(new PropertyValue[0]));
+        } catch (Exception e) {
+            log.log(Level.FINE, e.toString(), e);
+        }
+    }
+
     public static void insertTable(WriterContext wContext, Ctrl_Table table, short paraShapeID, HwpCallback callback, int step) throws HwpParseException {
         // 테이블 그리기 전, 문단모양 설정한다. 문단에 Frame을 넣기때문에 문단 margin에 맞게 여백이 들어가야 한다.
         HwpRecord_ParaShape paraShape = wContext.getParaShape((short) paraShapeID);
+        if (paraShape != null) {
+            // 함께 쓰는 레코드에 앞 문단의 표 다음 간격 표시가 남아 있을 수 있다. 표 문단에는 적용하지 않는다
+            paraShape.firstAfterTable = false;
+        }
         XParagraphCursor paraCursor = UnoRuntime.queryInterface(XParagraphCursor.class, wContext.mTextCursor);
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
         ConvPara.setParagraphProperties(paraProps, paraShape, wContext.getDocInfo().compatibleDoc, ConvPara.PARA_SPACING);
@@ -134,6 +233,12 @@ public class ConvTable {
                 xFrame = makeOuterFrame(wContext, table);
                 xFrameText = xFrame.getText();
                 xFrameCursor = xFrameText.createTextCursor();
+                boolean captionTop = isCaptionTop(table);
+                if (captionTop) {
+                    // 위 캡션: 캡션 문단을 먼저 넣고 표를 그 다음 문단 자리에 넣는다
+                    addCaptionString(wContext, xFrameText, xFrameCursor, table, step + 1);
+                    breakAfterCaption(xFrameText, xFrameCursor);
+                }
                 xFrameText.insertTextContent(xFrameCursor, xTextTable, false);
                 if (wContext.version >= 72) {
                     XPropertySet frameProps = UnoRuntime.queryInterface(XPropertySet.class, xFrame);
@@ -142,9 +247,21 @@ public class ConvTable {
                         xFrameText.insertString(xFrameCursor, " ", true);
                     }
                 }
-                addCaptionString(wContext, xFrameText, xFrameCursor, table, step + 1);
+                if (!captionTop) {
+                    addCaptionString(wContext, xFrameText, xFrameCursor, table, step + 1);
+                }
                 step += 1;
             } else {
+                // 캡션이 표시될 문단의 오른쪽 spacing을 임의로 조정
+                HwpDoc.section.Page page = ConvPage.getCurrentPage().page;
+                int rightSpace = page.width - page.marginLeft - page.marginRight - paraShape.marginLeft - table.width;
+                boolean captionTop = isCaptionTop(table);
+                if (captionTop) {
+                    // 위 캡션: 캡션 문단을 먼저 넣고 표를 그 다음 문단 자리에 넣는다.
+                    // 기존: 캡션 위치와 관계없이 표 뒤에 넣어 위 캡션이 표 아래에 보였음
+                    addCaptionString(wContext, wContext.mText, wContext.mTextCursor, table, 0, rightSpace, step);
+                    breakAfterCaption(wContext.mText, wContext.mTextCursor);
+                }
                 wContext.mText.insertTextContent(wContext.mTextCursor, xTextTable, false);
                 if (wContext.version >= 72) {
                     TextContentAnchorType anchorType = (TextContentAnchorType) tableProps.getPropertyValue("AnchorType");
@@ -157,10 +274,9 @@ public class ConvTable {
                         HwpRecurs.removeLastParaBreak(wContext.mTextCursor);
                     }
                 }
-                // 캡션이 표시될 문단의 오른쪽 spacing을 임의로 조정
-                HwpDoc.section.Page page = ConvPage.getCurrentPage().page;
-                int rightSpace = page.width - page.marginLeft - page.marginRight - paraShape.marginLeft - table.width;
-                addCaptionString(wContext, wContext.mText, wContext.mTextCursor, table, 0, rightSpace, step);
+                if (!captionTop) {
+                    addCaptionString(wContext, wContext.mText, wContext.mTextCursor, table, 0, rightSpace, step);
+                }
                 if (callback != null && callback.onTableWithFrame() == TableFrame.MADE) {
 
                 } else {
@@ -169,15 +285,20 @@ public class ConvTable {
                 if (table.treatAsChar) {
                     tableProps.setPropertyValue("Split", false);
                 } else {
-                    if ((table.attr & 0x03) == 0x02) {
-                        tableProps.setPropertyValue("Split", true);
-                    } else {
-                        tableProps.setPropertyValue("Split", false);
-                    }
+                    // 쪽 경계에서 나눔 (bit 0-1). 0: 나누지 않음, 1: 셀 단위로 나눔 (HWPX "TABLE"), 2: 나눔 (HWPX "CELL")
+                    // 명세 표 75 는 2 를 "나누지 않음"으로 적었으나 0 과 중복. 기존: 1 이면 나누지 않았음
+                    int pageBreak = table.attr & 0x03;
+                    tableProps.setPropertyValue("Split", pageBreak == 0x01 || pageBreak == 0x02);
                 }
             }
 
-            
+            // 제목 줄 반복: 위에서부터 연속된 제목 셀 행 수만큼 반복
+            int headerRows = countHeaderRows(table);
+            if ((table.attr & 0x04) != 0 && headerRows > 0) {
+                tableProps.setPropertyValue("RepeatHeadline", true);
+                tableProps.setPropertyValue("HeaderRowCount", headerRows);
+            }
+
             HwpRecord_BorderFill tableBorderFill = WriterContext.getBorderFill(table.borderFillID);
             if (tableBorderFill != null) {
                 TableBorder tBorder = new TableBorder();
@@ -217,6 +338,9 @@ public class ConvTable {
             }
 
 
+            // 표 안 여백(셀에 따로 없을 때의 셀 여백): LibreOffice 에서는 셀 여백을 0 으로 두므로 원래 값을 남긴다 (HWPX 저장)
+            setGrabBag(tableProps, "TableInteropGrabBag", MARGIN_KEY,
+                    table.inLSpace + "|" + table.inRSpace + "|" + table.inUSpace + "|" + table.inDSpace);
             int width = Transform.translateHwp2Office(table.width);
             short sTableColumnRelativeSum = (Short) tableProps.getPropertyValue("TableColumnRelativeSum");
             double dRatio = (double) sTableColumnRelativeSum / (double) width;
@@ -231,15 +355,35 @@ public class ConvTable {
             TableColumnSeparator[] xSeparators = UnoRuntime.queryInterface(TableColumnSeparator[].class,
                     tableProps.getPropertyValue("TableColumnSeparators"));
             double dPosition = 0;
+            int prevPosition = 0;
+            double[] boundMm = new double[colWidth.length];
+            double mmSum = 0;
             for (int col = 0; col < colWidth.length; col++) {
                 // [20250817] position gap이 최소 2이상이 되도록 한다. 1에서 머지가 안되는 경우 있음. issue #60
                 dPosition += (colWidth[col] * dRatio > 1.0 ? colWidth[col] * dRatio : 3);
-                xSeparators[col].Position = (short) Math.ceil(dPosition);
+                mmSum += colWidth[col];
+                boundMm[col] = mmSum;
+                // 반올림: HWPX 로 저장(LoToHwpx.table)하면 구분선 위치가 폭으로 바뀌어 다시 읽힌다. 단위 변환 오차로
+                // 정수 위치가 조금 넘게 돌아오면 올림(ceil)은 한 칸씩 밀어 저장할 때마다 열 폭이 바뀌었다
+                int position = Math.max((int) Math.round(dPosition), prevPosition + 2);
+                xSeparators[col].Position = (short) position;
+                prevPosition = position;
             }
             tableProps.setPropertyValue("TableColumnSeparators", xSeparators);
+            // LibreOffice 는 구분선 위치를 내부 단위로 바꿔 저장해 읽으면 1~2 작게 나온다. 그 차이만큼 더해 다시 넣는다
+            // (기존: 줄어든 위치를 HWPX 로 저장해 저장할 때마다 열 폭이 몇 HWPUNIT 씩 바뀌었다)
+            adjustSeparators(tableProps, xSeparators,
+                    Arrays.copyOf(boundMm, xSeparators.length), width, sTableColumnRelativeSum);
             
             // table row 높이 조정
             XTableRows xTableRows = xTextTable.getRows();
+            if (xTableRows != null && !table.treatAsChar && (table.attr & 0x03) == 0x01) {
+                // 셀 단위로 나눔: 표는 쪽 경계에서 나뉘지만 행(셀) 안에서는 나누지 않는다
+                for (int row = 0; row < xTableRows.getCount(); row++) {
+                    XPropertySet rowProps = UnoRuntime.queryInterface(XPropertySet.class, xTableRows.getByIndex(row));
+                    rowProps.setPropertyValue("IsSplitAllowed", false);
+                }
+            }
             if (xTableRows != null) {
                 int[] rowHeight = calculateRowHeight(cellArray, table.height);
                 if (hasNullRow(rowHeight, table.height) == false) {
@@ -323,26 +467,13 @@ public class ConvTable {
                             cellProps.setPropertyValue("VertOrient", Transform.toVertAlign(cell.verAlign.ordinal()));
 
                             if (cellBorderFill != null) {
-                                if (cellBorderFill.fill.isColorFill()) {
-                                    if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
-                                        cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
-                                    } else {
-                                        cellProps.setPropertyValue("BackTransparent", false);
-                                        cellProps.setPropertyValue("BackColor", cellBorderFill.fill.faceColor);
-                                    }
-                                } else if (cellBorderFill.fill.isGradFill()) {
-                                    // CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
-                                    if (cellBorderFill.fill.colors.length==2) {
-                                        short r, g, b;
-                                        r = (short) (((cellBorderFill.fill.colors[0]>>16&0x00FF) + (cellBorderFill.fill.colors[1]>>16&0x00FF))/2);  
-                                        g = (short) (((cellBorderFill.fill.colors[0]>>8&0x00FF) + (cellBorderFill.fill.colors[1]>>8&0x00FF))/2);  
-                                        b = (short) (((cellBorderFill.fill.colors[0]&0x00FF) + (cellBorderFill.fill.colors[1]&0x00FF))/2);  
-                                        int midColor = (r<<16)|(g<<8)|b;
-                                        cellProps.setPropertyValue("BackColor", midColor);
-                                    }
-                                } else if (cellBorderFill.fill.isImageFill()) {
-                                    ConvGraphics.fillGraphic(wContext, cellProps, cellBorderFill.fill);
-                                }
+                                applyCellFill(wContext, cellProps, cellBorderFill, callback);
+                            }
+                            applyCellZones(wContext, cellProps, cell, table, callback);
+                            // 셀 여백 (HWPX 저장. 위 표 안 여백과 같은 이유)
+                            if (cell.margin != null) {
+                                setGrabBag(cellProps, "CellInteropGrabBag", MARGIN_KEY, (cell.hasMargin ? 1 : 0) + "|"
+                                        + cell.margin[0] + "|" + cell.margin[1] + "|" + cell.margin[2] + "|" + cell.margin[3]);
                             }
                         }
                     } catch (IllegalArgumentException | UnknownPropertyException | PropertyVetoException
@@ -356,6 +487,85 @@ public class ConvTable {
         } catch (IllegalArgumentException | Exception e3) {
             log.log(Level.SEVERE, e3.toString(), e3);
         }
+    }
+
+    private static void applyCellFill(WriterContext wContext, XPropertySet cellProps, HwpRecord_BorderFill borderFill,
+            HwpCallback callback) throws IllegalArgumentException, UnknownPropertyException, PropertyVetoException,
+            WrappedTargetException, HwpParseException {
+        if (borderFill.fill == null) {
+            return;
+        }
+        if (borderFill.fill.isColorFill()) {
+            if (callback != null && callback.onTableWithFrame() == TableFrame.MAKE_PART) {
+                cellProps.setPropertyValue("BackTransparent", true); // ZOrder 변경이 안되어 이런식으로 만듬.
+            } else {
+                cellProps.setPropertyValue("BackTransparent", false);
+                cellProps.setPropertyValue("BackColor", borderFill.fill.faceColor);
+            }
+        } else if (borderFill.fill.isGradFill()) {
+            // CellProperties에는 Gradient 그릴 수 있는 속성이 없다. 중간색으로 칠한다.
+            if (borderFill.fill.colors.length==2) {
+                short r, g, b;
+                r = (short) (((borderFill.fill.colors[0]>>16&0x00FF) + (borderFill.fill.colors[1]>>16&0x00FF))/2);
+                g = (short) (((borderFill.fill.colors[0]>>8&0x00FF) + (borderFill.fill.colors[1]>>8&0x00FF))/2);
+                b = (short) (((borderFill.fill.colors[0]&0x00FF) + (borderFill.fill.colors[1]&0x00FF))/2);
+                int midColor = (r<<16)|(g<<8)|b;
+                cellProps.setPropertyValue("BackColor", midColor);
+            }
+        } else if (borderFill.fill.isImageFill()) {
+            ConvGraphics.fillGraphic(wContext, cellProps, borderFill.fill);
+        }
+    }
+
+    /*
+     * 셀 영역(cellzone): 셀 범위에 테두리/배경을 지정한다. 셀 자신의 테두리/배경과 별도로 저장된다.
+     * 한글 렌더링으로 확인한 규칙 (h23_year_end_settlement.hwpx 의 영역 테두리를 바꿔 PDF 로 비교):
+     *  - 배경은 범위 안의 모든 셀에 적용
+     *  - 테두리는 범위의 바깥 경계에만 적용 (안쪽 선은 그대로)
+     *  - 선 없음(NONE)인 변은 이웃 셀 선과 구분할 수 없어 바꾸지 않는다
+     * 기존: 변환기가 영역을 전혀 쓰지 않아 영역으로 지정한 배경/테두리가 빠졌음.
+     */
+    private static void applyCellZones(WriterContext wContext, XPropertySet cellProps, TblCell cell, Ctrl_Table table,
+            HwpCallback callback) throws IllegalArgumentException, UnknownPropertyException, PropertyVetoException,
+            WrappedTargetException, HwpParseException {
+        if (table.cellzoneList == null || table.cellzoneList.isEmpty()) {
+            return;
+        }
+        int r0 = cell.rowAddr, r1 = cell.rowAddr + Math.max(1, (int) cell.rowSpan) - 1;
+        int c0 = cell.colAddr, c1 = cell.colAddr + Math.max(1, (int) cell.colSpan) - 1;
+        for (Ctrl_Table.CellZone zone : table.cellzoneList) {
+            if (r1 < zone.startRowAddr || r0 > zone.endRowAddr || c1 < zone.startColAddr || c0 > zone.endColAddr) {
+                continue;
+            }
+            HwpRecord_BorderFill zoneFill;
+            try {
+                zoneFill = WriterContext.getBorderFill(zone.borderFillIDRef);
+            } catch (java.lang.IndexOutOfBoundsException e) {
+                // 잘못된 참조 하나로 문서 전체 변환이 실패하지 않도록 건너뛴다
+                log.warning("cellzone borderFill out of range: " + zone.borderFillIDRef);
+                continue;
+            }
+            if (zoneFill == null) {
+                continue;
+            }
+            applyCellFill(wContext, cellProps, zoneFill, callback);
+            if (c0 == zone.startColAddr && hasLine(zoneFill.left)) {
+                cellProps.setPropertyValue("LeftBorder", Transform.toBorderLine(zoneFill.left));
+            }
+            if (c1 == zone.endColAddr && hasLine(zoneFill.right)) {
+                cellProps.setPropertyValue("RightBorder", Transform.toBorderLine(zoneFill.right));
+            }
+            if (r0 == zone.startRowAddr && hasLine(zoneFill.top)) {
+                cellProps.setPropertyValue("TopBorder", Transform.toBorderLine(zoneFill.top));
+            }
+            if (r1 == zone.endRowAddr && hasLine(zoneFill.bottom)) {
+                cellProps.setPropertyValue("BottomBorder", Transform.toBorderLine(zoneFill.bottom));
+            }
+        }
+    }
+
+    private static boolean hasLine(HwpRecord_BorderFill.Border border) {
+        return border != null && border.style != null && border.style != HwpDoc.HwpElement.HwpRecordTypes.LineStyle2.NONE;
     }
 
     private static XTextFrame makeOuterFrame(WriterContext wContext, Ctrl_Table table) throws Exception {
@@ -1024,6 +1234,38 @@ public class ConvTable {
         }
     }
 
+    /** 캡션이 표 위에 있는가 (캡션 속성 bit 0-1: 0 왼쪽, 1 오른쪽, 2 위, 3 아래) */
+    private static boolean isCaptionTop(Ctrl_Table table) {
+        return table.caption != null && table.caption.size() > 0 && (table.captionAttr & 0x03) == 0x02;
+    }
+
+    /**
+     * 위 캡션 문단을 마무리한다: 다음 문단(표)과 함께 두고(한글은 캡션이 표에 붙어 있다), 캡션 문단이 끝나지 않았으면
+     * 문단을 나눈다 (캡션 끝의 문단 나눔은 본문(step 2)에서만 넣는다)
+     */
+    private static void breakAfterCaption(XText xText, XTextCursor xCursor) {
+        XParagraphCursor pc = UnoRuntime.queryInterface(XParagraphCursor.class, xCursor);
+        if (pc == null) return;
+        try {
+            pc.gotoEnd(false);
+            if (pc.isStartOfParagraph()) {
+                // 이미 나뉘었다: 앞 문단이 캡션
+                XParagraphCursor prev = UnoRuntime.queryInterface(XParagraphCursor.class,
+                        xText.createTextCursorByRange(xCursor.getStart()));
+                if (prev != null && prev.gotoPreviousParagraph(false)) {
+                    UnoRuntime.queryInterface(XPropertySet.class, prev).setPropertyValue("ParaKeepTogether", true);
+                }
+            } else {
+                XPropertySet props = UnoRuntime.queryInterface(XPropertySet.class, pc);
+                props.setPropertyValue("ParaKeepTogether", true);
+                xText.insertControlCharacter(xCursor, com.sun.star.text.ControlCharacter.PARAGRAPH_BREAK, false);
+                props.setPropertyValue("ParaKeepTogether", false);
+            }
+        } catch (com.sun.star.uno.Exception e) {
+            log.log(Level.SEVERE, e.toString(), e);
+        }
+    }
+
     static void addCaptionString(WriterContext wContext, XText xFrameText, XTextCursor xFrameCursor, Ctrl_Table table, int step) throws HwpParseException {
         addCaptionString(wContext, xFrameText, xFrameCursor, table, 0, 0, step);
     }
@@ -1037,6 +1279,7 @@ public class ConvTable {
         XPropertySet paraProps = UnoRuntime.queryInterface(XPropertySet.class, paraCursor);
 
         List<String> capStr = new ArrayList<String>();
+        List<Short> capCharShape = new ArrayList<Short>();     // 조각별 글자 모양 (-1: 앞 조각의 모양을 따른다)
         short[] charShapeID = new short[1];
         Optional<Ctrl> ctrlOp = table.caption.stream().filter(c -> c.p != null)
         		                             .flatMap(c -> c.p.stream())
@@ -1048,18 +1291,21 @@ public class ConvTable {
         HwpCallback callback = new HwpCallback() {
             @Override
             public void onAutoNumber(Ctrl_AutoNumber autoNumber, int paraStyleID, int paraShapeID) {
+                capCharShape.add((short) -1);
                 capStr.add(Integer.toString(++autoNum));
             };
 
             @Override
             public boolean onTab(String info) {
                 capStr.add("\t");
+                capCharShape.add((short) -1);
                 return true;
             };
 
             @Override
             public boolean onText(String content, int charShapeId, int charPos, boolean append) {
                 capStr.add(content);
+                capCharShape.add((short) charShapeId);
                 charShapeID[0] = (short) charShapeId;
                 return true;
             }
@@ -1067,14 +1313,19 @@ public class ConvTable {
             @Override
             public boolean onParaBreak() {
                 capStr.add("\r");
+                capCharShape.add((short) -1);
                 return true;
             }
         };
-        HwpRecurs.printParaRecurs(wContext, wContext, table.caption.get(0), callback, step);
+        // 캡션 문단을 모두 넣는다 (기존: 첫 문단만 넣어 첫 문단이 빈 캡션은 글이 사라졌음)
+        for (HwpParagraph capPara : table.caption) {
+            HwpRecurs.printParaRecurs(wContext, wContext, capPara, callback, step);
+        }
         if (capStr.size() > 0) {
             if (step > 2) { // 본문위에 table은 step=2, Frame내에 들어간 table은 step=3
                 if (capStr.get(capStr.size() - 1).equals("\r")) { // 마지막이 PARA_BREAK라면 출력하지 않음.
                     capStr.remove(capStr.size() - 1);
+                    capCharShape.remove(capCharShape.size() - 1);
                 }
             }
 
@@ -1091,9 +1342,7 @@ public class ConvTable {
                 paraProps.setPropertyValue("ParaBottomMargin", Transform.translateHwp2Office(table.captionSpacing));
                 paraProps.setPropertyValue("ParaLeftMargin", Transform.translateHwp2Office(leftSpacing));
                 paraProps.setPropertyValue("ParaRightMargin", Transform.translateHwp2Office(rightSpacing));
-                for (String cap : capStr) {
-                    xFrameText.insertString(xFrameCursor, cap, false);
-                }
+                ConvGraphics.insertCaptionText(wContext, xFrameText, xFrameCursor, paraProps, capStr, capCharShape, step);
             } catch (Exception e) {
                 log.log(Level.SEVERE, e.toString(), e);
             }
@@ -1127,6 +1376,18 @@ public class ConvTable {
         int xx = (nullColCount + curRowsCount - otherRowsColSpan) / 26;
         int xxx = (nullColCount + curRowsCount - otherRowsColSpan) % 26;
         return (xx > 0 ? "" + ((char) ('a' + (xxx))) : "" + ((char) ('A' + xxx))) + (y + 1);
+    }
+
+    /** 첫 행부터 연속으로 제목 셀(header)이 있는 행의 수. 제목 셀 정보가 없으면(HWP) 0 */
+    private static int countHeaderRows(Ctrl_Table table) {
+        if (table.cells == null) return 0;
+        java.util.Set<Integer> headerRowSet = new java.util.HashSet<Integer>();
+        for (TblCell cell : table.cells) {
+            if (cell.header) headerRowSet.add((int) cell.rowAddr);
+        }
+        int rows = 0;
+        while (headerRowSet.contains(rows)) rows++;
+        return rows;
     }
 
     private static void setCellPara(String cellName, TblCell cell, XTextTable xtable, Ctrl_Table table,
@@ -1188,9 +1449,14 @@ public class ConvTable {
                 if (isLastPara == false) {
                     HwpRecurs.insertParaString(childContext, "\r", para.lineSegs, styleName, paraStyle, paraShape,
                             charShape, true, true, step);
+                } else {
+                    // 셀의 마지막 빈 문단도 문단/글자 모양을 적용한다 (안 하면 앞 문단 모양이나 기본값이 남는다)
+                    HwpRecurs.beforeParaBreak(childContext, cellParaShape(paraShape, cell), charShape, false, true, step);
                 }
                 continue;
             }
+            // 글자가 들어간 문단인지 (마지막 문단에 글자가 없으면 문단 끝에서 문단 모양을 적용한다)
+            final boolean[] textDone = new boolean[1];
 
             HwpCallback callback = new HwpCallback() {
                 @Override
@@ -1241,21 +1507,12 @@ public class ConvTable {
                     String styleNameTemp = ConvPara.getStyleName((int) para.paraStyleID);
                     HwpRecord_Style paraStyleTemp = wContext.getParaStyle(para.paraStyleID);
                     HwpRecord_ParaShape paraShape = wContext.getParaShape(para.paraShapeID);
-                    HwpRecord_ParaShape paraShapeTemp = null;
-                    try {
-                        paraShapeTemp = HwpRecord_ParaShape.clone(paraShape);
-                        if (cell.paras.size()==1) {
-                            // Cell내 문단이 1개만 있는 경우, 선 간격을 최소로 한다. LibreOffice와 Hwp 간격 차이를 해소하기 위함.
-                            paraShapeTemp.lineSpacing = 100;
-                            paraShapeTemp.lineSpacingType = 0x3;
-                        }
-                    } catch (java.lang.ClassNotFoundException | IOException e) {
-                        log.log(Level.SEVERE, e.toString(), e);
-                    }
+                    HwpRecord_ParaShape paraShapeTemp = cellParaShape(paraShape, cell);
                     HwpRecord_CharShape charShape = wContext.getCharShape((short) charShapeId);
                     charShapeID[0] = (short) charShapeId;
                     HwpRecurs.insertParaString(childContext, content, para.lineSegs, styleNameTemp, paraStyleTemp,
                                                paraShapeTemp, charShape, append, true, step);
+                    textDone[0] = true;
                     return true;
                 }
 
@@ -1264,12 +1521,55 @@ public class ConvTable {
                     if (isLastPara == false) {
                     	return false;
                     } else {
+                        if (textDone[0] == false) {
+                            // 글자 없는 마지막 문단 (그림/표만 있거나 빈 문단): 문단 끝 글자 모양으로 문단 모양을 적용한다
+                            HwpRecurs.beforeParaBreak(childContext, cellParaShape(paraShape, cell),
+                                                      wContext.getCharShape(lastCharShapeId(para, charShapeID[0])), false, true, step);
+                        }
                     	return true;
                     }
                 }
             };
             HwpRecurs.printParaRecurs(childContext, wContext, para, callback, 2);
         }
+    }
+
+    /**
+     * 셀 문단의 문단 모양 (복사본). 셀에 문단이 하나뿐이면 줄 간격을 최소 100 으로 한다 (LibreOffice 와 한글의 간격 차이 해소).
+     * 표 다음 문단 간격 보정은 본문에서만 한다 (함께 쓰는 레코드에 남은 값을 지운다)
+     */
+    private static HwpRecord_ParaShape cellParaShape(HwpRecord_ParaShape paraShape, TblCell cell) {
+        if (paraShape == null) {
+            return paraShape;
+        }
+        try {
+            HwpRecord_ParaShape temp = HwpRecord_ParaShape.clone(paraShape);
+            temp.firstAfterTable = false;
+            if (cell.paras.size() == 1) {
+                temp.origLineSpacingType = paraShape.lineSpacingType;    // HWPX 저장이 원래 값으로 쓴다
+                temp.origLineSpacing = paraShape.lineSpacing;
+                temp.lineSpacing = 100;
+                temp.lineSpacingType = 0x3;
+            }
+            return temp;
+        } catch (java.lang.ClassNotFoundException | IOException e) {
+            log.log(Level.SEVERE, e.toString(), e);
+            return paraShape;
+        }
+    }
+
+    /** 문단 끝(PARAGRAPH_BREAK)의 글자 모양. 없으면 def */
+    private static short lastCharShapeId(HwpParagraph para, short def) {
+        if (para.p != null) {
+            for (int i = para.p.size() - 1; i >= 0; i--) {
+                Ctrl c = para.p.get(i);
+                if (c instanceof Ctrl_Character
+                        && ((Ctrl_Character) c).ctrlChar == Ctrl_Character.CtrlCharType.PARAGRAPH_BREAK) {
+                    return (short) ((Ctrl_Character) c).charShapeId;
+                }
+            }
+        }
+        return def;
     }
 
     private static TblCell[][] removeAllNullColumns(TblCell[][] cellArray) {

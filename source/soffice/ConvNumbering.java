@@ -55,6 +55,7 @@ import com.sun.star.text.XParagraphCursor;
 import com.sun.star.uno.Exception;
 import com.sun.star.uno.UnoRuntime;
 
+import HwpDoc.HwpElement.HwpRecordTypes.NumberShape2;
 import HwpDoc.Exception.HwpParseException;
 import HwpDoc.HwpElement.HwpRecord_Bullet;
 import HwpDoc.HwpElement.HwpRecord_Numbering;
@@ -150,7 +151,8 @@ public class ConvNumbering {
                 prefix = getPrefix(numb.numFormat);
                 suffix = getSuffix(numb.numFormat);
                 listFormat = getNumberFormat(numb.numFormat);
-                numberingType = getNumberingType(numb.numFormat, i);
+                numberingType = numb.numberShape!=null ? toNumberingType(numb.numberShape)
+                                                       : getNumberingType(numb.numFormat, i);
                 charShapeId = numb.charShape+1;
                 charStyleName = ConvPara.getCharStyleName(charShapeId);
                 if (numb.textOffsetType==0x1) {         // 절대값 거리
@@ -630,6 +632,28 @@ public class ConvNumbering {
         sb.append(format.substring(prevEnd));
 
         return sb.toString();
+    }
+
+    /** 번호 모양(HWPX numFormat)을 LibreOffice NumberingType 으로 변환한다. */
+    public static short toNumberingType(NumberShape2 shape) {
+        switch (shape) {
+        case DIGIT:                     return NumberingType.ARABIC;
+        case CIRCLE_DIGIT:              return NumberingType.CIRCLE_NUMBER;
+        case ROMAN_CAPITAL:             return NumberingType.ROMAN_UPPER;
+        case ROMAN_SMALL:               return NumberingType.ROMAN_LOWER;
+        case LATIN_CAPITAL:             return NumberingType.CHARS_UPPER_LETTER;
+        case LATIN_SMALL:               return NumberingType.CHARS_LOWER_LETTER;
+        case CIRCLED_LATIN_CAPITAL:     return NumberingType.CHARS_UPPER_LETTER;  // LibreOffice 에 대응 형식 없음
+        case CIRCLED_LATIN_SMALL:       return NumberingType.CHARS_LOWER_LETTER;  // LibreOffice 에 대응 형식 없음
+        case HANGLE_SYLLABLE:           return NumberingType.HANGUL_SYLLABLE_KO;
+        case CIRCLED_HANGUL_SYLLABLE:   return NumberingType.HANGUL_CIRCLED_SYLLABLE_KO;
+        case HANGUL_JAMO:               return NumberingType.HANGUL_JAMO_KO;
+        case CIRCLED_HANGUL_JAMO:       return NumberingType.HANGUL_CIRCLED_JAMO_KO;
+        case HANGUL_PHONETIC:           return NumberingType.NUMBER_HANGUL_KO;
+        case IDEOGRAPH:                 return NumberingType.NUMBER_LOWER_ZH;
+        case CIRCLED_IDEOGRAPH:         return NumberingType.NUMBER_LOWER_ZH;     // LibreOffice 에 대응 형식 없음
+        default:                        return NumberingType.ARABIC;
+        }
     }
 
     public static short getNumberingType(String format, int i) {
